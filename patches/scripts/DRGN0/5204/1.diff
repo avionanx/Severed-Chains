@@ -1,0 +1,30 @@
+--- original
++++ modified
+@@ -1922,6 +1922,10 @@
+ call Battle::FUN_800cb764, stor[27] ; unused
+ call Battle::FUN_800cb76c, stor[27] ; bentIndex
+ call Battle::scriptSetBentAnimationLoopState, stor[27], 0x0 ; bentIndex, loop
++jmp_cmp ==, var[35], 0x1, inl[:THIRD_ROCK_ON_BOBJ_0]; - Party count fixes:
++jmp_cmp ==, var[35], 0x2, inl[:FIRST_ROCK_ON_BOBJ_1]; - if theres 1 character, skip to third leap attack, which is performed on sobj 0
++jmp_cmp ==, var[35], 0x3, inl[:FIRST_ROCK_ON_BOBJ_1]; - if theres 2 characters, after first leap, skip to last leap
++FIRST_ROCK_ON_BOBJ_1:
+ mov 0x16, stor[23] ; source, dest
+ wait stor[23] ; frames
+ mov 0x8, stor[23] ; source, dest
+@@ -1949,6 +1953,8 @@
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov 0x4, stor[stor[stor[0], 18], 23] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_43] ; scriptIndex, address
++jmp_cmp ==, var[35], 0x2, inl[:THIRD_ROCK_ON_BOBJ_0];
++SECOND_ROCK_ON_BOBJ_2:
+ mov 0xe, stor[23] ; source, dest
+ wait stor[23] ; frames
+ mov 0x8, stor[23] ; source, dest
+@@ -1977,6 +1983,7 @@
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov 0x4, stor[stor[stor[0], 18], 23] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_43] ; scriptIndex, address
++THIRD_ROCK_ON_BOBJ_0:
+ mov 0xe, stor[23] ; source, dest
+ wait stor[23] ; frames
+ mov 0x8, stor[23] ; source, dest

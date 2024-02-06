@@ -1,0 +1,18 @@
+--- original
++++ modified
+@@ -2495,11 +2495,12 @@
+ return
+ LABEL_151:
+ mov 0x0, stor[8] ; source, dest
+-gosub inl[:LABEL_183] ; addr
++;gosub inl[:LABEL_183] ; addr - Removed the part that checks whether dart is in party or not
+ jmp_cmp ==, stor[8], 0xffffffff, inl[:LABEL_150] ; operand, left, right, addr
+ or 0x8, var[45][31] ; right, left
+-mov stor[8], stor[9] ; source, dest
+-mov var[34][0], stor[9] ; source, dest
++;mov stor[8], stor[9] ; source, dest
++;mov var[34][0], stor[9] ; source, dest
++mov 0x6, stor[9]; Use character in slot 0 instead
+ jmp_cmp &, 0x40, stor[stor[stor[0], 9], 7], inl[:LABEL_186] ; operand, left, right, addr
+ call Battle::FUN_800dac20, 0x0, 0xed800, 0xfffed400, 0xfffc7c00, 0x0 ; mode, x, y, z, scriptIndex
+ call Battle::FUN_800db034, 0x0, 0x3e800, 0xfffc1800, 0x0, 0x0 ; mode, x, y, z, scriptIndex
