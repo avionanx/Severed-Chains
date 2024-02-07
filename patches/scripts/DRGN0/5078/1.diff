@@ -1,0 +1,46 @@
+--- original
++++ modified
+@@ -1553,6 +1553,7 @@
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_26] ; scriptIndex, address
+ mov 0x7, stor[23] ; source, dest
+ wait stor[23] ; frames
++ATTACK_BOBJ_0:
+ call Battle::FUN_800db574, 0x6, 0xfffc7c00, 0xfffaec00, 0x64000, 0x0, 0xa, 0x0, stor[11] ; mode, x, y, z, ?, ticks, stepType, scriptIndex
+ gosub inl[:LABEL_36] ; addr
+ call Battle::scriptStopBentSound, 0x2, stor[27], 0x3, 0x3 ; unused, bentIndex, soundIndex, mode
+@@ -1560,6 +1561,9 @@
+ call Battle::scriptPauseAnimation, stor[27] ; bentIndex
+ mov 0xe, stor[23] ; source, dest
+ wait stor[23] ; frames
++jmp_cmp ==, var[35], 0x1, inl[:END_ATTACK];
++jmp_cmp ==, var[35], 0x2, inl[:ATTACK_BOBJ_1];
++ATTACK_BOBJ_2:
+ call Battle::FUN_800dac20, 0x6, 0xfff57400, 0xfffe7000, 0xfffce000, stor[13] ; mode, x, y, z, scriptIndex
+ call Battle::FUN_800db034, 0x6, 0x38400, 0xfffb5000, 0x25800, stor[13] ; mode, x, y, z, scriptIndex
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+@@ -1568,6 +1572,7 @@
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_26] ; scriptIndex, address
+ mov 0xe, stor[23] ; source, dest
+ wait stor[23] ; frames
++ATTACK_BOBJ_1:
+ call Battle::FUN_800dac20, 0x6, 0xfff95c00, 0xfffed400, 0x8fc00, stor[12] ; mode, x, y, z, scriptIndex
+ call Battle::FUN_800db034, 0x6, 0x2bc00, 0xfffa8800, 0x0, stor[12] ; mode, x, y, z, scriptIndex
+ call Battle::scriptGetBentRotation, stor[12], stor[stor[stor[0], 12], 8], stor[stor[stor[0], 12], 9], stor[stor[stor[0], 12], 10] ; bentIndex, x, y, z
+@@ -1584,6 +1589,7 @@
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+ mov stor[12], stor[stor[stor[0], 18], 28] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_26] ; scriptIndex, address
++END_ATTACK:
+ call SEffe::scriptGetRelativePosition, stor[20], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex, parentIndex, x, y, z
+ sub 0x7d0, stor[25] ; amount, operand
+ call SEffe::scriptSetRelativePosition, stor[20], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
+@@ -1609,7 +1615,9 @@
+ call Battle::scriptStopBentSound, 0x2, stor[27], 0x7, 0x3 ; unused, bentIndex, soundIndex, mode
+ mov 0xf, stor[23] ; source, dest
+ wait stor[23] ; frames
++jmp_cmp ==, var[35], 0x1, inl[:WHY_IS_THIS_HERE];
+ call Battle::scriptSetBentRotation, stor[12], stor[stor[stor[0], 12], 8], stor[stor[stor[0], 12], 9], stor[stor[stor[0], 12], 10] ; bentIndex, x, y, z
++WHY_IS_THIS_HERE:
+ call Battle::scriptPlayBentSound, 0x2, stor[27], 0x5, 0x0, 0x0, 0x0, 0x0 ; type, bentIndex, soundIndex, a3, a4, initialDelay, repeatDelay
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_23] ; scriptIndex, address
