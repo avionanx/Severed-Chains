@@ -3234,6 +3234,10 @@ public class Battle extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.INT, name = "selectedAction", description = "The action the player has selected")
   @Method(0x800cca34L)
   public FlowControl scriptSetUpAndHandleCombatMenu(final RunningScript<BattleEntity27c> script) {
+    if(this.hud.spellAndItemMenu_800c6b60.menuType_0a == 2) {
+      return FlowControl.PAUSE_AND_REWIND;
+    }
+
     final int displayableIconsBitset = script.params_20[0].get();
 
     if(this.currentDisplayableIconsBitset_800c675c != displayableIconsBitset || (script.scriptState_04.storage_44[7] & 0x1000) != 0) {
@@ -3934,22 +3938,24 @@ public class Battle extends EngineState {
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Generates a random number using the Mersenne Twister algorithm")
+  @ScriptDescription("Generates a random number")
   @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.INT, name = "value", description = "The random number")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "min", description = "The minimum value (inclusive)")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "max", description = "The maximum value (exclusive)")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "max", description = "The maximum value (inclusive)")
   @Method(0x800cee50L)
   public FlowControl scriptRand(final RunningScript<?> script) {
     final int min = script.params_20[1].get();
     final int max = script.params_20[2].get();
+    final int range = max - min;
 
-    // Yes, scripts do this
-    if(min == max) {
-      script.params_20[0].set(min);
+    final int rand;
+    if(range >= 0) {
+      rand = seed_800fa754.nextInt(range + 1) + min;
     } else {
-      script.params_20[0].set(seed_800fa754.nextInt(min, max));
+      rand = -seed_800fa754.nextInt(-range + 1) + min;
     }
 
+    script.params_20[0].set(rand);
     return FlowControl.CONTINUE;
   }
 
@@ -4969,7 +4975,7 @@ public class Battle extends EngineState {
   @Method(0x800e46c8L)
   public void resetLights() {
     final BattleLightStruct64 v1 = this._800c6930;
-    v1.colour_00.set(0x800, 0x800, 0x800);
+    v1.colour_00.set(0.5f, 0.5f, 0.5f);
 
     final BttlLightStruct84 a0 = this.lights_800c692c[0];
     a0.light_00.direction_00.set(0.0f, 1.0f, 0.0f);
@@ -7278,7 +7284,9 @@ public class Battle extends EngineState {
           RENDERER.queueModel(part.obj, lw)
             .lightDirection(lightDirectionMatrix_800c34e8)
             .lightColour(lightColourMatrix_800c3508)
-            .backgroundColour(GTE.backgroundColour);
+            .backgroundColour(GTE.backgroundColour)
+            .ctmdFlags((part.attribute_00 & 0x4000_0000) != 0 ? 0x12 : 0x0)
+            .battleColour(this._800c6930.colour_00);
         }
       }
 
