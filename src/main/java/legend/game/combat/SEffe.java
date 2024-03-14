@@ -39,7 +39,6 @@ import legend.game.combat.effects.AdditionOverlaysEffect44;
 import legend.game.combat.effects.AdditionOverlaysHit20;
 import legend.game.combat.effects.AttachmentHost;
 import legend.game.combat.effects.BillboardSpriteEffect0c;
-import legend.game.combat.effects.ButtonPressHudMetrics06;
 import legend.game.combat.effects.DeffTmdRenderer14;
 import legend.game.combat.effects.Effect;
 import legend.game.combat.effects.EffectAttachment;
@@ -121,14 +120,12 @@ import static legend.core.GameEngine.GTE;
 import static legend.core.GameEngine.RENDERER;
 import static legend.core.GameEngine.SCRIPTS;
 import static legend.game.Scus94491BpeSegment.battlePreloadedEntities_1f8003f4;
+import static legend.game.Scus94491BpeSegment.battleUiParts;
 import static legend.game.Scus94491BpeSegment.displayHeight_1f8003e4;
 import static legend.game.Scus94491BpeSegment.displayWidth_1f8003e0;
 import static legend.game.Scus94491BpeSegment.playSound;
 import static legend.game.Scus94491BpeSegment.projectionPlaneDistance_1f8003f8;
 import static legend.game.Scus94491BpeSegment.rcos;
-import static legend.game.Scus94491BpeSegment.renderButtonPressHudElement;
-import static legend.game.Scus94491BpeSegment.renderButtonPressHudTexturedRect;
-import static legend.game.Scus94491BpeSegment.renderDivineDragoonAdditionPressIris;
 import static legend.game.Scus94491BpeSegment.rsin;
 import static legend.game.Scus94491BpeSegment.simpleRand;
 import static legend.game.Scus94491BpeSegment.tmdGp0Tpage_1f8003ec;
@@ -158,7 +155,6 @@ import static legend.game.Scus94491BpeSegment_800b.stage_800bda0c;
 import static legend.game.Scus94491BpeSegment_800c.lightColourMatrix_800c3508;
 import static legend.game.Scus94491BpeSegment_800c.lightDirectionMatrix_800c34e8;
 import static legend.game.Scus94491BpeSegment_800c.worldToScreenMatrix_800c3548;
-import static legend.game.combat.Battle.buttonPressHudMetrics_800faaa0;
 import static legend.game.combat.Battle.deffManager_800c693c;
 import static legend.game.combat.Battle.melbuStageIndices_800fb064;
 import static legend.game.combat.Battle.seed_800fa754;
@@ -186,12 +182,12 @@ public final class SEffe {
 
   /** Four sets of color values used for addition overlay borders; only last actually used */
   public static final int[] additionBorderColours_800fb7f0 = {0x70, 0xc0, 0x75, 0xc0, 0xa8, 0x70, 0x70, 0xb5, 0xc0, 0x48, 0x60, 0xff};
-  private static final int[][] daddyHudEyeTranslucencyModes_800fb7fc = {{3, 0}, {1, 1}, {1, 1}, {0, 0}};
-  private static final int[][] daddyHudMeterOffsets_800fb804 = {{49, 32}, {46, 49}, {38, 56}, {35, 60}, {31, 60}};
-  private static final int[][] daddyHudMeterUvs_800fb818 = {{128, 112}, {128, 80}, {128, 96}, {216, 8}, {216, 16}};
-  private static final int[][] daddyHudMeterDimensions_800fb82c = {{24, 32}, {16, 16}, {16, 16}, {8, 8}, {8, 8}};
-  private static final int[] daddyHudFrameClutOffsets_800fb840 = {0x50, 0x51, 0x52, 0x53, 0x54, 0x51, 0x55, 0x56, 0x52, 0x57, 0, 0};
-  private static final int[] daddyHudEyeClutOffsets_800fb84c = {0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x59, 0x5d, 0x5e, 0x5a, 0x5f, 0, 0, 0, 1, 0, 0};
+  public static final int[][] daddyHudEyeTranslucencyModes_800fb7fc = {{3, 0}, {1, 1}, {1, 1}, {0, 0}};
+  public static final int[][] daddyHudMeterOffsets_800fb804 = {{49, 32}, {46, 49}, {38, 56}, {35, 60}, {31, 60}};
+  public static final int[][] daddyHudMeterUvs_800fb818 = {{128, 112}, {128, 80}, {128, 96}, {216, 8}, {216, 16}};
+  public static final int[][] daddyHudMeterDimensions_800fb82c = {{24, 32}, {16, 16}, {16, 16}, {8, 8}, {8, 8}};
+  public static final int[] daddyHudFrameClutOffsets_800fb840 = {0x50, 0x51, 0x52, 0x53, 0x54, 0x51, 0x55, 0x56, 0x52, 0x57, 0, 0};
+  public static final int[] daddyHudEyeClutOffsets_800fb84c = {0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x59, 0x5d, 0x5e, 0x5a, 0x5f, 0, 0, 0, 1, 0, 0};
 
   private static final Vector3f _800fb8d0 = new Vector3f(1.0f, 0.0f, 0.0f);
 
@@ -313,8 +309,8 @@ public final class SEffe {
   private static final int[] kongolDaddyHitSuccessWindows_80119f98 = {4, 3, 2, 0, 0, 0, 0};
   private static int daddySpinnerBrightnessFactor_80119fb4;
 
-  private static final int[] perfectDaddyGlyphUs_80119fbc = {232, 208, 40, 48, 208, 56, 64, 240};
-  private static final int[] perfectDaddyGlyphVs_80119fc4 = {64, 64, 128, 128, 64, 128, 128, 64};
+  public static final int[] perfectDaddyGlyphUs_80119fbc = {232, 208, 40, 48, 208, 56, 64, 240};
+  public static final int[] perfectDaddyGlyphVs_80119fc4 = {64, 64, 128, 128, 64, 128, 128, 64};
 
   /**
    * <ol start="0">
@@ -456,11 +452,6 @@ public final class SEffe {
     final MV transformMatrix = new MV();
     GsGetLw(bent.model_148.modelParts_00[objIndex].coord2_04, transformMatrix);
     translation.set(transformMatrix.transfer);
-  }
-
-  @Method(0x800d3f98L)
-  public static void FUN_800d3f98(final short x, final short y, final int a2, final short a3, final int brightness) {
-    renderButtonPressHudTexturedRect(x, y, a2 * 8 + 16 & 0xf8, 40, 8, 16, a3, Translucency.B_PLUS_F, brightness, 0x1000);
   }
 
   /** used renderCtmd */
@@ -2075,13 +2066,7 @@ public final class SEffe {
   }
 
   public static void renderButtonPressHudElement1(final int type, final int x, final int y, final Translucency translucency, final int brightness) {
-    final ButtonPressHudMetrics06 metrics = buttonPressHudMetrics_800faaa0[type];
-
-    if(metrics.hudElementType_00 == 0) {
-      renderButtonPressHudTexturedRect(x, y, metrics.u_01, metrics.v_02, metrics.wOrRightU_03, metrics.hOrBottomV_04, metrics.clutOffset_05, translucency, brightness, 0x1000);
-    } else {
-      renderButtonPressHudElement(x, y, metrics.u_01, metrics.v_02, metrics.wOrRightU_03, metrics.hOrBottomV_04, metrics.clutOffset_05, translucency, brightness, 0x1000, 0x1000);
-    }
+    battleUiParts.queueButton(type, x, y, translucency, brightness, 1.0f, 1.0f);
   }
 
   /**
@@ -2761,19 +2746,7 @@ public final class SEffe {
     if(daddy.buttonPressGlowBrightnessFactor_11 != 0) {
       final int brightness = daddy.buttonPressGlowBrightnessFactor_11 * 0x40 - 1;
       renderButtonPressHudElement1(20, x1 - 4, y1 - 4, Translucency.B_PLUS_F, 128);
-      renderButtonPressHudElement(
-        (short)x1 - 2,
-        (short)y1 - 5,
-        232,
-        120,
-        255,
-        143,
-        0xc,
-        Translucency.B_PLUS_F,
-        brightness,
-        daddy.buttonPressGlowBrightnessFactor_11 * 256 + 6404,
-        daddy.buttonPressGlowBrightnessFactor_11 * 256 + 4096
-      );
+      battleUiParts.queueDaddyButtonGlow(x1, y1, brightness, (daddy.buttonPressGlowBrightnessFactor_11 * 256 + 0x1904) / (float)0x1000, (daddy.buttonPressGlowBrightnessFactor_11 * 256 + 0x1000) / (float)0x1000);
     }
 
     //LAB_80107bf0
@@ -2803,22 +2776,16 @@ public final class SEffe {
 
   @Method(0x80107dc4L)
   public static void renderDragoonAdditionHud_(final DragoonAdditionScriptData1c daddy, final int transModesIndex, final int angle) {
-    int brightness = (daddySpinnerBrightnessFactor_80119fb4 + 1) * 0x40;
-
-    final int y = daddyHudOffsetY_8011a020 + (rsin(angle) * 17 >> 12) + 24;
-
-    final int x;
+    final int starY = daddyHudOffsetY_8011a020 + (rsin(angle) * 17 >> 12) + 24;
+    final int starX;
     if(daddyHudSpinnerStepCountsPointer_8011a028[daddy.stepCountIndex_06] >= 2) {
-      x = daddyHudOffsetX_8011a01c + (rcos(angle) * 17 >> 12) + 28;
+      starX = daddyHudOffsetX_8011a01c + (rcos(angle) * 17 >> 12) + 28;
     } else {
-      x = daddyHudOffsetX_8011a01c + 28;
+      starX = daddyHudOffsetX_8011a01c + 28;
     }
 
     //LAB_80108048
-    // Spinner star
-    renderButtonPressHudTexturedRect(x, y, 128, 64, 16, 16, 51, Translucency.B_PLUS_F, brightness, 0x1000);
-
-    brightness = 0x80;
+    int brightness = 0x80;
 
     //LAB_801080ac
     for(int i = 0; i < 5; i++) {
@@ -2827,126 +2794,32 @@ public final class SEffe {
       }
 
       //LAB_801080cc
-      // Meter
-      renderButtonPressHudTexturedRect(
-        daddyHudOffsetX_8011a01c + daddyHudMeterOffsets_800fb804[i][0],
-        daddyHudOffsetY_8011a020 + daddyHudMeterOffsets_800fb804[i][1],
-        daddyHudMeterUvs_800fb818[i][0],
-        daddyHudMeterUvs_800fb818[i][1],
-        daddyHudMeterDimensions_800fb82c[i][0],
-        daddyHudMeterDimensions_800fb82c[i][1],
-        53 + i,
-        Translucency.B_PLUS_F,
-        brightness,
-        0x1000
-      );
+      battleUiParts.queueDaddyMeter(i, daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020, 0x35 + i, Translucency.B_PLUS_F, brightness);
     }
 
     // Button press textures
     renderDragoonAdditionButtonPressTextures(daddy);
 
-    brightness = 0x80;
-
     //LAB_801081a8
     for(int i = 0; i < daddy.countEyeFlashTicks_0d; i++) {
-      // Eye flash
-      renderButtonPressHudTexturedRect(
-        daddyHudOffsetX_8011a01c + 18,
-        daddyHudOffsetY_8011a020 + 16,
-        224,
-        208,
-        31,
-        31,
-        daddyHudEyeClutOffsets_800fb84c[daddy.charId_18],
-        Translucency.B_PLUS_F,
-        brightness,
-        0x1000
-      );
+      battleUiParts.queueDaddyEyeFlash(daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020, daddyHudEyeClutOffsets_800fb84c[daddy.charId_18], Translucency.B_PLUS_F, 0x80);
 
       if(daddy.charId_18 == 9) {
-        renderDivineDragoonAdditionPressIris(
-          daddyHudOffsetX_8011a01c + 23,
-          daddyHudOffsetY_8011a020 + 21,
-          232,
-          120,
-          23,
-          23,
-          12,
-          Translucency.B_PLUS_F,
-          brightness,
-          0x800,
-          0x1800
-        );
+        battleUiParts.queueDaddyDivineIris(daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020);
       }
       //LAB_80108250
     }
 
     //LAB_80108268
     // Daddy spinner
-    // Arrow/ tick mark
-    renderButtonPressHudTexturedRect(
-      daddyHudOffsetX_8011a01c + 32,
-      daddyHudOffsetY_8011a020 -  4,
-      152,
-      208,
-      8,
-      24,
-      50,
-      Translucency.HALF_B_PLUS_HALF_F,
-      brightness,
-      0x1000
-    );
-    // Dark eye overlay
-    renderButtonPressHudTexturedRect(
-      daddyHudOffsetX_8011a01c + 18,
-      daddyHudOffsetY_8011a020 + 16,
-      224,
-      208,
-      31,
-      31,
-      daddyHudEyeClutOffsets_800fb84c[daddy.charId_18],
-      Translucency.of(daddyHudEyeTranslucencyModes_800fb7fc[transModesIndex][0]),
-      brightness,
-      0x1000
-    );
-    // Flat center overlay
-    renderButtonPressHudTexturedRect(
-      daddyHudOffsetX_8011a01c + 17,
-      daddyHudOffsetY_8011a020 + 14,
-      112,
-      200,
-      40,
-      40,
-      52,
-      Translucency.of(daddyHudEyeTranslucencyModes_800fb7fc[transModesIndex][1]),
-      brightness,
-      0x1000
-    );
-    // Frame top portion
-    renderButtonPressHudTexturedRect(
-      daddyHudOffsetX_8011a01c,
-      daddyHudOffsetY_8011a020, 160,
-      192,
-      64,
-      48,
-      daddyHudFrameClutOffsets_800fb840[daddy.charId_18],
-      null,
-      brightness,
-      0x1000
-    );
-    // Frame bottom portion
-    renderButtonPressHudTexturedRect(
-      daddyHudOffsetX_8011a01c +  8,
-      daddyHudOffsetY_8011a020 + 48,
-      200,
-      80,
-      42,
-      8,
-      daddyHudFrameClutOffsets_800fb840[daddy.charId_18],
-      null,
-      brightness,
-      0x1000
-    );
+    battleUiParts.queueDaddyFrame(daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020, daddyHudFrameClutOffsets_800fb840[daddy.charId_18], null, 0x80);
+    battleUiParts.queueDaddyFlatCenter(daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020, 0x34, Translucency.of(daddyHudEyeTranslucencyModes_800fb7fc[transModesIndex][1]), 0x80);
+    battleUiParts.queueDaddyDarkEye(daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020, daddyHudEyeClutOffsets_800fb84c[daddy.charId_18], Translucency.of(daddyHudEyeTranslucencyModes_800fb7fc[transModesIndex][0]), 0x80);
+    battleUiParts.queueDaddyArrow(daddyHudOffsetX_8011a01c, daddyHudOffsetY_8011a020, 0x32, Translucency.HALF_B_PLUS_HALF_F, 0x80);
+
+    // Spinner star
+    battleUiParts.queueDaddyStar(starX, starY, 0x33, Translucency.B_PLUS_F, (daddySpinnerBrightnessFactor_80119fb4 + 1) * 0x40);
+
     daddySpinnerBrightnessFactor_80119fb4 = 1 - daddySpinnerBrightnessFactor_80119fb4;
   }
 
@@ -3146,9 +3019,6 @@ public final class SEffe {
     for(int i = 7; i >= 0; i--) {
       int brightness = 0x80;
 
-      final int u = perfectDaddyGlyphUs_80119fbc[i];
-      final int v = perfectDaddyGlyphVs_80119fc4[i];
-
       final PerfectDragoonAdditionEffectGlyph06 glyph = effect.glyphs_00[i];
 
       final int renderStage = glyph.renderStage_00;
@@ -3165,18 +3035,7 @@ public final class SEffe {
         //LAB_80108ac4
         for(int j = 0; j < 4; j++) {
           brightness -= 0x20;
-          renderButtonPressHudTexturedRect(
-            glyph.currentXPosition_02 + j * 6,
-            daddyHudOffsetY_8011a020 + 16,
-            u,
-            v,
-            8,
-            16,
-            41,
-            Translucency.B_PLUS_F,
-            brightness,
-            0x1000
-          );
+          battleUiParts.queueDaddyPerfect(i, glyph.currentXPosition_02 + j * 6, daddyHudOffsetY_8011a020 + 16, brightness);
         }
       } else if(renderStage == 1) {
         //LAB_80108b58
@@ -3200,32 +3059,10 @@ public final class SEffe {
       //LAB_80108be8
       //LAB_80108bec
       //LAB_80108bf0
-      renderButtonPressHudTexturedRect(
-        glyph.currentXPosition_02,
-        daddyHudOffsetY_8011a020 + 16,
-        u,
-        v,
-        8,
-        16,
-        41,
-        Translucency.B_PLUS_F,
-        brightness,
-        0x1000
-      );
+      battleUiParts.queueDaddyPerfect(i, glyph.currentXPosition_02, daddyHudOffsetY_8011a020 + 16, brightness);
 
       if((glyph.currentStaticRenderTick_01 & 0x1) != 0) {
-        renderButtonPressHudTexturedRect(
-          glyph.currentXPosition_02,
-          daddyHudOffsetY_8011a020 + 16,
-          u,
-          v,
-          8,
-          16,
-          41,
-          Translucency.B_PLUS_F,
-          brightness,
-          0x1000
-        );
+        battleUiParts.queueDaddyPerfect(i, glyph.currentXPosition_02, daddyHudOffsetY_8011a020 + 16, brightness);
       }
       //LAB_80108cb0
     }
