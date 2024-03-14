@@ -165,7 +165,7 @@ public class SMap extends EngineState {
 
   private boolean unloadSubmapParticles_800c6870;
 
-  public final ScriptState<SubmapObject210>[] sobjs_800c6880 = new ScriptState[20];
+  public final ScriptState<SubmapObject210>[] sobjs_800c6880 = new ScriptState[128];
 
   public Submap submap;
 
@@ -1733,6 +1733,7 @@ public class SMap extends EngineState {
     script.params_20[3].set(Math.round(GTE.getScreenX(2) + 192));
     script.params_20[4].set(Math.round(GTE.getScreenY(2) + 128));
     return FlowControl.CONTINUE;
+
   }
 
   @ScriptDescription("Gets the ID of the current submap")
@@ -3659,8 +3660,11 @@ public class SMap extends EngineState {
         this.mapTransitionTicks_800cab28 = 0;
         submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
-
-        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
+        if(submapCut_80052c30 >= 1000){
+          this.submap = new SubmapModded(submapCut_80052c30, this.collisionGeometry_800cbe08);
+        }else{
+          this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
+        }
         this.submap.loadEnv(() -> this.smapLoadingStage_800cb430 = SubmapState.START_LOADING_MEDIA_10);
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
       }
