@@ -113,7 +113,7 @@ public final class ControllerDatabase {
 
     for(final String dbMap : databaseEntries) {
       final String[] mapInfo = dbMap.split(",");
-      if(mapInfo[0].equals(controllerGUID)) {
+      if(mapInfo[0].equalsIgnoreCase(controllerGUID)) {
         matchesInDb.add(dbMap);
       }
     }
