@@ -76,7 +76,7 @@ public class SubmapModded extends Submap {
   private int frameIndex = 0;
   private int trackOffset = 104;
 
-  public static boolean guitarMode = true;
+  public static boolean guitarMode = false;
 
   public SubmapModded(final int cut, final CollisionGeometry collisionGeometry) {
     this.cut = cut;
