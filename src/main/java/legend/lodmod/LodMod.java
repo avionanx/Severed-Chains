@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import legend.game.BossRush;
 import legend.game.inventory.Equipment;
 import legend.game.inventory.EquipmentRegistryEvent;
 import legend.game.inventory.Item;
@@ -22,6 +23,7 @@ import org.legendofdragoon.modloader.Mod;
 import org.legendofdragoon.modloader.events.EventListener;
 import org.legendofdragoon.modloader.registries.RegistryId;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import static legend.game.SItem.equipmentStats_80111ff0;
@@ -99,6 +101,7 @@ public class LodMod {
         idEquipmentMap.put(equipment.getRegistryId(), equipmentId);
       }
     }
+    //BossRush.attachEquipments(event);
   }
 
   @EventListener

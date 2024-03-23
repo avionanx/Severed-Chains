@@ -18,12 +18,14 @@ import legend.core.opengl.PolyBuilder;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
+import legend.game.BossRush;
 import legend.game.EngineState;
 import legend.game.EngineStateEnum;
 import legend.game.fmv.Fmv;
 import legend.game.input.Input;
 import legend.game.input.InputAction;
 import legend.game.inventory.WhichMenu;
+import legend.game.inventory.screens.TextColour;
 import legend.game.modding.coremod.CoreMod;
 import legend.game.scripting.FlowControl;
 import legend.game.scripting.Param;
@@ -73,6 +75,8 @@ import static legend.core.MathHelper.flEq;
 import static legend.core.MathHelper.psxDegToRad;
 import static legend.core.MathHelper.sin;
 import static legend.game.SItem.loadCharacterStats;
+import static legend.game.Scus94491BpeSegment.centreScreenX_1f8003dc;
+import static legend.game.Scus94491BpeSegment.centreScreenY_1f8003de;
 import static legend.game.Scus94491BpeSegment.getLoadedDrgnFiles;
 import static legend.game.Scus94491BpeSegment.loadDir;
 import static legend.game.Scus94491BpeSegment.loadFile;
@@ -94,8 +98,10 @@ import static legend.game.Scus94491BpeSegment_8002.initObjTable2;
 import static legend.game.Scus94491BpeSegment_8002.loadAndRenderMenus;
 import static legend.game.Scus94491BpeSegment_8002.loadModelStandardAnimation;
 import static legend.game.Scus94491BpeSegment_8002.prepareObjTable2;
+import static legend.game.Scus94491BpeSegment_8002.renderText;
 import static legend.game.Scus94491BpeSegment_8002.scriptDeallocateAllTextboxes;
 import static legend.game.Scus94491BpeSegment_8002.srand;
+import static legend.game.Scus94491BpeSegment_8002.textWidth;
 import static legend.game.Scus94491BpeSegment_8002.textboxFits;
 import static legend.game.Scus94491BpeSegment_8003.GetTPage;
 import static legend.game.Scus94491BpeSegment_8003.GsGetLs;
@@ -1549,11 +1555,14 @@ public class SMap extends EngineState {
     return this.FUN_800e0184(script);
   }
 
+  //SCRIPT COMBAT STAT LOADER
   @ScriptDescription("Something related to submap object animated textures")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "animatedTextureIndex", description = "The animated texture index")
   @Method(0x800df560L)
   private FlowControl FUN_800df560(final RunningScript<?> script) {
-    throw new RuntimeException("Not implemented");
+    BossRush.prepareGameState(script.params_20[0].get());
+    return FlowControl.CONTINUE;
+    //throw new RuntimeException("Not implemented");
   }
 
   @ScriptDescription("Unknown")
@@ -3429,10 +3438,10 @@ public class SMap extends EngineState {
             .depthOffset(-1.0f);
         }
 
-//        this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(i, middle);
-//        this.transformVertex(transformed, middle);
-//        final LodString text = new LodString(Integer.toString(i));
-//        renderText(text, transformed.x + centreScreenX_1f8003dc - textWidth(text) / 2.0f, transformed.y + centreScreenY_1f8003de - 6, TextColour.LIME, 0);
+       this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(i, middle);
+       this.transformVertex(transformed, middle);
+       final LodString text = new LodString(Integer.toString(i));
+       renderText(text, transformed.x + centreScreenX_1f8003dc - textWidth(text) / 2.0f, transformed.y + centreScreenY_1f8003de - 6, TextColour.LIME, 0);
       }
     } else if(this.collisionGeometry_800cbe08.debugObj != null) {
       this.collisionGeometry_800cbe08.debugObj.delete();

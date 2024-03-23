@@ -2,43 +2,43 @@ package legend.game.submap;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import legend.core.RenderEngine;
-import legend.core.gpu.Bpp;
 import legend.core.gpu.Rect4i;
 import legend.core.gte.MV;
 import legend.core.gte.TmdWithId;
 import legend.core.memory.types.IntRef;
-import legend.core.opengl.MeshObj;
 import legend.core.opengl.Obj;
-import legend.core.opengl.QuadBuilder;
-import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
+import legend.game.BossRush;
+import legend.game.inventory.Equipment;
+import legend.game.inventory.EquipmentRegistryEvent;
 import legend.game.scripting.ScriptFile;
 import legend.game.tim.Tim;
 import legend.game.tmd.UvAdjustmentMetrics14;
 import legend.game.types.CContainer;
+import legend.game.types.EquipmentSlot;
 import legend.game.types.GsRVIEW2;
 import legend.game.types.Model124;
 import legend.game.types.TmdAnimationFile;
 import legend.game.unpacker.FileData;
 import legend.game.unpacker.Unpacker;
+import static legend.game.Scus94491BpeSegment_800b.battleStage_800bb0f4;
 
+import legend.lodmod.LodEquipment;
+import legend.lodmod.LodMod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Path;
+import org.legendofdragoon.modloader.events.EventListener;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static legend.core.Async.allLoaded;
 import static legend.core.GameEngine.GPU;
-import static legend.core.GameEngine.RENDERER;
+import static legend.core.GameEngine.REGISTRIES;
 import static legend.game.Scus94491BpeSegment.orderingTableBits_1f8003c0;
 import static legend.game.Scus94491BpeSegment_8003.GsSetSmapRefView2L;
 import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
@@ -64,62 +64,19 @@ public class SubmapModded extends Submap {
   private final GsRVIEW2 rview2_800cbd10 = new GsRVIEW2();
   private Obj backgroundObj;
 
-  private QuadBuilder quadBuilder;
-  private MeshObj arrow;
 
-  private Texture arrowTexture;
 
-  private ArrayList<Note> noteList;
-  private int noteProgressPointer;
-  private ArrayList<LaunchedNote> launchedNotes;
-
-  private int frameIndex = 0;
-  private int trackOffset = 104;
-
-  public static boolean guitarMode = true;
 
   public SubmapModded(final int cut, final CollisionGeometry collisionGeometry) {
+    battleStage_800bb0f4 = 17;
+    submapId_800bd808 = 0;
     this.cut = cut;
     this.collisionGeometry = collisionGeometry;
     this.loadCollisionAndTransitions();
-    submapId_800bd808 = 57;
-    if(this.cut == 1002){
-      this.quadBuilder = new QuadBuilder("SoulIndicatorMaker");
-      this.arrowTexture = Texture.png(Path.of("gfx", "ddr", "arrow.png"));
-      this.arrow = this.quadBuilder
-        .bpp(Bpp.BITS_24)
-        .size(1.0f, 1.0f)
-        .uvSize(1.0f, 1.0f)
-        .pos(-0.5f, -0.5f, 0.0f)
-        .build();
-      this.launchedNotes = new ArrayList<>();
-      this.noteProgressPointer = 0;
-      this.noteList = new ArrayList<>();
-      this.loadNotes();
-    }
+    BossRush.clearEquipments();
+    BossRush.clearItems();
   }
 
-  int getTrackIndexFromScriptFlags(){
-    final int f1 = gameState_800babc8.scriptFlags2_bc.get(848) ? 4 : 0;
-    final int f2 = gameState_800babc8.scriptFlags2_bc.get(849) ? 2 : 0;
-    final int f3 = gameState_800babc8.scriptFlags2_bc.get(850) ? 1 : 0;
-    return f1 + f2 + f3;
-  }
-  private void loadNotes(){
-    final int trackIndex = getTrackIndexFromScriptFlags();
-    try (final BufferedReader br = new BufferedReader(new FileReader("assets/beatmaps/" + trackIndex + ".txt"))){
-      String line;
-      while((line = br.readLine()) != null){
-        final String[] parts = line.split(",");
-        this.noteList.add(new Note(NoteType.values()[Integer.valueOf(parts[0])],Integer.valueOf(parts[1])));
-      }
-    } catch(final IOException e){
-      e.printStackTrace();
-    }
-    if(trackIndex == 4){
-      this.trackOffset = 120;
-    }
-  }
   @Override
   public void loadEnv(Runnable onLoaded) {
     Unpacker.loadFile("../assets/submap/%d/environment/collinfo".formatted(this.cut),fileData1 -> {
@@ -343,70 +300,14 @@ public class SubmapModded extends Submap {
 
   @Override
   public void draw() {
-    if(this.cut != 1002) return;
-    this.renderIndicators();
-    this.launchNotes();
-    this.renderNotes();
-    this.clearNotes();
-    this.updateNotes();
-  }
-
-  private void launchNotes(){
-    if(noteProgressPointer == noteList.size()) return;
-    Note nextNote = noteList.get(noteProgressPointer);
-    if(nextNote.frameIndex + this.trackOffset + 325 /*fix this garbage */  == this.frameIndex){
-      launchedNotes.add(new LaunchedNote(nextNote.noteType));
-      noteProgressPointer++;
-      launchNotes(); //no bitwise math here, just check next index
-    }
-  }
-  private void updateNotes(){
-    this.frameIndex +=1;
-    for(LaunchedNote launchedNote : launchedNotes){
-      launchedNote.frameStep();
-    }
-  }
-  private void clearNotes(){
-    for(int i = 0; i < launchedNotes.size(); i++){
-      if(launchedNotes.get(i).finished){
-        launchedNotes.remove(i);
-        i -= 1;
-      }
-    }
-  }
-  private void renderNotes(){
-
-    for(LaunchedNote launchedNote : launchedNotes){
-      MV mv = new MV();
-      mv.identity();
-      mv.scale(24);
-      mv.transfer.set(launchedNote.position);
-      mv.rotateZ(launchedNote.rotation);
-      final RenderEngine.QueuedModel<?> indicatorUp =  RENDERER.queueOrthoModel(this.arrow, mv);
-      indicatorUp.texture(this.arrowTexture);
-    }
-  }
-  private void renderIndicators(){
-    final float y = guitarMode ? 200.0f : 40.0f;
+    /*
     MV mv = new MV();
     mv.identity();
-    mv.scale(24);
-    mv.transfer.set(204.0f,y,1.0f);
-    final RenderEngine.QueuedModel<?> indicatorUp =  RENDERER.queueOrthoModel(this.arrow, mv);
-    indicatorUp.texture(this.arrowTexture);
-    mv.rotateZ(1 * 1.5708f);
-    mv.transfer.set(244.0f,y,1.0f);
-    final RenderEngine.QueuedModel<?> indicatorRight =  RENDERER.queueOrthoModel(this.arrow, mv);
-    indicatorRight.texture(this.arrowTexture);
-    mv.rotateZ(1 * 1.5708f);
-    mv.transfer.set(164.0f,y,1.0f);
-    final RenderEngine.QueuedModel<?> indicatorDown =  RENDERER.queueOrthoModel(this.arrow, mv);
-    indicatorDown.texture(this.arrowTexture);
-    mv.rotateZ(1 * 1.5708f);
-    mv.transfer.set(124.0f,y,1.0f);
-    final RenderEngine.QueuedModel<?> indicatorLeft =  RENDERER.queueOrthoModel(this.arrow, mv);
-    indicatorLeft.texture(this.arrowTexture);
+    mv.scale(1000);
+    RENDERER.queueModel(this.map,mv);
+     */
   }
+
 
   @Override
   public void drawEnv(MV[] sobjMatrices) {
@@ -423,21 +324,12 @@ public class SubmapModded extends Submap {
   @Override
   public void unload() {
     previousSubmapCut_800bda08 = this.cut;
-
-
-
     this.submapModel_800d4bf8.deleteModelParts();
 
     if(this.backgroundObj != null) {
       this.backgroundObj.delete();
       this.backgroundObj = null;
     }
-    if(this.cut == 1002){
-      this.arrow.delete();
-      this.arrowTexture.delete();
-    }
-
-
   }
   private void loadCollisionAndTransitions(){
     this.collisionGeometry.clearCollisionAndTransitionInfo();
@@ -487,12 +379,7 @@ public class SubmapModded extends Submap {
   private static final Int2ObjectMap<CameraInfo> cameraInfos;
   static {
     cameraInfos = new Int2ObjectOpenHashMap<>();
-    cameraInfos.put(1000, new CameraInfo(new Vector3f(39.0f,-2599.0f,-2841.0f),new Vector3f(39.0f,-2553.0f,-2786.0f),0,2345));
-    cameraInfos.put(1001, new CameraInfo(new Vector3f(9.600E+1f,-8.930E+2f,-1.536E+3f),new Vector3f(9.500E+1f,-8.230E+2f,-1.378E+3f),0,817));
-    cameraInfos.put(1002, new CameraInfo(new Vector3f(0.0f, -220.0f, -520.0f),new Vector3f(0.0f, -160.0f, -400.0f),0,500));
-    cameraInfos.put(1003, new CameraInfo(new Vector3f( 3.600E+1f, -1.001E+3f, -1.658E+3f),new Vector3f( 0.000E+0f,  0.000E+0f,  0.000E+0f), 0, 938));
-    cameraInfos.put(1004, new CameraInfo(new Vector3f( -1.400E+1f , -1.575E+3f, -1.226E+3f),new Vector3f( -1.400E+1f, -1.471E+3f, -1.141E+3f), 0, 1172));
-
+    cameraInfos.put(2000, new CameraInfo(new Vector3f( -1.400E+1f , -1.575E+3f, -1.226E+3f),new Vector3f( -1.400E+1f, -1.471E+3f, -1.141E+3f), 0, 1172));
   }
 
 

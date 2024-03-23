@@ -481,7 +481,7 @@ public final class SItem {
     new LodString("Mortal Dr Mt."), new LodString(""), new LodString("Kashua Glacier"), new LodString("Flanvel Tower"), new LodString("Snowfield"),
     new LodString("Fort Magrad"), new LodString("Vellweb"), new LodString(""), new LodString("Death Frontier"), new LodString("Ulara"),
     new LodString("Zenebatos"), new LodString("Mayfil"), new LodString(""), new LodString("Rouge"), new LodString("Aglis"),
-    new LodString("Divine Tree"), new LodString("Moon"), new LodString("Sound Plane")
+    new LodString("Divine Tree"), new LodString("Moon"), new LodString("Arena")
   };
   public static final LodString[] worldMapNames_8011c1ec = {
     new LodString("So. of Serdio"),
