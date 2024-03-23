@@ -8,7 +8,7 @@ import legend.core.gte.TmdWithId;
 import legend.core.memory.types.IntRef;
 import legend.core.opengl.Obj;
 import legend.core.opengl.TmdObjLoader;
-import legend.game.BossRush;
+
 import legend.game.inventory.Equipment;
 import legend.game.inventory.EquipmentRegistryEvent;
 import legend.game.scripting.ScriptFile;
@@ -31,7 +31,7 @@ import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.legendofdragoon.modloader.events.EventListener;
-
+import legend.game.BossRush;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;

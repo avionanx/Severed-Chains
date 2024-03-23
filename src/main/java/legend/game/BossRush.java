@@ -5,17 +5,13 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvValidationException;
 import legend.core.GameEngine;
-import legend.core.Registries;
-import legend.game.characters.Element;
 import legend.game.characters.ElementSet;
 import legend.game.inventory.Equipment;
 import legend.game.inventory.EquipmentRegistryEvent;
 import legend.game.modding.coremod.CoreMod;
-import legend.game.modding.coremod.elements.EarthElement;
 import legend.game.types.EquipmentSlot;
 import legend.lodmod.LodMod;
 import org.legendofdragoon.modloader.Mod;
-import org.legendofdragoon.modloader.events.EventListener;
 import org.legendofdragoon.modloader.registries.RegistryId;
 
 import java.io.IOException;
@@ -89,10 +85,16 @@ public class BossRush {
     );
   }
   public static void prepareGameState(int stage){
-    setAllLevels(1);
-    setAllDLevels(5);
+    hideParty();
+    resetPartyStats();
     switch(stage){
-      case 0 -> {
+      case 0 -> { //Commander
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[2].partyFlags_04 = 0x3;
+      }
+      case 1 -> { //Fruegel
+
       }
       default -> {
       }
@@ -104,6 +106,10 @@ public class BossRush {
   private static void unlockParty(){
     for(int i = 0; i < 9; i++){
       gameState_800babc8.charData_32c[i].partyFlags_04 = 3;
+    }
+  }
+  private static void resetPartyStats(){
+    for(int i = 0; i < 9; i++){
       gameState_800babc8.charData_32c[i].dlevel_13 = 1;
       gameState_800babc8.charData_32c[i].level_12 = 1;
       gameState_800babc8.charData_32c[i].xp_00 = 0;
@@ -155,7 +161,7 @@ public class BossRush {
       Iterator<String> e = Arrays.stream(equipments).iterator();
       int c = 0;
       while(e.hasNext()){
-        EquipmentSlot slot = EquipmentSlot.values()[c];
+        EquipmentSlot slot = EquipmentSlot.values()[c % 5];
         gameState_800babc8.charData_32c[c/5].equipment_14.put(slot, REGISTRIES.equipment.getEntry(LodMod.MOD_ID + ":" + e.next()).get());
         c++;
       }
@@ -186,4 +192,20 @@ public class BossRush {
     gameState_800babc8.equipment_1e8.clear();
   }
   private static void prepareAdditions(){}
+
+  public static int getStageIndexFromFlags(){
+    int b1 = gameState_800babc8.scriptFlags2_bc.get(0x320)? 8 : 0;
+    int b2 = gameState_800babc8.scriptFlags2_bc.get(0x321)? 4 : 0;
+    int b3 = gameState_800babc8.scriptFlags2_bc.get(0x322)? 2 : 0;
+    int b4 = gameState_800babc8.scriptFlags2_bc.get(0x323)? 1 : 0;
+    return b1 + b2 + b3 + b4;
+  }
+  public static void advanceStage(){
+    int s = getStageIndexFromFlags() + 1;
+
+    gameState_800babc8.scriptFlags2_bc.set(0x320, (s & 8) == 8);
+    gameState_800babc8.scriptFlags2_bc.set(0x321, (s & 4) == 4);
+    gameState_800babc8.scriptFlags2_bc.set(0x322, (s & 2) == 2);
+    gameState_800babc8.scriptFlags2_bc.set(0x323, (s & 1) == 1);
+  }
 }
