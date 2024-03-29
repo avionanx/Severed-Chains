@@ -133,6 +133,7 @@ import static legend.game.Scus94491BpeSegment_8005.characterSoundFileIndices_800
 import static legend.game.Scus94491BpeSegment_8005.combatMusicFileIndices_800501bc;
 import static legend.game.Scus94491BpeSegment_8005.combatSoundEffectsTypes_8005019c;
 import static legend.game.Scus94491BpeSegment_8005.monsterSoundFileIndices_800500e8;
+import static legend.game.Scus94491BpeSegment_8005.submapCut_80052c30;
 import static legend.game.Scus94491BpeSegment_8006.battleState_8006e398;
 import static legend.game.Scus94491BpeSegment_8007.clearRed_8007a3a8;
 import static legend.game.Scus94491BpeSegment_8007.vsyncMode_8007a3b8;
@@ -2496,7 +2497,11 @@ public final class Scus94491BpeSegment {
     unloadSoundFile(8);
 
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
-    loadDrgnDir(0, 5815, files -> musicPackageLoadedCallback(files, 5815, true));
+    if(submapCut_80052c30 == 2000){
+      loadDrgnDir(0, 6095, files -> musicPackageLoadedCallback(files, 6095, true));
+    }else {
+      loadDrgnDir(0, 5815, files -> musicPackageLoadedCallback(files, 5815, true));
+    }
   }
 
   /** FUN_8001e010 with param -1 */
@@ -2888,6 +2893,7 @@ public final class Scus94491BpeSegment {
     unloadSoundFile(8);
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
     final int fileIndex = 5815 + index * 5;
+    System.out.println();
     loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, true));
   }
 

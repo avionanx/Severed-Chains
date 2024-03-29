@@ -1560,7 +1560,7 @@ public class SMap extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "animatedTextureIndex", description = "The animated texture index")
   @Method(0x800df560L)
   private FlowControl FUN_800df560(final RunningScript<?> script) {
-    BossRush.prepareGameState(script.params_20[0].get());
+    BossRush.prepareGameState();
     return FlowControl.CONTINUE;
     //throw new RuntimeException("Not implemented");
   }

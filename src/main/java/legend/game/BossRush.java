@@ -84,17 +84,47 @@ public class BossRush {
       0)
     );
   }
-  public static void prepareGameState(int stage){
+  public static void prepareGameState(){
+    int stage = getStageIndexFromFlags();
     hideParty();
     resetPartyStats();
     switch(stage){
       case 0 -> { //Commander
         gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
-        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
-        gameState_800babc8.charData_32c[2].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
       }
       case 1 -> { //Fruegel
-
+        setAllLevels(3);
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[2].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = 1;
+        gameState_800babc8.charIds_88[2] = 2;
+      }
+      case 2 -> { //Urobolus
+        setAllLevels(4);
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[2].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = 1;
+        gameState_800babc8.charIds_88[2] = 2;
+      }
+      case 3 -> { //Sandora Elite I
+        setAllLevels(5);
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = 1;
+        gameState_800babc8.charIds_88[2] = -1;
+      }
+      case 4 -> { //Kongol I
+        setAllLevels(5);
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = 1;
       }
       default -> {
       }
@@ -102,6 +132,7 @@ public class BossRush {
     prepareEquipment(stage);
     prepareBonusEquipment(stage);
     prepareInventory(stage);
+    advanceStage();
   }
   private static void unlockParty(){
     for(int i = 0; i < 9; i++){
@@ -141,7 +172,7 @@ public class BossRush {
         .withSkipLines(stage)
         .build();
       String[] items = csvReader.readNext();
-      if(items[0].equals("")) return;
+      if(items == null || items[0].equals("")) return;
       Iterator<String> e = Arrays.stream(items).iterator();
       while(e.hasNext()){
         String itemName = e.next();
@@ -174,9 +205,9 @@ public class BossRush {
       CSVReader csvReader = new CSVReaderBuilder(reader)
         .withSkipLines(stage)
         .build();
-      String[] equipments = csvReader.readNext();
-      if(equipments[0].equals("")) return;
-      Iterator<String> e = Arrays.stream(equipments).iterator();
+      String[] bonus_equipments = csvReader.readNext();
+      if(bonus_equipments == null || bonus_equipments[0].equals("")) return;
+      Iterator<String> e = Arrays.stream(bonus_equipments).iterator();
       while(e.hasNext()){
         String itemName = e.next();
         gameState_800babc8.equipment_1e8.add(REGISTRIES.equipment.getEntry(LodMod.MOD_ID + ":" + itemName).get());

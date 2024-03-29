@@ -8,43 +8,34 @@ import legend.core.gte.TmdWithId;
 import legend.core.memory.types.IntRef;
 import legend.core.opengl.Obj;
 import legend.core.opengl.TmdObjLoader;
-
-import legend.game.inventory.Equipment;
-import legend.game.inventory.EquipmentRegistryEvent;
+import legend.game.BossRush;
 import legend.game.scripting.ScriptFile;
 import legend.game.tim.Tim;
 import legend.game.tmd.UvAdjustmentMetrics14;
 import legend.game.types.CContainer;
-import legend.game.types.EquipmentSlot;
 import legend.game.types.GsRVIEW2;
 import legend.game.types.Model124;
 import legend.game.types.TmdAnimationFile;
 import legend.game.unpacker.FileData;
 import legend.game.unpacker.Unpacker;
-import static legend.game.Scus94491BpeSegment_800b.battleStage_800bb0f4;
-
-import legend.lodmod.LodEquipment;
-import legend.lodmod.LodMod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.legendofdragoon.modloader.events.EventListener;
-import legend.game.BossRush;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static legend.core.Async.allLoaded;
 import static legend.core.GameEngine.GPU;
-import static legend.core.GameEngine.REGISTRIES;
 import static legend.game.Scus94491BpeSegment.orderingTableBits_1f8003c0;
 import static legend.game.Scus94491BpeSegment_8003.GsSetSmapRefView2L;
 import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
 import static legend.game.Scus94491BpeSegment_8005.submapCutBeforeBattle_80052c3c;
 import static legend.game.Scus94491BpeSegment_8005.submapEnvState_80052c44;
-import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
+import static legend.game.Scus94491BpeSegment_800b.battleStage_800bb0f4;
 import static legend.game.Scus94491BpeSegment_800b.previousSubmapCut_800bda08;
 import static legend.game.Scus94491BpeSegment_800b.projectionPlaneDistance_800bd810;
 import static legend.game.Scus94491BpeSegment_800b.rview2_800bd7e8;
@@ -373,7 +364,7 @@ public class SubmapModded extends Submap {
 
   @Override
   public boolean isReturningToSameMapAfterBattle() {
-    return false;
+    return true;
   }
 
   private static final Int2ObjectMap<CameraInfo> cameraInfos;

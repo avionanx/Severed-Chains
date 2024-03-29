@@ -1713,7 +1713,7 @@ public class Battle extends EngineState {
       }
 
       //LAB_800c8578
-      final int postCombatSubmapCut = this.currentStageData_800c6718.postCombatSubmapCut_28;
+      final int postCombatSubmapCut = 0xffff ; //this.currentStageData_800c6718.postCombatSubmapCut_28;
       if(postCombatSubmapCut != 0xffff) {
         submapCut_80052c30 = postCombatSubmapCut;
       }
