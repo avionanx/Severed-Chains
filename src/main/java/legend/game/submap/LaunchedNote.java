@@ -1,6 +1,9 @@
 package legend.game.submap;
 
+import legend.game.modding.coremod.CoreMod;
 import org.joml.Vector3f;
+
+import static legend.core.GameEngine.CONFIG;
 
 public class LaunchedNote {
 
@@ -36,7 +39,7 @@ public class LaunchedNote {
   }
   private void updatePosition(){
 
-    float updatedY = SubmapModded.guitarMode ? 40.0f + (this.frame * 160/movementFrames) : 200.0f - (this.frame * 160/movementFrames);
+    float updatedY = CONFIG.getConfig(CoreMod.INVERSE_ARROW_MOVEMENT_CONFIG.get()) ? 40.0f + (this.frame * 160/movementFrames) : 200.0f - (this.frame * 160/movementFrames);
     switch(noteType){
       case UP ->    this.position.set(204.0f, updatedY, 1.0f);
       case RIGHT -> this.position.set(244.0f, updatedY, 1.0f);

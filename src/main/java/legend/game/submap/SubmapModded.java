@@ -13,6 +13,7 @@ import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
+import legend.game.modding.coremod.CoreMod;
 import legend.game.scripting.ScriptFile;
 import legend.game.tim.Tim;
 import legend.game.tmd.UvAdjustmentMetrics14;
@@ -22,21 +23,23 @@ import legend.game.types.Model124;
 import legend.game.types.TmdAnimationFile;
 import legend.game.unpacker.FileData;
 import legend.game.unpacker.Unpacker;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static legend.core.Async.allLoaded;
+import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.RENDERER;
 import static legend.game.Scus94491BpeSegment.orderingTableBits_1f8003c0;
@@ -76,7 +79,6 @@ public class SubmapModded extends Submap {
   private int frameIndex = 0;
   private int trackOffset = 104;
 
-  public static boolean guitarMode = false;
 
   public SubmapModded(final int cut, final CollisionGeometry collisionGeometry) {
     this.cut = cut;
@@ -122,8 +124,8 @@ public class SubmapModded extends Submap {
   }
   @Override
   public void loadEnv(Runnable onLoaded) {
-    Unpacker.loadFile("../assets/submap/%d/environment/collinfo".formatted(this.cut),fileData1 -> {
-      Unpacker.loadFile("../assets/submap/%d/environment/collmesh".formatted(this.cut),fileData2 -> {
+    Unpacker.loadFile("SECT/DRGN21.BIN/169/1",fileData1 -> {
+      Unpacker.loadFile("SECT/DRGN21.BIN/169/2",fileData2 -> {
         this.collisionGeometry.loadCollision(new TmdWithId("SubmapColl", fileData2),fileData1);
         CameraInfo cam = cameraInfos.get(this.cut);
         updateRview2(cam.viewpoint(),cam.refpoint(),cam.rotation(),cam.projectionDistance());
@@ -179,11 +181,82 @@ public class SubmapModded extends Submap {
 
       final Runnable prepareSobjs = () -> this.prepareSobjs(assets, scripts, textures);
       final Runnable prepareSobjsAndComplete = () -> allLoaded(loadedCount, expectedCount, prepareSobjs, onLoaded);
-      Unpacker.loadDirectory("../assets/submap/%d/assets".formatted(this.cut),files -> allLoaded(assetsCount, 3, () -> assets.addAll(files), prepareSobjsAndComplete));
+      switch (this.cut) {
+        case 1004:
+          //Unpacker.loadDirectory("../assets/submap/%d/assets/textures".formatted(this.cut), files -> allLoaded(assetsCount, 3, () -> textures.addAll(files), prepareSobjsAndComplete));
+          Unpacker.loadFile("SECT/DRGN24.BIN/953/textures/2", file -> allLoaded(assetsCount, 3, () -> {
+            List<FileData> finalFiles = new ArrayList<>(Collections.nCopies(8, file));
+            FileData meruTexture = Unpacker.loadFile("SECT/DRGN22.BIN/755/textures/1");
+            finalFiles.set(0, meruTexture);
+            textures.addAll(finalFiles);
+          }, prepareSobjsAndComplete));
+          //Unpacker.loadDirectory("../assets/submap/%d/assets".formatted(this.cut),files -> allLoaded(assetsCount, 3, () -> assets.addAll(files), prepareSobjsAndComplete));
+          Unpacker.loadDirectory("SECT/DRGN22.BIN/755", files -> allLoaded(assetsCount, 3, () -> {
+            List<FileData> meruFiles = files.subList(33,61);
+            List<FileData> finalFiles = new ArrayList<>(Collections.nCopies(275, meruFiles.getLast()));
+            FileData cubeFile = Unpacker.loadFile("SECT/DRGN24.BIN/953/66");
+            FileData cubeAnim = Unpacker.loadFile("SECT/DRGN24.BIN/953/67");
+            finalFiles.set(0, meruFiles.get(0));
+            finalFiles.set(1, meruFiles.get(1));
+            finalFiles.set(2, meruFiles.get(2));
+            finalFiles.set(3, meruFiles.get(3));
+            finalFiles.set(4, meruFiles.get(20));
+            finalFiles.set(5, meruFiles.get(25));
+            finalFiles.set(6, meruFiles.get(1));
+            finalFiles.set(33, cubeFile);
+            finalFiles.set(34, cubeAnim);
+            finalFiles.set(66, cubeFile);
+            finalFiles.set(67, cubeAnim);
+            finalFiles.set(99, cubeFile);
+            finalFiles.set(100, cubeAnim);
+            finalFiles.set(132, cubeFile);
+            finalFiles.set(133, cubeAnim);
+            finalFiles.set(165, cubeFile);
+            finalFiles.set(166, cubeAnim);
+            finalFiles.set(198, cubeFile);
+            finalFiles.set(199, cubeAnim);
+            finalFiles.set(231, cubeFile);
+            finalFiles.set(232, cubeAnim);
+            finalFiles.set(264, cubeFile);
+            finalFiles.set(265, cubeAnim);
+            finalFiles.set(finalFiles.size() - 3, files.get(files.size() - 3));
+            finalFiles.set(finalFiles.size() - 2, files.get(files.size() - 2));
+            finalFiles.set(finalFiles.size() - 1, files.get(files.size() - 1));
+            assets.addAll(finalFiles);
+          }, prepareSobjsAndComplete));
+          break;
+        case 1002:
+          Unpacker.loadFile("SECT/DRGN22.BIN/755/textures/1", file -> allLoaded(assetsCount, 3, () -> {
+            List<FileData> finalFiles = new ArrayList<>(Collections.nCopies(4, file));
+            textures.addAll(finalFiles);
+          }, prepareSobjsAndComplete));
+          Unpacker.loadDirectory("SECT/DRGN22.BIN/755", files -> allLoaded(assetsCount, 3, () -> {
+            List<FileData> meruFiles = files.subList(33,61);
+            List<FileData> finalFiles = new ArrayList<>(Collections.nCopies(139, meruFiles.getLast()));
+            finalFiles.set(0, meruFiles.get(0));
+            finalFiles.set(1, meruFiles.get(1));
+            finalFiles.set(2, meruFiles.get(5));
+            finalFiles.set(3, meruFiles.get(15));
+            finalFiles.set(4, meruFiles.get(20));
+            finalFiles.set(5, meruFiles.get(25));
+            finalFiles.set(33, meruFiles.get(0));
+            finalFiles.set(34, meruFiles.get(1));
+            finalFiles.set(66, meruFiles.get(0));
+            finalFiles.set(67, meruFiles.get(1));
+            finalFiles.set(99, meruFiles.get(0));
+            finalFiles.set(100, meruFiles.get(1));
+            finalFiles.set(132, meruFiles.get(0));
+            finalFiles.set(133, meruFiles.get(1));
+            finalFiles.set(finalFiles.size() - 3, files.get(files.size() - 3));
+            finalFiles.set(finalFiles.size() - 2, files.get(files.size() - 2));
+            finalFiles.set(finalFiles.size() - 1, files.get(files.size() - 1));
+            assets.addAll(finalFiles);
+          }, prepareSobjsAndComplete));
+          break;
+      }
+
       Unpacker.loadDirectory("../assets/submap/%d/scripts".formatted(this.cut),files -> allLoaded(assetsCount, 3, () -> scripts.addAll(files), prepareSobjsAndComplete));
-      //loadDrgnDir(drgnIndex.get() + 2, fileIndex.get() + 1, files -> allLoaded(assetsCount, 3, () -> assets.addAll(files), prepareSobjsAndComplete));
-      //loadDrgnDir(drgnIndex.get() + 2, fileIndex.get() + 2, files -> allLoaded(assetsCount, 3, () -> scripts.addAll(files), prepareSobjsAndComplete));
-      Unpacker.loadDirectory("../assets/submap/%d/assets/textures".formatted(this.cut), files -> allLoaded(assetsCount, 3, () -> textures.addAll(files), prepareSobjsAndComplete));
+
 
 
   }
@@ -387,7 +460,7 @@ public class SubmapModded extends Submap {
     }
   }
   private void renderIndicators(){
-    final float y = guitarMode ? 200.0f : 40.0f;
+    final float y = CONFIG.getConfig(CoreMod.INVERSE_ARROW_MOVEMENT_CONFIG.get()) ? 200.0f : 40.0f;
     MV mv = new MV();
     mv.identity();
     mv.scale(24);
