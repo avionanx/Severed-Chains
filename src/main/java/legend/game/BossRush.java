@@ -88,10 +88,14 @@ public class BossRush {
     int stage = getStageIndexFromFlags();
     hideParty();
     resetPartyStats();
+    setAllDLevels(0);
     switch(stage){
       case 0 -> { //Commander
+        setAllLevels(1);
         gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
         gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = -1;
+        gameState_800babc8.charIds_88[2] = -1;
       }
       case 1 -> { //Fruegel
         setAllLevels(3);
@@ -120,11 +124,35 @@ public class BossRush {
         gameState_800babc8.charIds_88[2] = -1;
       }
       case 4 -> { //Kongol I
-        setAllLevels(5);
+        setAllLevels(6);
         gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
         gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
         gameState_800babc8.charIds_88[0] = 0;
         gameState_800babc8.charIds_88[1] = 1;
+      }
+      case 5 -> { //Virage I
+        setAllLevels(7);
+        setSpecificDLevel(0, 1);
+        setSpecificDLevel(3, 1);
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[2].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[3].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = 1;
+        gameState_800babc8.charIds_88[2] = 3;
+      }
+      case 6 -> { //Fire Bird
+        setAllLevels(8);
+        setSpecificDLevel(0, 1);
+        setSpecificDLevel(3, 1);
+        gameState_800babc8.charData_32c[0].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[1].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[2].partyFlags_04 = 0x3;
+        gameState_800babc8.charData_32c[3].partyFlags_04 = 0x3;
+        gameState_800babc8.charIds_88[0] = 0;
+        gameState_800babc8.charIds_88[1] = 1;
+        gameState_800babc8.charIds_88[2] = 3;
       }
       default -> {
       }
@@ -165,6 +193,11 @@ public class BossRush {
         gameState_800babc8.charData_32c[i].sp_0c = dlevel * 100;
       }
     }
+  }
+  private static void setSpecificDLevel(int charId, int dlevel){
+    gameState_800babc8.goods_19c[0] |= (1 << dragoonGoodsBits_800fbd08[charId]);
+    gameState_800babc8.charData_32c[charId].dlevel_13 = dlevel;
+    gameState_800babc8.charData_32c[charId].sp_0c = dlevel * 100;
   }
   private static void prepareInventory(int stage){
     try (Reader reader = Files.newBufferedReader(Path.of("assets","bossrush","items.csv"))) {
