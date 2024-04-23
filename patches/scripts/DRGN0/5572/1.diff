@@ -1,0 +1,151 @@
+--- original
++++ modified
+@@ -2539,45 +2539,116 @@
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_12] ; scriptIndex, address
+ return
+ 
+-; SUBROUTINE
+-LABEL_4:
+-mov var[34][0], stor[27] ; source, dest
+-call Battle::scriptGetCombatantIndex, stor[27], stor[8] ; bentIndex, combatantIndex
+-mov stor[8], var[45][2] ; source, dest
+-call Battle::scriptAllocateBent, 0x1, stor[8], stor[10] ; entrypointIndex, combatantIndex, scriptIndex
+-call Battle::FUN_800cb618, stor[10], 0x0 ; bentIndex, set
+-yield
+-mov stor[10], var[45][12] ; source, dest
+-mov var[36][0], stor[27] ; source, dest
+-call Battle::scriptGetCombatantIndex, stor[27], stor[8] ; bentIndex, combatantIndex
+-mov stor[8], var[45][1] ; source, dest
+-call Battle::scriptAllocateBent, 0x1, stor[8], stor[10] ; entrypointIndex, combatantIndex, scriptIndex
+-call Battle::FUN_800cb618, stor[10], 0x0 ; bentIndex, set
+-yield
+-mov stor[10], var[45][11] ; source, dest
+-mov var[34][2], stor[27] ; source, dest
++CHECK_IS_CHAR_LOADED:
++mov var[34][0], stor[27] ;
++jmp_cmp ==, stor[27], 0xffffffff, inl[:RETURN_IS_NOT_LOADED]
+ call Battle::scriptGetCharOrMonsterId, stor[27], stor[10] ; bentIndex, id
+-jmp_cmp ==, stor[10], 0x1, inl[:LABEL_5] ; operand, left, right, addr
+-mov var[34][1], stor[27] ; source, dest
+-LABEL_5:
++jmp_cmp ==, stor[10], stor[17], inl[:RETURN_IS_LOADED] ; operand, left, right, addr
++mov var[34][1], stor[27] ;
++jmp_cmp ==, stor[27], 0xffffffff, inl[:RETURN_IS_NOT_LOADED]
++call Battle::scriptGetCharOrMonsterId, stor[27], stor[10] ; bentIndex, id
++jmp_cmp ==, stor[10], stor[17], inl[:RETURN_IS_LOADED] ; operand, left, right, addr
++mov var[34][0], stor[27] ;
++jmp_cmp ==, stor[27], 0xffffffff, inl[:RETURN_IS_NOT_LOADED]
++call Battle::scriptGetCharOrMonsterId, stor[27], stor[10] ; bentIndex, id
++jmp_cmp ==, stor[10], stor[17], inl[:RETURN_IS_LOADED] ; operand, left, right, addr
++mov 0x0, stor[17];
++return;
++RETURN_IS_LOADED:
++mov 0x1, stor[17];
++return;
++RETURN_IS_NOT_LOADED:
++mov 0x0, stor[17];
++return;
++
++TABLE_SCRIPT_INDEX:
++data 0xc
++data 0xb
++data 0xd
++data 0xe
++TABLE_COMBATANT_INDEX:
++data 0x2
++data 0x1
++data 0x3
++data 0x4
++TABLE_TMD_INDEX:
++data 0x0
++data 0xffffffff
++data 0x15
++data 0x7
++TABLE_ANIM_INDEX:
++data 0x2
++data 0xffffffff
++data 0x17
++data 0x9
++ASSETS_COUNT:
++data 0x4
++ENEMY_INDICES_TO_LOAD:
++data 0x0
++ASSET_LOAD_ORDER:
++rel :LOAD_ALLY
++rel :LOAD_ENEMY
++rel :LOAD_ALLY
++rel :LOAD_ALLY
++
++LOAD_ALLY:
++call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
++mov inl[:TABLE_TMD_INDEX[stor[15]]], stor[stor[stor[0], 23], 14] ; source, dest
++mov inl[:TABLE_ANIM_INDEX[stor[15]]], stor[stor[stor[0], 23], 15] ; source, dest
++mov inl[:TABLE_COMBATANT_INDEX[stor[15]]], stor[stor[stor[0], 23], 16] ; source, dest
++mov inl[:TABLE_SCRIPT_INDEX[stor[15]]], stor[stor[stor[0], 23], 17] ; source, dest
++call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:ADD_COMBATANT] ; scriptIndex, address
++return;
++
++LOAD_ENEMY:
++incr stor[16] ; operand
++mov inl[:ENEMY_INDICES_TO_LOAD[stor[16]]], stor[14];
++mov var[36][stor[14]], stor[27] ; source, dest
+ call Battle::scriptGetCombatantIndex, stor[27], stor[8] ; bentIndex, combatantIndex
+-mov stor[8], var[45][3] ; source, dest
++mov inl[:TABLE_COMBATANT_INDEX[stor[15]]], stor[14];
++mov stor[8], var[45][stor[14]] ; source, dest
+ call Battle::scriptAllocateBent, 0x1, stor[8], stor[10] ; entrypointIndex, combatantIndex, scriptIndex
+ call Battle::FUN_800cb618, stor[10], 0x0 ; bentIndex, set
+-yield
+-mov stor[10], var[45][13] ; source, dest
+-mov var[34][1], stor[27] ; source, dest
+-call Battle::scriptGetCharOrMonsterId, stor[27], stor[10] ; bentIndex, id
+-jmp_cmp ==, stor[10], 0x2, inl[:LABEL_6] ; operand, left, right, addr
+-mov var[34][2], stor[27] ; source, dest
+-LABEL_6:
+-call Battle::scriptGetCombatantIndex, stor[27], stor[8] ; bentIndex, combatantIndex
+-mov stor[8], var[45][4] ; source, dest
++mov inl[:TABLE_SCRIPT_INDEX[stor[15]]], stor[14];
++mov stor[10], var[45][stor[14]] ; source, dest
++return;
++
++LOAD_ASSETS:
++mov 0x0, stor[15];
++LOAD_ASSETS_INNER_LOOP:
++jmp_cmp ==, stor[15], inl[:ASSETS_COUNT], inl[:FINISH_LOADING] ; operand, left, right, addr
++gosub_table stor[15], inl[:ASSET_LOAD_ORDER];
++incr stor[15] ; operand
++jmp inl[:LOAD_ASSETS_INNER_LOOP];
++FINISH_LOADING:
++return;
++
++LABEL_4:
++gosub inl[:LOAD_ASSETS];
++return;
++
++
++ADD_COMBATANT:
++mov 0x0, var[45][31] ; source, dest
++call Battle::scriptAddCombatant, 0xffffffff, stor[8] ; charIndexAndFlags, combatantIndex
++call Battle::FUN_800cd468, 0x0, stor[14], stor[9] ; drgnIndex, fileIndex, index
++call Battle::FUN_800cd4b0, stor[9] ; index
++call Battle::FUN_800cd740, stor[8], stor[9] ; combatantIndex, p1
++incr stor[14] ; operand
++call Battle::FUN_800cd468, 0x0, stor[14], stor[9] ; drgnIndex, fileIndex, index
++call Battle::FUN_800cd4b0, stor[9] ; index
++call Battle::FUN_800cd8a4, stor[8], stor[9] ; combatantIndex, p1
++call Battle::FUN_800cd4f0, stor[9] ; index
++call Battle::FUN_800cd468, 0x0, stor[15], stor[9] ; drgnIndex, fileIndex, index
++call Battle::FUN_800cd4b0, stor[9] ; index
++call Battle::FUN_800cd810, stor[8], 0x0, stor[9] ; combatantIndex, p1, p2
+ call Battle::scriptAllocateBent, 0x1, stor[8], stor[10] ; entrypointIndex, combatantIndex, scriptIndex
+ call Battle::FUN_800cb618, stor[10], 0x0 ; bentIndex, set
+ yield
+-mov stor[10], var[45][14] ; source, dest
+-return
++mov stor[8], var[45][stor[16]] ; source, dest
++mov stor[10], var[45][stor[17]] ; source, dest
++mov 0x4, var[45][31] ; source, dest
++deallocate
+ 
+ ; SUBROUTINE
+ LABEL_22:
