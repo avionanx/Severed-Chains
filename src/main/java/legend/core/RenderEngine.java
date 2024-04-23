@@ -1,5 +1,6 @@
 package legend.core;
 
+import legend.core.gpu.Bpp;
 import legend.core.gpu.Rect4i;
 import legend.core.gte.MV;
 import legend.core.opengl.BasicCamera;
@@ -53,12 +54,16 @@ import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.GTE;
 import static legend.core.GameEngine.RENDERER;
+import static legend.core.MathHelper.PI;
+import static legend.core.MathHelper.clamp;
+import static legend.core.MathHelper.put3x4;
 import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_F10;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_F11;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_F5;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_F9;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_M;
@@ -170,11 +175,13 @@ public class RenderEngine {
 
   public static final ShaderType<VoidShaderOptions> SCREEN_SHADER = new ShaderType<>(options -> loadShader("post", "screen", options), shader -> () -> VoidShaderOptions.INSTANCE);
 
+  private static final int RENDER_BUFFER_COUNT = 2;
   private Shader<TmdShaderOptions> tmdShader;
   private TmdShaderOptions tmdShaderOptions;
-  private FrameBuffer opaqueFrameBuffer;
-  private Texture opaqueTexture;
+  private final FrameBuffer[] renderBuffers = new FrameBuffer[RENDER_BUFFER_COUNT];
+  private final Texture[] renderTextures = new Texture[RENDER_BUFFER_COUNT];
   private Texture depthTexture;
+  private int renderBufferIndex;
 
   // Text
   public Obj chars;
@@ -187,6 +194,8 @@ public class RenderEngine {
   // Line box (reticles)
   public Obj lineBox;
   public Obj lineBoxBPlusF;
+  // Render buffer
+  public Obj renderBufferQuad;
 
   private int width;
   private int height;
@@ -233,6 +242,7 @@ public class RenderEngine {
   private boolean paused;
   private boolean frameAdvanceSingle;
   private boolean frameAdvance;
+  private boolean reloadShaders;
 
   public void setProjectionSize(final float width, final float height) {
     this.projectionWidth = width;
@@ -314,6 +324,10 @@ public class RenderEngine {
     } catch(final IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public Texture getLastFrame() {
+    return this.renderTextures[Math.floorMod(this.renderBufferIndex - 1, RENDER_BUFFER_COUNT)];
   }
 
   public void init() {
@@ -416,6 +430,14 @@ public class RenderEngine {
       .build();
     this.lineBoxBPlusF.persistent = true;
 
+    this.renderBufferQuad = new QuadBuilder("Render buffer")
+      .bpp(Bpp.BITS_24)
+      .size(1.0f, 1.0f)
+      .uv(0.0f, 1.0f)
+      .uvSize(1.0f, -1.0f)
+      .build();
+    this.renderBufferQuad.persistent = true;
+
     this.window.events.onDraw(() -> {
       this.pre();
 
@@ -455,7 +477,7 @@ public class RenderEngine {
           this.needsSorting = false;
         }
 
-        this.opaqueFrameBuffer.bind();
+        this.renderBuffers[this.renderBufferIndex].bind();
         this.clear();
 
         // Gross hack bro
@@ -491,7 +513,7 @@ public class RenderEngine {
         screenShader.use();
 
         // draw final screen quad
-        this.opaqueTexture.use();
+        this.renderTextures[this.renderBufferIndex].use();
         postQuad.draw();
 
         // If we don't unbind the framebuffer textures, window resizing will crash since it has to resize the framebuffer
@@ -509,9 +531,26 @@ public class RenderEngine {
         this.shaderPool.reset();
       }
 
+      this.renderBufferIndex = (this.renderBufferIndex + 1) % RENDER_BUFFER_COUNT;
+
+      // Delete stuff marked for deletion
+      Obj.deleteObjects();
+      Texture.deleteTextures();
+
       this.fps = 1_000_000_000.0f / (System.nanoTime() - this.lastFrame);
       this.lastFrame = System.nanoTime();
       this.vsyncCount += 60.0d * Config.getGameSpeedMultiplier() / this.window.getFpsLimit();
+
+      if(this.reloadShaders) {
+        this.reloadShaders = false;
+        LOGGER.info("Reloading shaders");
+
+        try {
+          ShaderManager.reload();
+        } catch(final IOException e) {
+          LOGGER.error("Failed to reload shaders", e);
+        }
+      }
 
       if(this.movingLeft) {
         this.camera3d.strafe(-MOVE_SPEED * 200);
@@ -936,7 +975,7 @@ public class RenderEngine {
 
   public void updateProjections() {
     if(legacyMode != 0) {
-      this.perspectiveProjection.setPerspectiveLH(MathHelper.PI / 4.0f, (float)this.width / this.height, 0.1f, 500.0f);
+      this.perspectiveProjection.setPerspectiveLH(PI / 4.0f, (float)this.width / this.height, 0.1f, 500.0f);
       this.orthographicProjection.setOrtho2D(0.0f, this.width, this.height, 0.0f);
       return;
     }
@@ -981,6 +1020,8 @@ public class RenderEngine {
       return;
     }
 
+    LOGGER.info("Resizing window to %dx%d", width, height);
+
     this.width = width;
     this.height = height;
 
@@ -989,23 +1030,24 @@ public class RenderEngine {
     // Projections
     this.updateProjections();
 
-    // Order-independent translucency
-    if(this.opaqueTexture != null) {
-      this.opaqueTexture.delete();
+    for(int i = 0; i < this.renderTextures.length; i++) {
+      if(this.renderTextures[i] != null) {
+        this.renderTextures[i].delete();
+      }
+
+      this.renderTextures[i] = Texture.create(builder -> {
+        builder.size(width, height);
+        builder.internalFormat(GL_RGBA16F);
+        builder.dataFormat(GL_RGBA);
+        builder.dataType(GL_HALF_FLOAT);
+        builder.magFilter(GL_LINEAR);
+        builder.minFilter(GL_LINEAR);
+      });
     }
 
     if(this.depthTexture != null) {
       this.depthTexture.delete();
     }
-
-    this.opaqueTexture = Texture.create(builder -> {
-      builder.size(width, height);
-      builder.internalFormat(GL_RGBA16F);
-      builder.dataFormat(GL_RGBA);
-      builder.dataType(GL_HALF_FLOAT);
-      builder.magFilter(GL_LINEAR);
-      builder.minFilter(GL_LINEAR);
-    });
 
     this.depthTexture = Texture.create(builder -> {
       builder.size(width, height);
@@ -1014,10 +1056,18 @@ public class RenderEngine {
       builder.dataType(GL_FLOAT);
     });
 
-    this.opaqueFrameBuffer = FrameBuffer.create(builder -> {
-      builder.attachment(this.opaqueTexture, GL_COLOR_ATTACHMENT0);
-      builder.attachment(this.depthTexture, GL_DEPTH_ATTACHMENT);
-    });
+
+    for(int i = 0; i < this.renderBuffers.length; i++) {
+      if(this.renderBuffers[i] != null) {
+        this.renderBuffers[i].delete();
+      }
+
+      final int finalI = i;
+      this.renderBuffers[i] = FrameBuffer.create(builder -> {
+        builder.attachment(this.renderTextures[finalI], GL_COLOR_ATTACHMENT0);
+        builder.attachment(this.depthTexture, GL_DEPTH_ATTACHMENT);
+      });
+    }
   }
 
   private void onMouseMove(final Window window, final double x, final double y) {
@@ -1031,7 +1081,7 @@ public class RenderEngine {
       this.yaw += (x - this.lastX) * MOUSE_SPEED;
       this.pitch += (this.lastY - y) * MOUSE_SPEED;
 
-      this.pitch = MathHelper.clamp(this.pitch, -MathHelper.PI / 2, MathHelper.PI / 2);
+      this.pitch = clamp(this.pitch, -PI / 2, PI / 2);
 
       this.lastX = x;
       this.lastY = y;
@@ -1069,6 +1119,8 @@ public class RenderEngine {
         case 1 -> System.out.println("Switched to legacy rendering");
         case 2 -> System.out.println("Switched to VRAM rendering");
       }
+    } else if(key == GLFW_KEY_F5) {
+      this.reloadShaders = true;
     } else if(key == GLFW_KEY_F11) {
       this.togglePause = !this.togglePause;
     } else if(key == GLFW_KEY_F9) {
@@ -1290,7 +1342,7 @@ public class RenderEngine {
     }
 
     public boolean shouldRender(@Nullable final Translucency translucency) {
-      return this.hasTranslucency && this.translucency == translucency || (this.ctmdFlags & 0x2) != 0 && translucency != null && this.tmdTranslucency == translucency.ordinal() || this.obj.shouldRender(translucency);
+      return this.hasTranslucency && this.translucency == translucency || (this.ctmdFlags & 0x2) != 0 && translucency != null && this.tmdTranslucency == translucency.ordinal() || !this.hasTranslucency && this.obj.shouldRender(translucency);
     }
 
     private void storeTransforms(final int modelIndex, final FloatBuffer transforms2Buffer, final FloatBuffer lightingBuffer) {
@@ -1299,7 +1351,7 @@ public class RenderEngine {
 
       if(this.lightUsed) {
         this.lightDirection.get(modelIndex * 32, lightingBuffer);
-        this.lightColour.get(modelIndex * 32 + 16, lightingBuffer);
+        put3x4(this.lightColour, modelIndex * 32 + 16, lightingBuffer);
         this.backgroundColour.get(modelIndex * 32 + 28, lightingBuffer);
       }
     }

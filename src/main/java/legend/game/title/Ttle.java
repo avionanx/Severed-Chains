@@ -2,7 +2,6 @@ package legend.game.title;
 
 import legend.core.MathHelper;
 import legend.core.gpu.Bpp;
-import legend.core.gpu.GpuCommandQuad;
 import legend.core.gpu.Rect4i;
 import legend.core.gpu.VramTexture;
 import legend.core.gpu.VramTextureSingle;
@@ -104,6 +103,7 @@ public class Ttle extends EngineState {
   private Obj trademarkObj;
   private Obj menuTextObj;
   private Obj copyrightObj;
+  private final MV flashTransforms = new MV();
 
   private VramTexture backgroundTexture;
   private VramTexture[] backgroundPalettes;
@@ -130,6 +130,11 @@ public class Ttle extends EngineState {
 
   @Override
   public boolean allowsHighQualityProjection() {
+    return false;
+  }
+
+  @Override
+  public boolean allowsWidescreen() {
     return false;
   }
 
@@ -577,7 +582,7 @@ public class Ttle extends EngineState {
     }
 
     if(this._800c6728 != 1) {
-      this.menuIdleTime += 2;
+//      this.menuIdleTime += 2;
 
       if(this.menuIdleTime > 1680) {
         this.loadingStage = 6;
@@ -951,7 +956,7 @@ public class Ttle extends EngineState {
   @Method(0x800cb728L)
   private void renderMenuLogoFire() {
     final Vector3f rotation = new Vector3f(0.0f, -MathHelper.TWO_PI / 2.0f, 0.0f);
-    final Vector3f scale = new Vector3f(0.743f, 1.0f, 1.0f);
+    final Vector3f scale = new Vector3f(0.8544922f, 1.0f, 1.0f);
 
     if(!this.logoFireInitialized) {
       this.logoFireInitialized = true;
@@ -980,7 +985,7 @@ public class Ttle extends EngineState {
 
       RENDERER.queueModel(this._800c66d0.dobj2s_00[i].obj, lw)
         .monochrome(this.flameColour / 128.0f)
-        .screenspaceOffset(9.75f, 0.5f)
+        .screenspaceOffset(8.0f, 0.0f)
         .lightDirection(lightDirectionMatrix_800c34e8)
         .lightColour(lightColourMatrix_800c3508)
         .backgroundColour(GTE.backgroundColour);
@@ -1017,15 +1022,12 @@ public class Ttle extends EngineState {
     //LAB_800cba90
     final int colour = rsin(this.logoFlashColour) * 160 >> 12;
 
-    // GP0.66 Textured quad, variable size, translucent, blended
-    final GpuCommandQuad cmd = new GpuCommandQuad()
-      .translucent(Translucency.B_PLUS_F)
-      .bpp(Bpp.BITS_15)
-      .monochrome(colour)
-      .pos(-192, -120, 384, 240)
-      .texture(GPU.getDisplayBuffer());
-
-    GPU.queueCommand(5, cmd);
+    this.flashTransforms.transfer.set(0.0f, 0.0f, 30.0f);
+    this.flashTransforms.scaling(368.0f, 240.0f, 1.0f);
+    RENDERER.queueOrthoModel(RENDERER.renderBufferQuad, this.flashTransforms)
+      .texture(RENDERER.getLastFrame())
+      .translucency(Translucency.B_PLUS_F)
+      .monochrome(colour / 128.0f);
 
     if(this.logoFlashColour == 0x800) {
       this.logoFlashStage = 2;

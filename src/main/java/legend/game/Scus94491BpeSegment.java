@@ -7,20 +7,24 @@ import javafx.application.Platform;
 import legend.core.Config;
 import legend.core.DebugHelper;
 import legend.core.MathHelper;
+import legend.core.audio.sequencer.assets.BackgroundMusic;
 import legend.core.gpu.Bpp;
 import legend.core.gpu.Gpu;
 import legend.core.gpu.GpuCommandPoly;
 import legend.core.gpu.GpuCommandQuad;
 import legend.core.gpu.GpuCommandSetMaskBit;
 import legend.core.gpu.Rect4i;
+import legend.core.gte.MV;
 import legend.core.memory.Method;
 import legend.core.opengl.MatrixStack;
 import legend.core.opengl.Obj;
+import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.ScissorStack;
 import legend.core.spu.Voice;
 import legend.game.combat.Battle;
 import legend.game.combat.bent.BattleEntity27c;
 import legend.game.combat.environment.BattlePreloadedEntities_18cb0;
+import legend.game.combat.environment.EncounterData38;
 import legend.game.combat.environment.StageData2c;
 import legend.game.debugger.Debugger;
 import legend.game.inventory.WhichMenu;
@@ -38,13 +42,13 @@ import legend.game.sound.SoundFile;
 import legend.game.sound.SoundFileIndices;
 import legend.game.sound.SpuStruct08;
 import legend.game.sound.Sshd;
-import legend.game.sound.Sssq;
+import legend.game.types.BattleReportOverlay0e;
+import legend.game.types.BattleReportOverlayList10;
+import legend.game.types.BattleUiParts;
 import legend.game.types.CharacterData2c;
 import legend.game.types.Flags;
 import legend.game.types.McqHeader;
 import legend.game.types.OverlayStruct;
-import legend.game.types.Struct0e;
-import legend.game.types.Struct10;
 import legend.game.types.TextboxBorderMetrics0c;
 import legend.game.types.Translucency;
 import legend.game.unpacker.FileData;
@@ -58,6 +62,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static legend.core.GameEngine.AUDIO_THREAD;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.RENDERER;
@@ -87,15 +92,14 @@ import static legend.game.Scus94491BpeSegment_8003.GsSwapDispBuff;
 import static legend.game.Scus94491BpeSegment_8003.setDrawOffset;
 import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
 import static legend.game.Scus94491BpeSegment_8004._8004dd48;
-import static legend.game.Scus94491BpeSegment_8004._8004f658;
 import static legend.game.Scus94491BpeSegment_8004._8004f6e4;
+import static legend.game.Scus94491BpeSegment_8004.battleReportOverlayLists_8004f658;
 import static legend.game.Scus94491BpeSegment_8004.battleStartDelayTicks_8004f6ec;
 import static legend.game.Scus94491BpeSegment_8004.changeSequenceVolumeOverTime;
 import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
 import static legend.game.Scus94491BpeSegment_8004.engineStateFunctions_8004e29c;
 import static legend.game.Scus94491BpeSegment_8004.engineStateOnceLoaded_8004dd24;
 import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd20;
-import static legend.game.Scus94491BpeSegment_8004.freeSequence;
 import static legend.game.Scus94491BpeSegment_8004.gameStateOverlays_8004dbc0;
 import static legend.game.Scus94491BpeSegment_8004.getSequenceFlags;
 import static legend.game.Scus94491BpeSegment_8004.height_8004dd34;
@@ -110,10 +114,8 @@ import static legend.game.Scus94491BpeSegment_8004.setSoundSequenceVolume;
 import static legend.game.Scus94491BpeSegment_8004.simpleRandSeed_8004dd44;
 import static legend.game.Scus94491BpeSegment_8004.sssqFadeIn;
 import static legend.game.Scus94491BpeSegment_8004.sssqFadeOut;
-import static legend.game.Scus94491BpeSegment_8004.sssqGetTempo;
 import static legend.game.Scus94491BpeSegment_8004.sssqSetReverbType;
 import static legend.game.Scus94491BpeSegment_8004.sssqSetReverbVolume;
-import static legend.game.Scus94491BpeSegment_8004.sssqSetTempo;
 import static legend.game.Scus94491BpeSegment_8004.sssqUnloadPlayableSound;
 import static legend.game.Scus94491BpeSegment_8004.startMusicSequence;
 import static legend.game.Scus94491BpeSegment_8004.startPitchShiftedSound;
@@ -161,15 +163,16 @@ import static legend.game.Scus94491BpeSegment_800b.scriptStatePtrArr_800bc1c0;
 import static legend.game.Scus94491BpeSegment_800b.sequenceVolume_800bd108;
 import static legend.game.Scus94491BpeSegment_800b.soundFiles_800bcf80;
 import static legend.game.Scus94491BpeSegment_800b.sssqTempoScale_800bd100;
-import static legend.game.Scus94491BpeSegment_800b.sssqTempo_800bd104;
 import static legend.game.Scus94491BpeSegment_800b.submapId_800bd808;
 import static legend.game.Scus94491BpeSegment_800b.tickCount_800bb0fc;
+import static legend.game.Scus94491BpeSegment_800b.victoryMusic;
 import static legend.game.Scus94491BpeSegment_800b.whichMenu_800bdc38;
 import static legend.game.Scus94491BpeSegment_800c.sequenceData_800c4ac8;
 import static legend.game.combat.environment.StageData.stageData_80109a98;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_F12;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_F5;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
+import static org.lwjgl.glfw.GLFW.GLFW_MOD_CONTROL;
 
 public final class Scus94491BpeSegment {
   private Scus94491BpeSegment() { }
@@ -193,7 +196,9 @@ public final class Scus94491BpeSegment {
   public static BattlePreloadedEntities_18cb0 battlePreloadedEntities_1f8003f4;
   public static float projectionPlaneDistance_1f8003f8;
 
-  public static final int[] levelUpUs_8001032c = {0xc8, 0xd0, 0xd8, 0xd0, 0xc8, 0xe0, 0xe8, 0xf0};
+  public static final BattleUiParts battleUiParts = new BattleUiParts();
+
+  public static final int[] levelUpUs_8001032c = {200, 208, 216, 208, 200, 224, 232, 240};
   public static final int[] levelUpOffsets_80010334 = {8, 8, 8, 8, 15, 8, 8, 0};
 
   public static final Rect4i[] rectArray28_80010770 = {
@@ -374,7 +379,7 @@ public final class Scus94491BpeSegment {
         }
       }
 
-      if(key == GLFW_KEY_F5 && currentEngineState_8004dd04 instanceof final Battle battle) {
+      if((mods & GLFW_MOD_CONTROL) != 0 && key == GLFW_KEY_W && currentEngineState_8004dd04 instanceof final Battle battle) {
         battle.endBattle();
       }
     });
@@ -440,6 +445,7 @@ public final class Scus94491BpeSegment {
     RENDERER.events().onShutdown(() -> {
       stopSound();
       SPU.stop();
+      AUDIO_THREAD.stop();
       Platform.exit();
     });
   }
@@ -755,8 +761,11 @@ public final class Scus94491BpeSegment {
 
   @Method(0x80013c3cL)
   public static void drawFullScreenRect(final int colour, final Translucency transMode) {
-    fullScreenEffect_800bb140.transforms.scaling(displayWidth_1f8003e0, displayHeight_1f8003e4, 1.0f);
-    fullScreenEffect_800bb140.transforms.transfer.set(0.0f, 0.0f, 120.0f);
+    // Make sure effect fills the whole screen
+    final float fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4);
+    final float extraWidth = fullWidth - displayWidth_1f8003e0;
+    fullScreenEffect_800bb140.transforms.scaling(fullWidth, displayHeight_1f8003e4, 1.0f);
+    fullScreenEffect_800bb140.transforms.transfer.set(-extraWidth / 2, 0.0f, 120.0f);
 
     RENDERER.queueOrthoModel(RENDERER.plainQuads.get(transMode), fullScreenEffect_800bb140.transforms)
       .monochrome(colour / 255.0f);
@@ -824,7 +833,7 @@ public final class Scus94491BpeSegment {
 
     final String[] paths = new String[files.length];
     for(int i = 0; i < files.length; i++) {
-      paths[i] = "SECT/DRGN%d.BIN/%s".formatted(drgnBinIndex, files[i]);
+      paths[i] = "SECT/DRGN" + drgnBinIndex + ".BIN/" + files[i];
     }
 
     Unpacker.loadFiles(onCompletion, paths);
@@ -846,7 +855,7 @@ public final class Scus94491BpeSegment {
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
     LOGGER.info("Loading DRGN%d %s from %s.%s(%s:%d)", drgnBinIndex, file, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
-    Unpacker.loadFile("SECT/DRGN%d.BIN/%s".formatted(drgnBinIndex, file), onCompletion);
+    Unpacker.loadFile("SECT/DRGN" + drgnBinIndex + ".BIN/" + file, onCompletion);
   }
 
   public static void loadDrgnFileSync(int drgnBinIndex, final String file, final Consumer<FileData> onCompletion) {
@@ -857,7 +866,7 @@ public final class Scus94491BpeSegment {
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
     LOGGER.info("Loading DRGN%d %s from %s.%s(%s:%d)", drgnBinIndex, file, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
-    onCompletion.accept(Unpacker.loadFile("SECT/DRGN%d.BIN/%s".formatted(drgnBinIndex, file)));
+    onCompletion.accept(Unpacker.loadFile("SECT/DRGN" + drgnBinIndex + ".BIN/" + file));
   }
 
   public static void loadDrgnDir(int drgnBinIndex, final int directory, final Consumer<List<FileData>> onCompletion) {
@@ -868,7 +877,7 @@ public final class Scus94491BpeSegment {
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
     LOGGER.info("Loading DRGN%d dir %d from %s.%s(%s:%d)", drgnBinIndex, directory, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
-    Unpacker.loadDirectory("SECT/DRGN%d.BIN/%d".formatted(drgnBinIndex, directory), onCompletion);
+    Unpacker.loadDirectory("SECT/DRGN" + drgnBinIndex + ".BIN/" + directory, onCompletion);
   }
 
   public static void loadDrgnDirSync(int drgnBinIndex, final String directory, final Consumer<List<FileData>> onCompletion) {
@@ -879,7 +888,7 @@ public final class Scus94491BpeSegment {
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
     LOGGER.info("Loading DRGN%d dir %s from %s.%s(%s:%d)", drgnBinIndex, directory, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
-    onCompletion.accept(Unpacker.loadDirectory("SECT/DRGN%d.BIN/%s".formatted(drgnBinIndex, directory)));
+    onCompletion.accept(Unpacker.loadDirectory("SECT/DRGN" + drgnBinIndex + ".BIN/" + directory));
   }
 
   public static void loadDrgnDirSync(int drgnBinIndex, final int directory, final Consumer<List<FileData>> onCompletion) {
@@ -890,7 +899,7 @@ public final class Scus94491BpeSegment {
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
     LOGGER.info("Loading DRGN%d dir %d from %s.%s(%s:%d)", drgnBinIndex, directory, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
-    onCompletion.accept(Unpacker.loadDirectory("SECT/DRGN%d.BIN/%d".formatted(drgnBinIndex, directory)));
+    onCompletion.accept(Unpacker.loadDirectory("SECT/DRGN" + drgnBinIndex + ".BIN/" + directory));
   }
 
   public static void loadDrgnDir(int drgnBinIndex, final String directory, final Consumer<List<FileData>> onCompletion) {
@@ -901,7 +910,7 @@ public final class Scus94491BpeSegment {
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
     LOGGER.info("Loading DRGN%d dir %s from %s.%s(%s:%d)", drgnBinIndex, directory, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
-    Unpacker.loadDirectory("SECT/DRGN%d.BIN/%s".formatted(drgnBinIndex, directory), onCompletion);
+    Unpacker.loadDirectory("SECT/DRGN" + drgnBinIndex + ".BIN/" + directory, onCompletion);
   }
 
   @ScriptDescription("Does nothing")
@@ -1219,243 +1228,156 @@ public final class Scus94491BpeSegment {
     //LAB_80018a4c
   }
 
-  @Method(0x80018a5cL)
-  public static void renderButtonPressHudElement(final int x, final int y, final int leftU, final int topV, final int rightU, final int bottomV, final int clutOffset, @Nullable final Translucency transMode, final int brightness, final int widthStretch, final int heightStretch) {
-    final int w = Math.abs(rightU - leftU);
-    final int h = Math.abs(bottomV - topV);
-
-    final GpuCommandPoly cmd = new GpuCommandPoly(4)
-      .monochrome(brightness);
-
-    if(transMode != null) {
-      cmd.translucent(transMode);
-    }
-
-    //LAB_80018b38
-    if(widthStretch != 0x1000 || heightStretch != 0x1000) {
-      //LAB_80018b90
-      final int left = x + w / 2;
-      final int top = y + h / 2;
-      final int offsetX = w * widthStretch / 2 >> 12;
-      final int offsetY = h * heightStretch / 2 >> 12;
-
-      cmd
-        .pos(0, left - offsetX, top - offsetY)
-        .pos(1, left + offsetX, top - offsetY)
-        .pos(2, left - offsetX, top + offsetY)
-        .pos(3, left + offsetX, top + offsetY);
-    } else {
-      //LAB_80018c38
-      cmd
-        .pos(0, x, y)
-        .pos(1, x + w, y)
-        .pos(2, x, y + h)
-        .pos(3, x + w, y + h);
-    }
-
-    //LAB_80018c60
-    cmd
-      .uv(0, leftU, topV)
-      .uv(1, rightU, topV)
-      .uv(2, leftU, bottomV)
-      .uv(3, rightU, bottomV);
-
-    final int clutOffsetX = clutOffset / 16;
-    final int clutOffsetY = clutOffset % 16;
-    final int clutY;
-    final int clutX;
-    if(clutOffsetX >= 4) {
-      clutX = clutOffsetX * 16 + 832;
-      clutY = clutOffsetY + 304;
-    } else {
-      clutX = clutOffsetX * 16 + 704;
-      clutY = clutOffsetY + 496;
-    }
-
-    //LAB_80018cf0
-    cmd
-      .bpp(Bpp.BITS_4)
-      .clut(clutX & 0x3f0, clutY)
-      .vramPos(704, 256);
-
-    GPU.queueCommand(2, cmd);
-  }
-
-  @Method(0x80018d60L)
-  public static void renderButtonPressHudTexturedRect(final int x, final int y, final int u, final int v, final int width, final int height, final int clutOffset, @Nullable final Translucency transMode, final int brightness, final int stretch) {
-    renderButtonPressHudElement(x, y, u, v, u + width, v + height, clutOffset, transMode, brightness, stretch, stretch);
-  }
-
-  @Method(0x80018decL)
-  public static void renderDivineDragoonAdditionPressIris(final int x, final int y, final int u, final int v, final int width, final int height, final int clutOffset, @Nullable final Translucency transMode, final int brightness, final int widthStretch, final int heightStretch) {
-    renderButtonPressHudElement(x, y, u, v, u + width, v + height, clutOffset, transMode, brightness, widthStretch, heightStretch);
-  }
-
   @Method(0x80018e84L)
-  public static void FUN_80018e84() {
+  public static void drawBattleReportOverlays() {
     final int[] sp0x30 = {0x42, 0x43, 0x02000802, 0x000a0406}; // These last two entries must be wrong but they might be unused cause I don't see anything wrong
 
     //LAB_80018f04
-    Struct10 s1 = _8004f658;
-    while(s1 != null) {
+    BattleReportOverlayList10 current = battleReportOverlayLists_8004f658;
+    while(current != null) {
       do {
-        s1._03--;
+        current.ticksRemaining_03--;
 
-        if(s1._03 != 0) {
+        if(current.ticksRemaining_03 != 0) {
           break;
         }
 
-        if(s1.next_08 == null) {
+        if(current.next_08 == null) {
           //LAB_80018f48
-          _8004f658 = s1.prev_0c;
+          battleReportOverlayLists_8004f658 = current.prev_0c;
         } else {
           //LAB_80018f50
-          s1.next_08.prev_0c = null;
+          current.next_08.prev_0c = null;
         }
 
         //LAB_80018f54
-        final Struct10 s0 = s1.prev_0c;
+        final BattleReportOverlayList10 list = current.prev_0c;
 
-        if(s0 != null) {
-          if(s1.next_08 == null) {
-            s0.next_08 = null;
-            _8004f658 = s1.prev_0c;
+        if(list != null) {
+          if(current.next_08 == null) {
+            list.next_08 = null;
+            battleReportOverlayLists_8004f658 = current.prev_0c;
           } else {
             //LAB_80018f84
-            s1.prev_0c.next_08 = s1.next_08;
-            s1.next_08.prev_0c = s1.prev_0c;
+            current.prev_0c.next_08 = current.next_08;
+            current.next_08.prev_0c = current.prev_0c;
           }
         }
 
         //LAB_80018fa0
-        if(s0 == null) {
+        if(list == null) {
           return;
         }
-        s1 = s0;
+        current = list;
       } while(true);
 
       //LAB_80018fd0
       //LAB_80018fd4
-      for(int s2 = 0; s2 < 8; s2++) {
-        final Struct0e s0 = s1.ptr_04[s2];
+      for(int overlayIndex = 0; overlayIndex < 8; overlayIndex++) {
+        final BattleReportOverlay0e overlay = current.overlays_04[overlayIndex];
 
-        s0._08++;
+        overlay.negaticks_08++;
 
-        if(s0._08 >= 0) {
-          final int v1 = s0.clutAndTranslucency_0c >>> 8 & 0xf;
+        if(overlay.negaticks_08 >= 0) {
+          final int v1 = overlay.clutAndTranslucency_0c >>> 8 & 0xf;
 
           if(v1 == 0) {
             //LAB_80019040
-            s0._09--;
+            overlay._09--;
 
-            if(s0._04 != 0) {
-              s0._04 -= 0x492;
-              s0._06 -= 0x492;
+            if(overlay.widthScale_04 != 0) {
+              overlay.widthScale_04 -= 0x492;
+              overlay.heightScale_06 -= 0x492;
             } else {
               //LAB_80019084
-              s0.clutAndTranslucency_0c &= 0x8fff;
+              overlay.clutAndTranslucency_0c &= 0x8fff;
             }
 
             //LAB_80019094
-            if(s0._09 == 0) {
-              s0.clutAndTranslucency_0c &= 0x7fff;
-              s0._08 = 0;
-              s0.clutAndTranslucency_0c &= 0xf0ff;
-              s0.clutAndTranslucency_0c |= ((s0.clutAndTranslucency_0c >>> 8 & 0xf) + 1 & 0xf) << 8;
+            if(overlay._09 == 0) {
+              overlay.clutAndTranslucency_0c &= 0x7fff;
+              overlay.negaticks_08 = 0;
+              overlay.clutAndTranslucency_0c &= 0xf0ff;
+              overlay.clutAndTranslucency_0c |= ((overlay.clutAndTranslucency_0c >>> 8 & 0xf) + 1 & 0xf) << 8;
             }
           } else if(v1 == 1) {
             //LAB_800190d4
-            s0.clutAndTranslucency_0c = sp0x30[s0.clutAndTranslucency_0c >>> 15];
+            overlay.clutAndTranslucency_0c = sp0x30[overlay.clutAndTranslucency_0c >>> 15];
 
-            if(s0._08 == 10) {
-              s0._09 = (byte)(simpleRand() % 10 + 2);
-              s0.clutAndTranslucency_0c &= 0xf0ff;
-              s0.clutAndTranslucency_0c |= ((s0.clutAndTranslucency_0c >>> 8 & 0xf) + 1 & 0xf) << 8;
+            if(overlay.negaticks_08 == 10) {
+              overlay._09 = (byte)(simpleRand() % 10 + 2);
+              overlay.clutAndTranslucency_0c &= 0xf0ff;
+              overlay.clutAndTranslucency_0c |= ((overlay.clutAndTranslucency_0c >>> 8 & 0xf) + 1 & 0xf) << 8;
             }
             //LAB_80019028
           } else if(v1 == 2) {
             //LAB_80019164
-            s0._09--;
+            overlay._09--;
 
-            if(s0._09 == 0) {
+            if(overlay._09 == 0) {
               //LAB_80019180
-              s0._09 = 8;
-              s0.clutAndTranslucency_0c &= 0xf0ff;
-              s0.clutAndTranslucency_0c |= ((s0.clutAndTranslucency_0c >>> 8 & 0xf) + 1 & 0xf) << 8;
+              overlay._09 = 8;
+              overlay.clutAndTranslucency_0c &= 0xf0ff;
+              overlay.clutAndTranslucency_0c |= ((overlay.clutAndTranslucency_0c >>> 8 & 0xf) + 1 & 0xf) << 8;
             }
           } else if(v1 == 3) {
             //LAB_800191b8
-            s0._09--;
+            overlay._09--;
 
-            if((s0._09 & 0x1) != 0) {
-              s0.y_02++;
+            if((overlay._09 & 0x1) != 0) {
+              overlay.y_02++;
             }
 
             //LAB_800191e4
-            s0._06 -= 0x200;
+            overlay.heightScale_06 -= 0x200;
 
-            if(s0._09 == 0) {
-              s0._08 = -100;
+            if(overlay._09 == 0) {
+              overlay.negaticks_08 = -100;
             }
           }
 
-          //LAB_80019208
-          renderButtonPressHudElement(
-            s0.x_00,
-            s0.y_02,
-            s0.u_0b,
-            64,
-            s0.u_0b + 7,
-            79,
-            s0.clutAndTranslucency_0c,
-            Translucency.of((s0.clutAndTranslucency_0c >>> 12 & 0x7) - 1),
-            0xff,
-            s0._04 + 0x1000,
-            s0._06 + 0x1000
-          );
+          battleUiParts.queueLevelUp(overlay);
         }
       }
 
-      s1 = s1.prev_0c;
+      current = current.prev_0c;
     }
 
     //LAB_800192b4
   }
 
   @Method(0x800192d8L)
-  public static void drawLevelUp(int x, final int y) {
-    final Struct10 s0 = new Struct10();
-    s0._00 = 0x61;
-    s0._01 = 0x6c;
-    s0._02 = 0x64;
-    s0._03 = 0x34;
-    s0.prev_0c = _8004f658;
+  public static void addLevelUpOverlay(int x, final int y) {
+    final BattleReportOverlayList10 s0 = new BattleReportOverlayList10();
+    s0.ticksRemaining_03 = 52;
+    s0.prev_0c = battleReportOverlayLists_8004f658;
 
     if(s0.prev_0c != null) {
       s0.prev_0c.next_08 = s0;
     }
 
     //LAB_800193b4
-    _8004f658 = s0;
+    battleReportOverlayLists_8004f658 = s0;
 
     //LAB_800193dc
     for(int i = 0; i < 8; i++) {
-      final Struct0e v1 = s0.ptr_04[i];
-      v1.x_00 = (short)(x - 6);
-      v1.y_02 = (short)(y - 16);
-      v1._04 = 0x1ffe;
-      v1._06 = 0x1ffe;
-      v1._08 = (byte)~i;
-      v1._09 = (byte)(20 - i);
-      v1.u_0b = levelUpUs_8001032c[i];
-      v1.clutAndTranslucency_0c = 0x204a;
+      final BattleReportOverlay0e overlay = s0.overlays_04[i];
+      overlay.x_00 = x - 6;
+      overlay.y_02 = y - 16;
+      overlay.widthScale_04 = 0x1ffe;
+      overlay.heightScale_06 = 0x1ffe;
+      overlay.negaticks_08 = (byte)~i;
+      overlay._09 = (byte)(20 - i);
+//      overlay.u_0b = levelUpUs_8001032c[i];
+      overlay.letterIndex = i;
+      overlay.clutAndTranslucency_0c = 0x204a;
       x += levelUpOffsets_80010334[i];
     }
   }
 
   @Method(0x80019470L)
   public static void FUN_80019470() {
-    _8004f658 = null;
+    battleReportOverlayLists_8004f658 = null;
   }
 
   @Method(0x80019500L)
@@ -1805,7 +1727,8 @@ public final class Scus94491BpeSegment {
 
   @Method(0x8001af00L)
   public static void startEncounterSounds() {
-    startMusicSequence(encounterSoundEffects_800bd610.sequenceData_0c);
+    AUDIO_THREAD.loadBackgroundMusic(victoryMusic);
+    AUDIO_THREAD.startSequence();
   }
 
   @ScriptDescription("Starts the encounter sounds sequence")
@@ -1899,7 +1822,7 @@ public final class Scus94491BpeSegment {
   @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.INT, name = "volume", description = "The volume")
   @Method(0x8001b1ecL)
   public static FlowControl scriptGetSequenceVolume(final RunningScript<?> script) {
-    script.params_20[0].set(sequenceVolume_800bd108);
+    script.params_20[0].set(AUDIO_THREAD.getSequenceVolume());
     return FlowControl.CONTINUE;
   }
 
@@ -2013,14 +1936,31 @@ public final class Scus94491BpeSegment {
     //LAB_8001b53c
   }
 
+  /** To determine if we need to rebuild the quad because the UVs changed */
+  private static float dissolveDisplayWidth;
+  private static Obj dissolveSquare;
+  private static final MV dissolveTransforms = new MV();
+
   @Method(0x8001b54cL)
   public static void renderCombatDissolveEffect() {
+    if(dissolveSquare == null) {
+      dissolveSquare = new QuadBuilder("Dissolve Square")
+        .bpp(Bpp.BITS_24)
+        .translucency(Translucency.HALF_B_PLUS_HALF_F)
+        .size(8.0f, 8.0f)
+        .uv(0.0f, 8.0f / 240.0f)
+        .uvSize(7.0f / dissolveDisplayWidth, -8.0f / 240.0f)
+        .build();
+
+      dissolveSquare.persistent = true;
+    }
+
     renderBattleStartingBorders();
 
     battleDissolveTicks += vsyncMode_8007a3b8;
 
-    final int sp10 = -displayWidth_1f8003e0 / 2;
-    final int sp14 = -displayHeight_1f8003e4 / 2;
+    final int sp10 = 0;
+    final int sp14 = 0;
 
     if((battleDissolveTicks & 0x1) == 0) {
       final int a0 = displayHeight_1f8003e4 / 8;
@@ -2077,6 +2017,12 @@ public final class Scus94491BpeSegment {
 
             //LAB_8001b868
             GPU.queueCommand(6, cmd);
+
+            dissolveTransforms.transfer.set(left, top, 24.0f);
+            RENDERER.queueOrthoModel(dissolveSquare, dissolveTransforms)
+              .uvOffset((float)u / dissolveDisplayWidth, (240.0f - v) / 240.0f)
+              .texture(RENDERER.getLastFrame())
+              .monochrome((dissolveDarkening_800bd700.brightnessAccumulator_08 >> 8) / 128.0f);
           }
 
           sp2c += 8;
@@ -2107,6 +2053,8 @@ public final class Scus94491BpeSegment {
     GPU.queueCommand(6, new GpuCommandQuad().monochrome(1).pos(right - 4, top, 36, height));
   }
 
+  private static final MV darkeningTransforms = new MV();
+
   /** The game doesn't continue rendering when battles are loading, this basically continues rendering the last frame that was rendered, but slightly darker each time */
   @Method(0x8001bbccL)
   public static void renderBattleStartingScreenDarkening(final int x, final int y) {
@@ -2125,6 +2073,12 @@ public final class Scus94491BpeSegment {
       .uv(3, 384, 240)
       .texture(GPU.getDisplayBuffer())
     );
+
+    darkeningTransforms.transfer.set(0.0f, 0.0f, 25.0f);
+    darkeningTransforms.scaling(dissolveDisplayWidth, 240.0f, 1.0f);
+    RENDERER.queueOrthoModel(RENDERER.renderBufferQuad, darkeningTransforms)
+      .texture(RENDERER.getLastFrame())
+      .monochrome(MathHelper.clamp((int)(dissolveDarkening_800bd700.brightnessAccumulator_08 * 1.1f) >> 8, 0x80 - 2 * vsyncMode_8007a3b8, 0x80) / 128.0f);
   }
 
   @Method(0x8001c4ecL)
@@ -2143,6 +2097,12 @@ public final class Scus94491BpeSegment {
     clearGreen_800bb104 = 0;
     clearBlue_800babc0 = 0;
     _8004f6e4 = 1;
+    dissolveDisplayWidth = RENDERER.getProjectionSize().x;
+
+    if(dissolveSquare != null) {
+      dissolveSquare.delete();
+      dissolveSquare = null;
+    }
   }
 
   @Method(0x8001c594L)
@@ -2287,7 +2247,7 @@ public final class Scus94491BpeSegment {
       }
     } else if(type == 1) {
       //LAB_8001d164
-      FUN_8001d2d8();
+      loadMonsterSoundsWithPhases();
     } else if(type == 2) {
       //LAB_8001d174
       loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x40);
@@ -2302,75 +2262,28 @@ public final class Scus94491BpeSegment {
   @Method(0x8001d1c4L)
   public static void loadMonsterSounds() {
     final int encounterId = encounterId_800bb0f8;
-    final int fileIndex;
-    if(encounterId == 390) { // Doel
-      //LAB_8001d21c
-      fileIndex = 1290;
-    } else if(encounterId == 431) { // Zackwell
-      //LAB_8001d244
-      fileIndex = 1296;
-      //LAB_8001d208
-    } else if(encounterId == 443) { // Melbu
-      //LAB_8001d270
-      fileIndex = 1292;
-    } else {
-      //LAB_8001d298
-      fileIndex = 778 + encounterId_800bb0f8;
+    switch(encounterId) {
+      case 390 -> loadBattlePhaseSounds("doel", 0);
+      case 431 -> loadBattlePhaseSounds("zackwell", 0);
+      case 443 -> loadBattlePhaseSounds("melbu", 0);
+      default -> loadEncounterSounds(encounterId);
     }
-
-    //LAB_8001d2c0
-    // Example file: 1017
-    loadMonsterSounds(fileIndex);
   }
 
   @Method(0x8001d2d8L)
-  public static void FUN_8001d2d8() {
-    if(encounterId_800bb0f8 == 390) { // Doel
-      //LAB_8001d330
-      if(battleState_8006e398.stageProgression_eec == 0) {
-        loadMonsterSounds(1290);
-      } else {
-        //LAB_8001d370
-        loadMonsterSounds(1291);
-      }
-      //LAB_8001d31c
-    } else if(encounterId_800bb0f8 == 431) { // Zackwell
-      //LAB_8001d394
-      if(battleState_8006e398.stageProgression_eec == 0) {
-        loadMonsterSounds(1296);
-      } else {
-        //LAB_8001d3d0
-        loadMonsterSounds(1297);
-      }
-    } else if(encounterId_800bb0f8 == 443) { // Melbu
-      //LAB_8001d3f8
-      final int stageProgression = battleState_8006e398.stageProgression_eec;
-      if(stageProgression == 0) {
-        //LAB_8001d43c
-        loadMonsterSounds(1292);
-        //LAB_8001d424
-      } else if(stageProgression == 1) {
-        //LAB_8001d464
-        loadMonsterSounds(1293);
-      } else if(stageProgression == 4) {
-        //LAB_8001d490
-        loadMonsterSounds(1294);
-      } else if(stageProgression == 6) {
-        //LAB_8001d4b8
-        loadMonsterSounds(1295);
-      }
-    } else {
-      //LAB_8001d4dc
-      loadMonsterSounds(778 + encounterId_800bb0f8);
+  public static void loadMonsterSoundsWithPhases() {
+    switch(encounterId_800bb0f8) {
+      case 390 -> loadBattlePhaseSounds("doel", battleState_8006e398.battlePhase_eec);
+      case 431 -> loadBattlePhaseSounds("zackwell", battleState_8006e398.battlePhase_eec);
+      case 443 -> loadBattlePhaseSounds("melbu", battleState_8006e398.battlePhase_eec);
+      default -> loadEncounterSounds(encounterId_800bb0f8);
     }
-
-    //LAB_8001d50c
   }
 
   public static int soundBufferOffset;
 
   /** TODO this isn't thread-safe */
-  private static void loadMonsterSounds(final int fileIndex) {
+  private static void loadBattlePhaseSounds(final String boss, final int phase) {
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x10);
     soundBufferOffset = 0;
 
@@ -2379,11 +2292,39 @@ public final class Scus94491BpeSegment {
       file.charId_02 = -1;
       file.used_00 = false;
 
-      if(Unpacker.exists("SECT/DRGN0.BIN/%d/%d".formatted(fileIndex, monsterSlot))) {
+      if(Unpacker.exists("monsters/phases/%s/%d/%d".formatted(boss, phase, monsterSlot))) {
         final int finalMonsterSlot = monsterSlot;
-        loadDrgnDir(0, fileIndex + "/" + monsterSlot, files -> FUN_8001d51c(files, "Monster slot %d (file %d)".formatted(finalMonsterSlot, fileIndex), finalMonsterSlot));
+        loadDir("monsters/phases/%s/%d/%d".formatted(boss, phase, monsterSlot), files -> FUN_8001d51c(files, "Monster slot %d (file %s/%d)".formatted(finalMonsterSlot, boss, phase), finalMonsterSlot));
       }
     }
+
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & 0xffff_ffef);
+  }
+
+  /** TODO this isn't thread-safe */
+  private static void loadEncounterSounds(final int encounterId) {
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x10);
+    soundBufferOffset = 0;
+
+    loadFile("encounters", file -> {
+      final EncounterData38 encounterData = new EncounterData38(file.getBytes(), encounterId * 0x38);;
+      final short[] monsterIds = encounterData.enemyIndices_00;
+
+      //TODO this is kinda dirty
+      for(int monsterSlot = 0; monsterSlot < 4; monsterSlot++) {
+        final SoundFile soundFile = soundFiles_800bcf80[monsterSoundFileIndices_800500e8[monsterSlot]];
+        soundFile.charId_02 = -1;
+        soundFile.used_00 = false;
+
+        if((monsterSlot >= monsterIds.length) || (monsterIds[monsterSlot] == -1)) {
+          continue;
+        }
+
+        final int finalMonsterSlot = monsterSlot;
+        loadDir("monsters/" + monsterIds[monsterSlot] + "/sounds", files -> FUN_8001d51c(files, "Monster slot %d (file %d)".formatted(finalMonsterSlot, monsterIds[finalMonsterSlot]), finalMonsterSlot));
+      }
+
+    });
 
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val & 0xffff_ffef);
   }
@@ -2438,29 +2379,24 @@ public final class Scus94491BpeSegment {
   }
 
   @Method(0x8001d9d0L)
-  public static void loadEncounterMusic() {
-    final StageData2c stageData = stageData_80109a98[encounterId_800bb0f8];
-
-    if(stageData.musicIndex_04 != 0xff) {
-      loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
-
-      final int fileIndex;
-      final Consumer<List<FileData>> callback;
-      if((stageData.musicIndex_04 & 0x1f) == 0x13) {
-        unloadSoundFile(8);
-        fileIndex = 732;
-        callback = files -> musicPackageLoadedCallback(files, 732, true);
-      } else {
-        //LAB_8001da58
-        fileIndex = combatMusicFileIndices_800501bc[stageData.musicIndex_04 & 0x1f];
-        callback = files -> FUN_8001fb44(files, "Encounter music %d (file %d)".formatted(stageData.musicIndex_04 & 0x1f, fileIndex), 0);
-      }
-
-      //LAB_8001daa4
-      loadDrgnDir(0, fileIndex, callback);
+  public static void loadEncounterMusic(final int musicIndex, final int victoryType) {
+    if(victoryType == -1) {
+      return;
     }
 
-    //LAB_8001daac
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
+
+    final int fileId;
+    final Consumer<List<FileData>> callback;
+    if(victoryType == 732) {
+      callback = files -> musicPackageLoadedCallback(files, victoryType, true);
+      fileId = victoryType;
+    } else {
+      callback = files -> FUN_8001fb44(files, musicIndex, victoryType);
+      fileId = musicIndex;
+    }
+
+    loadDrgnDir(0, fileId, callback);
   }
 
   @Method(0x8001dabcL)
@@ -2468,35 +2404,17 @@ public final class Scus94491BpeSegment {
     LOGGER.info("Music package %d loaded", fileIndex);
     musicFileIndex_800bd0fc = fileIndex;
 
-    int i = 0;
-    final SoundFile sound = soundFiles_800bcf80[11];
-    sound.used_00 = true;
-    sound.name = "Music package (file %d)".formatted(fileIndex);
-    sound.charId_02 = files.get(i++).readShort(0);
+    AUDIO_THREAD.loadBackgroundMusic(new BackgroundMusic(files, fileIndex));
 
-    if(files.size() == 5) {
-      sound.numberOfExtraSoundbanks_18 = files.get(i++).readUByte(0) - 1;
+    AUDIO_THREAD.setSequenceVolume(40);
+
+    if(startSequence) {
+      AUDIO_THREAD.startSequence();
     }
 
-    final Sssq sssq = new Sssq(files.get(i++));
-    final Sshd sshd = new Sshd(files.get(i++));
-    final FileData soundbank = files.get(i);
-    sound.spuRamOffset_14 = soundbank.size();
-    sound.playableSound_10 = loadSshdAndSoundbank(sound.name, soundbank, sshd, 0x2_1f70);
-    currentSequenceData_800bd0f8 = loadSssq(sound.playableSound_10, sssq);
+    musicLoaded_800bd782 = true;
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & 0xffff_ff7f);
 
-    if(files.size() == 5) {
-      loadExtraSoundbanks(startSequence);
-    } else {
-      if(startSequence) {
-        startMusicSequence(currentSequenceData_800bd0f8);
-      }
-
-      FUN_8001fa18();
-    }
-
-    //LAB_8001dda0
-    setSequenceVolume(40);
     _800bd0f0 = 2;
   }
 
@@ -2504,7 +2422,7 @@ public final class Scus94491BpeSegment {
   public static void FUN_8001ddd8() {
     final EncounterSoundEffects10 encounterSoundEffects = encounterSoundEffects_800bd610;
 
-    startMusicSequence(currentSequenceData_800bd0f8);
+    AUDIO_THREAD.startSequence();
     encounterSoundEffects._00 = 2;
     encounterSoundEffects.sequenceData_0c = loadSssq(soundFiles_800bcf80[encounterSoundEffects.soundFileIndex].playableSound_10, encounterSoundEffects.sssq_08);
     musicLoaded_800bd782 = true;
@@ -2528,28 +2446,20 @@ public final class Scus94491BpeSegment {
       //LAB_8001df8c
       unloadSoundFile(8);
 
-      final int type = combatSoundEffectsTypes_8005019c[stageData.musicIndex_04 & 0x1f];
-      if(type == 0xc) {
-        loadEncounterSoundEffects(696);
-      } else if(type == 0xd) {
-        //LAB_8001df68
-        loadEncounterSoundEffects(697);
-      } else if(type == 0xe) {
-        //LAB_8001df70
-        loadEncounterSoundEffects(698);
-      } else if(type == 0xf) {
-        //LAB_8001df78
-        loadEncounterSoundEffects(699);
-        //LAB_8001df44
-      } else if(type == 0x56) {
-        //LAB_8001df84
-        loadEncounterSoundEffects(700);
-      } else if(type == 0x58) {
-        //LAB_8001df80
-        loadEncounterSoundEffects(701);
-      }
+      final int musicIndex = combatMusicFileIndices_800501bc[stageData.musicIndex_04 & 0x1f];
+      final int victoryType = switch(combatSoundEffectsTypes_8005019c[stageData.musicIndex_04 & 0x1f]) {
+        case 0xc -> 696;
+        case 0xd -> 697;
+        case 0xe -> 698;
+        case 0xf -> 699;
+        case 0x56 -> 700;
+        case 0x58 -> 701;
+        default -> parseMelbuVictory(stageData.musicIndex_04 & 0x1f);
+      };
 
-      loadEncounterMusic();
+      loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x4000);
+
+      loadEncounterMusic(musicIndex, victoryType);
     }
 
     //LAB_8001df9c
@@ -2567,6 +2477,14 @@ public final class Scus94491BpeSegment {
     }
 
     loadMonsterSounds();
+  }
+
+  private static int parseMelbuVictory(final int musicIndex) {
+    if(musicIndex == 0x13) {
+      return 732;
+    }
+
+    return -1;
   }
 
   public static String getCharacterName(final int id) {
@@ -2706,8 +2624,7 @@ public final class Scus94491BpeSegment {
 
       case 8 -> {
         if(_800bd0f0 != 0) {
-          stopMusicSequence(currentSequenceData_800bd0f8, 1);
-          freeSequence(currentSequenceData_800bd0f8);
+          AUDIO_THREAD.unloadMusic();
 
           //LAB_8001e56c
           _800bd0f0 = 0;
@@ -2999,8 +2916,8 @@ public final class Scus94491BpeSegment {
     unloadSoundFile(8);
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
     final int fileIndex = 5815 + script.params_20[0].get() * 5;
-    final boolean startSequence = script.params_20[1].get() == 0;
-    loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, startSequence));
+    final boolean playSequence = script.params_20[1].get() == 0;
+    loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, playSequence));
     return FlowControl.CONTINUE;
   }
 
@@ -3012,8 +2929,8 @@ public final class Scus94491BpeSegment {
     unloadSoundFile(8);
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
     final int fileIndex = 732 + script.params_20[0].get() * 5;
-    final boolean startSequence = script.params_20[1].get() == 0;
-    loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, startSequence));
+    final boolean playSequence = script.params_20[1].get() == 0;
+    loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, playSequence));
     return FlowControl.CONTINUE;
   }
 
@@ -3025,104 +2942,47 @@ public final class Scus94491BpeSegment {
     unloadSoundFile(8);
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
     final int fileIndex = 2353 + script.params_20[0].get() * 6;
-    final boolean startSequence = script.params_20[1].get() == 0;
-    loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, startSequence));
+    final boolean playSequence = script.params_20[1].get() == 0;
+    loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, playSequence));
     return FlowControl.CONTINUE;
   }
 
   @Method(0x8001f708L)
   public static void loadWmapMusic(final int chapterIndex) {
+    final int fileIndex = 5850 + chapterIndex * 5;
+
+    if(AUDIO_THREAD.getSongId() * 5 + 5815 == fileIndex) {
+      return;
+    }
+
     unloadSoundFile(8);
     loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
-    final int fileIndex = 5850 + chapterIndex * 5;
     loadDrgnDir(0, fileIndex, files -> musicPackageLoadedCallback(files, fileIndex, true));
   }
 
-  @Method(0x8001f810L)
-  public static void loadExtraSoundbanks(final boolean startSequence) {
-    final String[] files = new String[soundFiles_800bcf80[11].numberOfExtraSoundbanks_18];
-
-    //LAB_8001f860
-    for(int extraSoundbankIndex = 0; extraSoundbankIndex < soundFiles_800bcf80[11].numberOfExtraSoundbanks_18; extraSoundbankIndex++) {
-      files[extraSoundbankIndex] = Integer.toString(musicFileIndex_800bd0fc + extraSoundbankIndex + 1);
-    }
-
-    loadDrgnFiles(0, f -> extraSoundbanksLoaded(f, startSequence), files);
-
-    //LAB_8001f8b4
-    musicLoaded_800bd782 = true;
-  }
-
-  private static void extraSoundbanksLoaded(final List<FileData> files, final boolean startSequence) {
-    int offset = 0x2_1f70 + soundFiles_800bcf80[11].spuRamOffset_14;
-    for(final FileData file : files) {
-      SPU.directWrite(offset, file.getBytes());
-      offset += file.size();
-    }
-
-    if(startSequence) {
-      startMusicSequence(currentSequenceData_800bd0f8);
-    }
-
-    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & 0xffff_ff7f);
-  }
-
-  @Method(0x8001fa18L)
-  public static void FUN_8001fa18() {
-    sssqTempo_800bd104 = sssqGetTempo(currentSequenceData_800bd0f8) * sssqTempoScale_800bd100;
-    sssqSetTempo(currentSequenceData_800bd0f8, sssqTempo_800bd104 >> 8);
-
-    musicLoaded_800bd782 = true;
-    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & 0xffff_ff7f);
-  }
-
   @Method(0x8001fb44L)
-  public static void FUN_8001fb44(final List<FileData> files, final String soundName, final int param) {
-    final SoundFile sound = soundFiles_800bcf80[11];
-    sound.name = soundName;
-    sound.used_00 = true;
+  public static void FUN_8001fb44(final List<FileData> files, final int fileIndex, final int victoryType) {
+    final BackgroundMusic bgm = new BackgroundMusic(files, fileIndex);
+    bgm.setVolume(40);
 
-    sound.charId_02 = files.get(0).readShort(0);
+    loadDrgnDir(0, victoryType, victoryFiles -> loadVictoryMusic(victoryFiles, bgm));
 
-    //LAB_8001fbcc
-    sound.playableSound_10 = loadSshdAndSoundbank(sound.name, files.get(3), new Sshd(files.get(2)), 0x2_1f70);
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & ~0x4000);
 
-    currentSequenceData_800bd0f8 = loadSssq(sound.playableSound_10, new Sssq(files.get(1)));
-    setSequenceVolume(40);
+    AUDIO_THREAD.loadBackgroundMusic(bgm);
+
     _800bd0f0 = 2;
 
-    if(param == 0) {
-      FUN_8001ddd8();
-    } else {
-      //LAB_8001fbc4
-      FUN_8001fc54();
-    }
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & ~0x80);
+
+    AUDIO_THREAD.startSequence();
+
+    musicLoaded_800bd782 = true;
   }
 
-  @Method(0x8001fc54L)
-  public static void FUN_8001fc54() {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  @Method(0x8001fcf4L)
-  public static void loadEncounterSoundEffects(final int fileIndex) {
-    loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x4000);
-    // Example file: 700
-    loadDrgnDir(0, fileIndex, Scus94491BpeSegment::encounterSoundEffectsLoaded);
-  }
-
-  @Method(0x8001fd4cL)
-  public static void encounterSoundEffectsLoaded(final List<FileData> files) {
-    final EncounterSoundEffects10 encounterSoundEffects = encounterSoundEffects_800bd610;
-    encounterSoundEffects._00 = 2;
-
-    encounterSoundEffects.unknown = files.get(0).readUShort(0);
-    encounterSoundEffects.soundFileIndex = files.get(1).readUShort(0);
-    encounterSoundEffects.sssq_08 = new Sssq(files.get(2));
-
-    Scus94491BpeSegment_8004.setSequenceVolume(encounterSoundEffects.sequenceData_0c, 40);
-    encounterSoundEffects._00 = 2;
-    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & 0xffff_bfff);
+  private static void loadVictoryMusic(final List<FileData> files, final BackgroundMusic battleMusic) {
+    victoryMusic = battleMusic.createVictoryMusic(files);
+    victoryMusic.setVolume(40);
   }
 
   @ScriptDescription("Load some kind of audio package")

@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static legend.core.Async.allLoaded;
+import static legend.core.GameEngine.AUDIO_THREAD;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.GTE;
@@ -172,7 +173,7 @@ public class RetailSubmap extends Submap {
 
     drgnBinIndex_800bc058 = drgnIndex.get();
     loadDrgnDir(2, fileIndex.get(), files -> {
-      this.loadBackground("DRGN2%d/%d".formatted(drgnIndex.get(), fileIndex.get()), files);
+      this.loadBackground("DRGN2" + drgnIndex.get() + "/" + fileIndex.get(), files);
       onLoaded.run();
     });
   }
@@ -210,7 +211,7 @@ public class RetailSubmap extends Submap {
 
       loadDrgnDir(drgnIndex.get() + 2, fileIndex.get() + 1, files -> allLoaded(assetsCount, 3, () -> assets.addAll(files), prepareSobjsAndComplete));
       loadDrgnDir(drgnIndex.get() + 2, fileIndex.get() + 2, files -> allLoaded(assetsCount, 3, () -> scripts.addAll(files), prepareSobjsAndComplete));
-      Unpacker.loadDirectory("SECT/DRGN%d.BIN/%d/textures".formatted(20 + drgnIndex.get(), fileIndex.get() + 1), files -> allLoaded(assetsCount, 3, () -> textures.addAll(files), prepareSobjsAndComplete));
+      Unpacker.loadDirectory("SECT/DRGN" + (20 + drgnIndex.get()) + ".BIN/" + (fileIndex.get() + 1) + "/textures", files -> allLoaded(assetsCount, 3, () -> textures.addAll(files), prepareSobjsAndComplete));
 
       // Load 3D overlay
       if(cutFileIndex != 0) {
@@ -1300,7 +1301,7 @@ public class RetailSubmap extends Submap {
     }
 
     //LAB_8001b408
-    return -1;
+    return AUDIO_THREAD.getSongId();
   }
 
   @Method(0x8001c60cL)
@@ -1371,7 +1372,7 @@ public class RetailSubmap extends Submap {
     }
 
     //LAB_8001c7ec
-    if(!currentSequenceData_800bd0f8.musicPlaying_028) {
+    if(currentSequenceData_800bd0f8 == null || !currentSequenceData_800bd0f8.musicPlaying_028) {
       return -2;
     }
 

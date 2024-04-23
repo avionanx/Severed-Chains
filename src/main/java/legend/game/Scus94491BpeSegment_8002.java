@@ -1,9 +1,9 @@
 package legend.game;
 
 import legend.core.MathHelper;
+import legend.core.RenderEngine;
 import legend.core.gpu.Bpp;
 import legend.core.gpu.GpuCommandCopyVramToVram;
-import legend.core.gpu.GpuCommandPoly;
 import legend.core.gpu.Rect4i;
 import legend.core.gte.GsCOORDINATE2;
 import legend.core.gte.MV;
@@ -15,7 +15,6 @@ import legend.core.memory.Method;
 import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.game.combat.types.EnemyDrop;
-import legend.game.fmv.Fmv;
 import legend.game.input.Input;
 import legend.game.input.InputAction;
 import legend.game.inventory.Equipment;
@@ -43,7 +42,6 @@ import legend.game.sound.QueuedSound28;
 import legend.game.sound.SoundFile;
 import legend.game.submap.SubmapEnvState;
 import legend.game.tim.Tim;
-import legend.game.tmd.Renderer;
 import legend.game.tmd.UvAdjustmentMetrics14;
 import legend.game.types.ActiveStatsa0;
 import legend.game.types.CContainer;
@@ -86,6 +84,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static legend.core.GameEngine.AUDIO_THREAD;
 import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
@@ -105,6 +104,7 @@ import static legend.game.Scus94491BpeSegment.centreScreenX_1f8003dc;
 import static legend.game.Scus94491BpeSegment.centreScreenY_1f8003de;
 import static legend.game.Scus94491BpeSegment.displayWidth_1f8003e0;
 import static legend.game.Scus94491BpeSegment.getLoadedDrgnFiles;
+import static legend.game.Scus94491BpeSegment.loadDir;
 import static legend.game.Scus94491BpeSegment.loadDrgnDir;
 import static legend.game.Scus94491BpeSegment.loadDrgnFileSync;
 import static legend.game.Scus94491BpeSegment.rectArray28_80010770;
@@ -274,14 +274,28 @@ public final class Scus94491BpeSegment_8002 {
     soundBufferOffset = 0;
 
     final int fileIndex = 1290 + script.params_20[0].get();
+
+    final String path;
+    switch(fileIndex) {
+      case 1290 -> path = "monsters/phases/doel/0";
+      case 1291 -> path = "monsters/phases/doel/1";
+      case 1292 -> path = "monsters/phases/melbu/0";
+      case 1293 -> path = "monsters/phases/melbu/1";
+      case 1294 -> path = "monsters/phases/melbu/4";
+      case 1295 -> path = "monsters/phases/melbu/6";
+      case 1296 -> path = "monsters/phases/zackwell/0";
+      case 1297 -> path = "monsters/phases/zackwell/1";
+      default -> throw new IllegalArgumentException("Unknown battle phase file index " + fileIndex);
+    }
+
     for(int monsterSlot = 0; monsterSlot < 4; monsterSlot++) {
       final SoundFile file = soundFiles_800bcf80[monsterSoundFileIndices_800500e8[monsterSlot]];
       file.charId_02 = -1;
       file.used_00 = false;
 
-      if(Unpacker.exists("SECT/DRGN0.BIN/%d/%d".formatted(fileIndex, monsterSlot))) {
+      if(Unpacker.exists(path + '/' + monsterSlot)) {
         final int finalMonsterSlot = monsterSlot;
-        loadDrgnDir(0, fileIndex + "/" + monsterSlot, files -> FUN_8001d51c(files, "Monster slot %d (file %d) (replaced)".formatted(finalMonsterSlot, fileIndex), finalMonsterSlot));
+        loadDir(path + '/' + monsterSlot, files -> FUN_8001d51c(files, "Monster slot %d (file %s) (replaced)".formatted(finalMonsterSlot, path), finalMonsterSlot));
       }
     }
 
@@ -1053,7 +1067,7 @@ public final class Scus94491BpeSegment_8002 {
   @Method(0x800232dcL)
   public static int takeItem(final int itemSlot) {
     if(itemSlot >= gameState_800babc8.items_2e9.size()) {
-      LOGGER.warn("Tried to take item index %d (out of bounds)".formatted(itemSlot));
+      LOGGER.warn("Tried to take item index %d (out of bounds)", itemSlot);
       return 0xff;
     }
 
@@ -1081,7 +1095,7 @@ public final class Scus94491BpeSegment_8002 {
   @Method(0x800233d8L)
   public static int takeEquipment(final int equipmentIndex) {
     if(equipmentIndex >= gameState_800babc8.equipment_1e8.size()) {
-      LOGGER.warn("Tried to take equipment index %d (out of bounds)".formatted(equipmentIndex));
+      LOGGER.warn("Tried to take equipment index %d (out of bounds)", equipmentIndex);
       return 0xff;
     }
 
@@ -1449,22 +1463,16 @@ public final class Scus94491BpeSegment_8002 {
         for(int metricsIndex = 0; metricsIndex < metricses.length; metricsIndex++) {
           final RenderableMetrics14 metrics = metricses[metricsIndex];
 
-          final GpuCommandPoly cmd = new GpuCommandPoly(4)
-            .monochrome(0x80);
-
           final float x1;
-          final float x2;
           final float width;
           if(MathHelper.flEq(renderable.widthScale, 1.0f)) {
             if(metrics.widthScale_10 < 0) {
               width = -metrics.width_08;
-              x2 = renderable.x_40 + metrics.x_02 - centreX;
-              x1 = x2 + metrics.width_08;
+              x1 = renderable.x_40 + metrics.x_02 - centreX + metrics.width_08;
             } else {
               //LAB_80023f20
               width = metrics.width_08;
               x1 = renderable.x_40 + metrics.x_02 - centreX;
-              x2 = x1 + metrics.width_08;
             }
           } else {
             //LAB_80023f40
@@ -1475,30 +1483,25 @@ public final class Scus94491BpeSegment_8002 {
             final float scaledWidth = Math.abs(metrics.width_08 * widthScale);
             if(metrics.widthScale_10 < 0) {
               width = -scaledWidth;
-              x2 = renderable.x_40 + metrics.width_08 / 2.0f + metrics.x_02 - centreX - scaledWidth / 2.0f;
-              x1 = x2 + scaledWidth;
+              x1 = renderable.x_40 + metrics.width_08 / 2.0f + metrics.x_02 - centreX - scaledWidth / 2.0f + scaledWidth;
             } else {
               //LAB_80023fb4
               width = scaledWidth;
               x1 = renderable.x_40 + metrics.width_08 / 2.0f + metrics.x_02 - centreX - scaledWidth / 2.0f;
-              x2 = x1 + scaledWidth;
             }
           }
 
           //LAB_80023fe4
           final float y1;
-          final float y2;
           final float height;
           if(MathHelper.flEq(renderable.heightScale_38, 1.0f)) {
             if(metrics.heightScale_12 < 0) {
               height = -metrics.height_0a;
-              y2 = renderable.y_44 + metrics.y_03 - 120.0f;
-              y1 = y2 + metrics.height_0a;
+              y1 = renderable.y_44 + metrics.y_03 - 120.0f + metrics.height_0a;
             } else {
               //LAB_80024024
               height = metrics.height_0a;
               y1 = renderable.y_44 + metrics.y_03 - 120.0f;
-              y2 = y1 + metrics.height_0a;
             }
           } else {
             //LAB_80024044
@@ -1509,55 +1512,35 @@ public final class Scus94491BpeSegment_8002 {
             final float scaledHeight = Math.abs(metrics.height_0a * heightScale);
             if(metrics.heightScale_12 < 0) {
               height = -scaledHeight;
-              y2 = renderable.y_44 + metrics.height_0a / 2.0f + metrics.y_03 - scaledHeight / 2.0f - 120.0f;
-              y1 = y2 + scaledHeight;
+              y1 = renderable.y_44 + metrics.height_0a / 2.0f + metrics.y_03 - scaledHeight / 2.0f - 120.0f + scaledHeight;
             } else {
               //LAB_800240b8
               height = scaledHeight;
               y1 = renderable.y_44 + metrics.height_0a / 2.0f + metrics.y_03 - scaledHeight / 2.0f - 120.0f;
-              y2 = y1 + scaledHeight;
             }
           }
 
           //LAB_800240e8
-          cmd.pos(0, x1 + renderable.baseX, y1 + renderable.baseY + renderable.heightCut);
-          cmd.pos(1, x2 + renderable.baseX, y1 + renderable.baseY + renderable.heightCut);
-          cmd.pos(2, x1 + renderable.baseX, y2 + renderable.baseY);
-          cmd.pos(3, x2 + renderable.baseX, y2 + renderable.baseY);
-
           //LAB_80024144
           //LAB_800241b4
-          cmd.uv(0, metrics.u_00, metrics.v_01 + renderable.heightCut);
-          cmd.uv(1, metrics.u_00 + metrics.textureWidth, metrics.v_01 + renderable.heightCut);
-          cmd.uv(2, metrics.u_00, metrics.v_01 + metrics.textureHeight);
-          cmd.uv(3, metrics.u_00 + metrics.textureWidth, metrics.v_01 + metrics.textureHeight);
-
           final int clut = renderable.clut_30 != 0 ? renderable.clut_30 : metrics.clut_04 & 0x7fff;
-          cmd.clut((clut & 0b111111) * 16, clut >>> 6);
-
-          //LAB_80024214
           final int tpage = renderable.tpage_2c != 0 ? metrics.tpage_06 & 0x60 | renderable.tpage_2c : metrics.tpage_06 & 0x7f;
 
-          cmd.vramPos((tpage & 0b1111) * 64, (tpage & 0b10000) != 0 ? 256 : 0);
-          cmd.bpp(Bpp.of(tpage >>> 7 & 0b11));
-
-          if((metrics.clut_04 & 0x8000) != 0) {
-            cmd.translucent(Translucency.of(tpage >>> 5 & 0b11));
-          }
-
           //LAB_8002424c
-          GPU.queueCommand(renderable.z_3c, cmd);
-
           if(renderable.uiType_20.obj != null) {
             final MV transforms = new MV();
             transforms.scaling(width, height, 1.0f);
             transforms.transfer.set(x1 + renderable.baseX + centreX - 8 + (width < 0 ? 1.0f : 0.0f), y1 + renderable.baseY + 120.0f + (height < 0 ? 1.0f : 0.0f), renderable.z_3c * 4.0f - Math.lerp(0.0f, 3.9f, (metricsIndex + 1.0f) / metricses.length));
 
-            RENDERER
+            final RenderEngine.QueuedModel<?> model = RENDERER
               .queueOrthoModel(renderable.uiType_20.obj, transforms)
               .vertices(metrics.vertexStart, 4)
               .tpageOverride((tpage & 0b1111) * 64, (tpage & 0b10000) != 0 ? 256 : 0)
               .clutOverride((clut & 0b111111) * 16, clut >>> 6);
+
+            if((metrics.clut_04 & 0x8000) != 0) {
+              model.translucency(Translucency.of(tpage >>> 5 & 0b11));
+            }
           }
         }
       }
@@ -4085,11 +4068,7 @@ public final class Scus94491BpeSegment_8002 {
       LOGGER.info("Playing XA archive %d file %d", xaArchiveIndex, xaFileIndex);
 
       //LAB_8002c448
-      //TODO don't do this.
-      new Thread(() -> Fmv.playXa(xaArchiveIndex, xaFileIndex)).start();
-//      final CdlLOC pos = CdlFILE_800bb4c8.get((int)MEMORY.ref(2, v1).offset(xaArchiveIndex * 0x8L).getSigned()).pos;
-
-//      CDROM.playXaAudio(pos, 1, xaFileIndex, () -> _800bf0cf.setu(0));
+      AUDIO_THREAD.loadXa(Unpacker.loadFile("XA/LODXA0%d.XA/%d.opus".formatted(xaArchiveIndex, xaFileIndex)));
       _800bf0cf = 4;
     }
 
