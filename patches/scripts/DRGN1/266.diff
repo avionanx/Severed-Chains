@@ -1,0 +1,12 @@
+--- original
++++ modified
+@@ -1004,7 +1004,9 @@
+ mov var[34][0], stor[28] ; source, dest
+ call Battle::FUN_800cb618, stor[28], 0x1 ; bentIndex, set
+ mov var[34][1], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_INVIS];
+ call Battle::FUN_800cb618, stor[28], 0x1 ; bentIndex, set
++SKIP_INVIS:
+ mov 0xe3, var[44] ; source, dest
+ mov var[45][247], stor[8] ; source, dest
+ jmp_cmp !=, 0x0, stor[8], inl[:LABEL_242] ; operand, left, right, addr

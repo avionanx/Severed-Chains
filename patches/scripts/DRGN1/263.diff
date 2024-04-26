@@ -1,0 +1,45 @@
+--- original
++++ modified
+@@ -3158,6 +3158,20 @@
+ call Battle::FUN_800e6db4, 0x3 ; p0
+ return
+
++PREPARE_FINISHER_SLOT:
++mov var[34][2], stor[27]
++jmp_cmp ==, stor[27], 0xffffffff, inl[:SKIP_FINISHER_CHECK_ON_SLOT_2]
++call Battle::scriptGetCharOrMonsterId, stor[27], stor[10]
++jmp_cmp ==, stor[10], 0x1, inl[:FINISH]
++SKIP_FINISHER_CHECK_ON_SLOT_2:
++mov var[34][1], stor[27]
++jmp_cmp ==, stor[27], 0xffffffff, inl[:SKIP_FINISHER_CHECK_ON_SLOT_1]
++call Battle::scriptGetCharOrMonsterId, stor[27], stor[10]
++jmp_cmp ==, stor[10], 0x1, inl[:FINISH]
++SKIP_FINISHER_CHECK_ON_SLOT_1:
++mov var[34][0], stor[27]
++FINISH:
++return;
+ ; SUBROUTINE
+ LABEL_259:
+ call Battle::FUN_800dac20, 0x0, 0x7bf00, 0xfffc3e00, 0xffff6300, 0x0 ; mode, x, y, z, scriptIndex
+@@ -3170,16 +3184,16 @@
+ mov var[34][0], stor[27] ; source, dest
+ call Battle::FUN_800cb618, stor[27], 0x0 ; bentIndex, set
+ mov var[34][1], stor[27] ; source, dest
++jmp_cmp ==, stor[27], 0xffffffff, inl[:SKIP_SET_BENT_INVIS_0]
+ call Battle::FUN_800cb618, stor[27], 0x0 ; bentIndex, set
++SKIP_SET_BENT_INVIS_0:
+ mov var[34][2], stor[27] ; source, dest
++jmp_cmp ==, stor[27], 0xffffffff, inl[:SKIP_SET_BENT_INVIS_1]
+ call Battle::FUN_800cb618, stor[27], 0x0 ; bentIndex, set
++SKIP_SET_BENT_INVIS_1:
+ mov var[36][0], stor[26] ; source, dest
+ call Battle::FUN_800cb618, stor[26], 0x1 ; bentIndex, set
+-mov var[34][2], stor[27] ; source, dest
+-call Battle::scriptGetCharOrMonsterId, stor[27], stor[10] ; bentIndex, id
+-jmp_cmp ==, stor[10], 0x1, inl[:LABEL_260] ; operand, left, right, addr
+-mov var[34][1], stor[27] ; source, dest
+-LABEL_260:
++gosub inl[:PREPARE_FINISHER_SLOT]
+ call Battle::scriptSetInterpolationEnabled, stor[27], 0x1 ; bentIndex, set
+ call Battle::scriptSetBentPos, stor[26], 0xffffe570, 0x0, 0x0 ; bentIndex, x, y, z
+ call Battle::scriptSetLoadingBentAnimationIndex, stor[27], 0x8 ; bentIndex, animIndex
