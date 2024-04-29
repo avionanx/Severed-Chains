@@ -1,0 +1,68 @@
+--- original
++++ modified
+@@ -1024,6 +1024,10 @@
+ data 0x900fff2
+ LABEL_7:
+ data 0x2
++data 0xc
++data 0x55
++data 0x4e
++data 0x2
+ data 0x1
+ data 0x0
+ data 0x50
+@@ -1128,14 +1132,14 @@
+ LABEL_5:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+ mov 0x0, stor[stor[stor[0], 23], 14] ; source, dest
+-mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
++mov 0x6, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+
+ ; SUBROUTINE
+ LABEL_13:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x5, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x6, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1143,7 +1147,7 @@
+ ; SUBROUTINE
+ LABEL_46:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xa, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xb, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1151,7 +1155,7 @@
+ ; SUBROUTINE
+ LABEL_60:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xf, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x10, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1159,7 +1163,7 @@
+ ; SUBROUTINE
+ LABEL_74:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x14, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x15, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1174,10 +1178,6 @@
+
+ ; SUBROUTINE
+ LABEL_2:
+-mov var[34][0], stor[27] ; source, dest
+-call Battle::scriptGetCombatantIndex, stor[27], stor[8] ; bentIndex, combatantIndex
+-mov stor[8], var[45][2] ; source, dest
+-mov stor[27], var[45][12] ; source, dest
+ return
+
+ ; FORK RE-ENTRY
