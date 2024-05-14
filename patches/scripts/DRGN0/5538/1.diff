@@ -1,0 +1,159 @@
+--- original
++++ modified
+@@ -95,6 +95,10 @@
+ data 0x136
+ data 0x127
+ data 0x2
++data 0xc
++data 0x10a
++data 0x108
++data 0x2
+ data 0x1
+ data 0x0
+ data 0x10f
+@@ -295,18 +299,20 @@
+ data 0x0
+ data 0x125
+
++
++
+ ; SUBROUTINE
+ LABEL_7:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+ mov 0x0, stor[stor[stor[0], 23], 14] ; source, dest
+-mov 0x6, stor[stor[stor[0], 23], 24] ; source, dest
++mov 0x7, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+
+ ; SUBROUTINE
+ LABEL_14:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x6, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x7, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x3, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -320,7 +326,7 @@
+ ; SUBROUTINE
+ LABEL_40:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x9, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xa, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x2, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -328,7 +334,7 @@
+ ; SUBROUTINE
+ LABEL_59:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xb, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xc, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x1, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -336,7 +342,7 @@
+ ; SUBROUTINE
+ LABEL_64:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xc, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xd, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x1, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -344,7 +350,7 @@
+ ; SUBROUTINE
+ LABEL_73:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xd, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xe, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x1, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -352,7 +358,7 @@
+ ; SUBROUTINE
+ LABEL_91:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xe, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xf, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x6, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -360,7 +366,7 @@
+ ; SUBROUTINE
+ LABEL_103:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x14, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x15, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x2, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -376,7 +382,7 @@
+ ; SUBROUTINE
+ LABEL_131:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x16, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x17, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x2, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -384,7 +390,7 @@
+ ; SUBROUTINE
+ LABEL_137:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x1b, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x1c, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x3, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -392,7 +398,7 @@
+ ; SUBROUTINE
+ LABEL_158:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x1e, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x1f, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0xa, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -400,7 +406,7 @@
+ ; SUBROUTINE
+ LABEL_168:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x28, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x29, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x2, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -408,7 +414,7 @@
+ ; SUBROUTINE
+ LABEL_174:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x2a, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x2b, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x3, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -416,7 +422,7 @@
+ ; SUBROUTINE
+ LABEL_193:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x2e, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x2f, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x4, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_8] ; scriptIndex, address
+ return
+@@ -429,12 +435,14 @@
+ yield
+ mov stor[23], var[45][11] ; source, dest
+ call Battle::FUN_800cb618, stor[23], 0x0 ; bentIndex, set
++jmp inl[:SKIP]
+ mov var[34][0], stor[27] ; source, dest
+ call Battle::scriptGetCombatantIndex, stor[27], stor[8] ; bentIndex, combatantIndex
+ mov stor[8], var[45][2] ; source, dest
+ yield
+ mov stor[27], var[45][12] ; source, dest
+ call Battle::FUN_800cb618, stor[27], 0x0 ; bentIndex, set
++SKIP:
+ mov var[36][1], stor[23] ; source, dest
+ call Battle::FUN_800cb618, stor[23], 0x0 ; bentIndex, set
+ call Battle::scriptGetCombatantIndex, stor[23], stor[8] ; bentIndex, combatantIndex
