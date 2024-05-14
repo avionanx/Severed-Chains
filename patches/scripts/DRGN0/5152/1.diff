@@ -1,0 +1,61 @@
+--- original
++++ modified
+@@ -2082,6 +2082,7 @@
+ call SEffe::scriptSetRelativeScale, stor[18], 0xffffffff, 0x400, 0x400, 0x400 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptSetRelativePosition, stor[18], var[34][0], 0x0, 0xfffffd00, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
+ yield
++jmp_cmp ==, var[34][1], 0xffffffff, inl[:SKIP_CHAR_1]
+ yield
+ call SEffe::scriptAllocateParticleEffect, stor[18], 0xffffffff, 0x200006, 0x1e, 0x50, 0x28, 0x400, 0x404ff00, 0x2f ; effectIndex, parentIndex, type, count, p4, p5, p6, p7, type2
+ call SEffe::scriptSetRelativeScale, stor[18], 0xffffffff, 0x400, 0x400, 0x400 ; bobjIndex1, bobjIndex2, x, y, z
+@@ -2095,6 +2096,8 @@
+ call SEffe::scriptSetRelativeScale, stor[18], 0xffffffff, 0x400, 0x400, 0x400 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptSetRelativePosition, stor[18], var[34][1], 0x0, 0xfffffd00, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
+ yield
++SKIP_CHAR_1:
++jmp_cmp ==, var[34][2], 0xffffffff, inl[:SKIP_CHAR_2]
+ yield
+ call SEffe::scriptAllocateParticleEffect, stor[18], 0xffffffff, 0x200006, 0x1e, 0x50, 0x28, 0x400, 0x404ff00, 0x2f ; effectIndex, parentIndex, type, count, p4, p5, p6, p7, type2
+ call SEffe::scriptSetRelativeScale, stor[18], 0xffffffff, 0x400, 0x400, 0x400 ; bobjIndex1, bobjIndex2, x, y, z
+@@ -2108,6 +2111,7 @@
+ call SEffe::scriptSetRelativeScale, stor[18], 0xffffffff, 0x400, 0x400, 0x400 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptSetRelativePosition, stor[18], var[34][2], 0x0, 0xfffffd00, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
+ yield
++SKIP_CHAR_2:
+ gosub inl[:LABEL_55] ; addr
+ mov 0x3c, stor[23] ; source, dest
+ wait stor[23] ; frames
+@@ -2260,23 +2264,33 @@
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ call SEffe::scriptSetRelativePosition, stor[18], var[34][0], 0x0, 0xfffffc00, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptAllocateParticleEffect, stor[19], stor[18], 0xe802, 0x28, 0x1388, 0x3c, 0x100, 0x1c105000, 0x19 ; effectIndex, parentIndex, type, count, p4, p5, p6, p7, type2
++jmp_cmp ==, var[34][1], 0xffffffff, inl[:SKIP_P_1]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ call SEffe::scriptSetRelativePosition, stor[18], var[34][1], 0x0, 0xfffffc00, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
++SKIP_P_1:
++jmp_cmp ==, var[34][2], 0xffffffff, inl[:SKIP_P_2]
+ call SEffe::scriptAllocateParticleEffect, stor[20], stor[18], 0xe802, 0x28, 0x1388, 0x3c, 0x100, 0x1c105000, 0x19 ; effectIndex, parentIndex, type, count, p4, p5, p6, p7, type2
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ call SEffe::scriptSetRelativePosition, stor[18], var[34][2], 0x0, 0xfffffc00, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
++SKIP_P_2:
+ call SEffe::scriptAllocateParticleEffect, stor[21], stor[18], 0xe802, 0x28, 0x1388, 0x3c, 0x100, 0x1c105000, 0x19 ; effectIndex, parentIndex, type, count, p4, p5, p6, p7, type2
+ call SEffe::scriptSetGenericEffectValue, stor[19], 0x0, 0x1 ; effectIndex, genericIndex, value
++jmp_cmp ==, var[34][2], 0xffffffff, inl[:SKIP_T_0]
+ call SEffe::scriptSetGenericEffectValue, stor[20], 0x0, 0x1 ; effectIndex, genericIndex, value
++SKIP_T_0:
+ call SEffe::scriptSetGenericEffectValue, stor[21], 0x0, 0x1 ; effectIndex, genericIndex, value
+ call SEffe::scriptSetRelativeScale, stor[19], 0xffffffff, 0x100, 0x100, 0x100 ; bobjIndex1, bobjIndex2, x, y, z
++jmp_cmp ==, var[34][2], 0xffffffff, inl[:SKIP_T_1]
+ call SEffe::scriptSetRelativeScale, stor[20], 0xffffffff, 0x100, 0x100, 0x100 ; bobjIndex1, bobjIndex2, x, y, z
++SKIP_T_1:
+ call SEffe::scriptSetRelativeScale, stor[21], 0xffffffff, 0x100, 0x100, 0x100 ; bobjIndex1, bobjIndex2, x, y, z
+ mov 0x3c, stor[23] ; source, dest
+ LABEL_43:
+ call SEffe::FUN_80111a58, stor[29], 0x26, stor[24], stor[25], stor[26] ; effectIndex, modelPartIndex, x, y, z
+ call SEffe::scriptSetRelativePosition, stor[19], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
++jmp_cmp ==, var[34][2], 0xffffffff, inl[:SKIP_T_2]
+ call SEffe::scriptSetRelativePosition, stor[20], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
++SKIP_T_2:
+ call SEffe::scriptSetRelativePosition, stor[21], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
+ yield
+ while stor[23], inl[:LABEL_43] ; counter, addr

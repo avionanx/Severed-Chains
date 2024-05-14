@@ -1,0 +1,29 @@
+--- original
++++ modified
+@@ -2462,9 +2462,12 @@
+ mov var[34][0], stor[28] ; source, dest
+ call Battle::scriptSetBentPos, stor[28], stor[stor[stor[0], 28], 24], stor[stor[stor[0], 28], 25], stor[stor[stor[0], 28], 26] ; bentIndex, x, y, z
+ mov var[34][1], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_0] ; operand, left, right, addr
+ call Battle::scriptSetBentPos, stor[28], stor[stor[stor[0], 28], 24], stor[stor[stor[0], 28], 25], stor[stor[stor[0], 28], 26] ; bentIndex, x, y, z
+ mov var[34][2], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_0] ; operand, left, right, addr
+ call Battle::scriptSetBentPos, stor[28], stor[stor[stor[0], 28], 24], stor[stor[stor[0], 28], 25], stor[stor[stor[0], 28], 26] ; bentIndex, x, y, z
++SKIP_0:
+ mov 0x4, stor[23] ; source, dest
+ wait stor[23] ; frames
+ call Battle::FUN_800dac20, 0x0, 0x2fe200, 0xffe58600, 0xffed3a00, 0x0 ; mode, x, y, z, scriptIndex
+@@ -2522,10 +2525,13 @@
+ add 0x100, stor[24] ; amount, operand
+ add 0x880, stor[26] ; amount, operand
+ mov var[34][1], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_1] ; operand, left, right, addr
+ call Battle::scriptSetBentPos, stor[28], stor[24], 0x0, stor[26] ; bentIndex, x, y, z
+ sub 0x1100, stor[26] ; amount, operand
+ mov var[34][2], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_1] ; operand, left, right, addr
+ call Battle::scriptSetBentPos, stor[28], stor[24], 0x0, stor[26] ; bentIndex, x, y, z
++SKIP_1:
+ rewind
+
+ ; SUBROUTINE
