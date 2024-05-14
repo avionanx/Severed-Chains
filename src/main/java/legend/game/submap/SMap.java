@@ -185,7 +185,7 @@ public class SMap extends EngineState {
   private int smapTicks_800c6ae0;
   /** Note: a negative value for some reason, counts up to 0 */
   private int ticksUntilEncountersAreEnabled_800c6ae4;
-  public int encounterAccumulator_800c6ae8;
+  public float encounterAccumulator_800c6ae8;
   private final List<CountdownLatch> latchList_800c6aec = new ArrayList<>();
 
   private int currentSubmapScene_800caaf8;
@@ -470,7 +470,7 @@ public class SMap extends EngineState {
     functions[263] = this::scriptSetEnvForegroundPosition;
     functions[264] = this::scriptSetModeParamForNextCallToScriptSetCameraOffsetOrHideSubmapForegroundObject;
     functions[265] = this::scriptGetSetEncountersDisabled;
-    functions[266] = this::FUN_800e6aa0;
+    functions[266] = this::scriptSetEnvironmentOverlayDepthModeAndZ;
     functions[267] = this::scriptGetCollisionPrimitivePos;
     functions[268] = this::FUN_800e6bd8;
     functions[269] = this::FUN_800e6be0;
@@ -2285,9 +2285,9 @@ public class SMap extends EngineState {
     final SubmapObject210 sobj = (SubmapObject210)scriptStatePtrArr_800bc1c0[script.params_20[0].get()].innerStruct_00;
     sobj.ambientColourEnabled_1c8 = true;
     sobj.ambientColour_1ca.set(
-      (script.params_20[1].get() & 0xffff) / 4096.0f,
-      (script.params_20[2].get() & 0xffff) / 4096.0f,
-      (script.params_20[3].get() & 0xffff) / 4096.0f
+      (short)script.params_20[1].get() / 4096.0f,
+      (short)script.params_20[2].get() / 4096.0f,
+      (short)script.params_20[3].get() / 4096.0f
     );
     return FlowControl.CONTINUE;
   }
@@ -3184,7 +3184,7 @@ public class SMap extends EngineState {
     //LAB_800e4a4c
     final EncounterRateMode mode = CONFIG.getConfig(CoreMod.ENCOUNTER_RATE_CONFIG.get());
 
-    final float dist = mode.modifyDistance(this.prevPlayerPos_800c6ab0.x - mat.transfer.x + (this.prevPlayerPos_800c6ab0.z - mat.transfer.z));
+    final float dist = mode.modifyDistance(this.prevPlayerPos_800c6ab0.x - mat.transfer.x + (this.prevPlayerPos_800c6ab0.z - mat.transfer.z)) * (2 / vsyncMode_8007a3b8);
 
     if(dist < 9.0f) {
       //LAB_800e4a98
@@ -3226,9 +3226,9 @@ public class SMap extends EngineState {
       return false;
     }
 
-    this.encounterAccumulator_800c6ae8 += Math.round(this.submap.getEncounterRate() * this.encounterMultiplier_800c6abc);
+    this.encounterAccumulator_800c6ae8 += this.submap.getEncounterRate() * this.encounterMultiplier_800c6abc * vsyncMode_8007a3b8 / 2.0f;
 
-    if(this.encounterAccumulator_800c6ae8 <= 0x1400 * (3 - vsyncMode_8007a3b8)) {
+    if(this.encounterAccumulator_800c6ae8 <= 0x1400) {
       return false;
     }
 
@@ -4064,14 +4064,14 @@ public class SMap extends EngineState {
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, related to environment foreground overlays")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "mode", description = "The mode (maybe layering mode?)")
+  @ScriptDescription("Sets depth mode for overlay, along with new z-value when needed.")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "mode", description = "The layering/depth mode")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "overlayIndex", description = "The overlay index")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "z", description = "The new Z position (only applies in modes 2 and 5")
   @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.INT, name = "out", description = "The overlay's Z position")
   @Method(0x800e6aa0L)
-  private FlowControl FUN_800e6aa0(final RunningScript<?> script) {
-    script.params_20[3].set(((RetailSubmap)this.submap).FUN_800e7728(script.params_20[0].get(), script.params_20[1].get(), script.params_20[2].get()));
+  private FlowControl scriptSetEnvironmentOverlayDepthModeAndZ(final RunningScript<?> script) {
+    script.params_20[3].set(((RetailSubmap)this.submap).setEnvironmentOverlayDepthModeAndZ(script.params_20[0].get(), script.params_20[1].get(), script.params_20[2].get()));
     return FlowControl.CONTINUE;
   }
 
@@ -5148,7 +5148,7 @@ public class SMap extends EngineState {
 
   @Method(0x800f3a00L)
   private int getEncounterTriangleColour() {
-    final int acc = this.encounterAccumulator_800c6ae8;
+    final int acc = (int)this.encounterAccumulator_800c6ae8;
 
     if(acc <= 0xa00) {
       return 0;

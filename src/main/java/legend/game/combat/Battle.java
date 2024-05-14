@@ -5,7 +5,6 @@ import legend.core.MathHelper;
 import legend.core.Random;
 import legend.core.gpu.Bpp;
 import legend.core.gpu.GpuCommandCopyVramToVram;
-import legend.core.gpu.GpuCommandQuad;
 import legend.core.gpu.Rect4i;
 import legend.core.gte.GsCOORDINATE2;
 import legend.core.gte.MV;
@@ -112,7 +111,6 @@ import legend.game.types.CContainer;
 import legend.game.types.CContainerSubfile2;
 import legend.game.types.CharacterData2c;
 import legend.game.types.Keyframe0c;
-import legend.game.types.LodString;
 import legend.game.types.McqHeader;
 import legend.game.types.Model124;
 import legend.game.types.SpellStats0c;
@@ -148,6 +146,8 @@ import static legend.game.Scus94491BpeSegment.FUN_80013404;
 import static legend.game.Scus94491BpeSegment.battlePreloadedEntities_1f8003f4;
 import static legend.game.Scus94491BpeSegment.centreScreenX_1f8003dc;
 import static legend.game.Scus94491BpeSegment.centreScreenY_1f8003de;
+import static legend.game.Scus94491BpeSegment.displayHeight_1f8003e4;
+import static legend.game.Scus94491BpeSegment.displayWidth_1f8003e0;
 import static legend.game.Scus94491BpeSegment.getCharacterName;
 import static legend.game.Scus94491BpeSegment.getLoadedDrgnFiles;
 import static legend.game.Scus94491BpeSegment.loadDeffSounds;
@@ -405,14 +405,14 @@ public class Battle extends EngineState {
     Arrays.setAll(this.dragoonSpells_800c6960, i -> new DragoonSpells09());
   }
 
-  public final LodString[] currentEnemyNames_800c69d0 = new LodString[9];
+  public final String[] currentEnemyNames_800c69d0 = new String[9];
 
   public Element dragoonSpaceElement_800c6b64;
 
   public final int[] monsterBents_800c6b78 = new int[9];
   private int monsterCount_800c6b9c;
 
-  public final LodString[] melbuMonsterNames_800c6ba8 = new LodString[3];
+  public final String[] melbuMonsterNames_800c6ba8 = new String[3];
 
   public final List<Item> usedRepeatItems_800c6c3c = new ArrayList<>();
 
@@ -679,17 +679,17 @@ public class Battle extends EngineState {
 
     functions[352] = this::scriptSetModelPartVisibility;
     functions[353] = this::scriptCopyVram;
-    functions[354] = this::FUN_800cd468;
-    functions[355] = this::FUN_800cd4b0;
-    functions[356] = this::FUN_800cd4f0;
+    functions[354] = this::scriptLoadGlobalAsset;
+    functions[355] = this::scriptWaitGlobalAssetAllocation;
+    functions[356] = this::scriptDeallocateGlobalAsset;
     functions[357] = this::scriptAddCombatant;
     functions[358] = this::scriptDeallocateAndRemoveCombatant;
     functions[359] = this::FUN_800cda78;
     functions[360] = this::scriptAllocateBent;
-    functions[361] = this::FUN_800cd740;
+    functions[361] = this::scriptLoadModelToCombatantFromGlobalAssets;
     functions[362] = this::FUN_800cd7a8;
-    functions[363] = this::FUN_800cd810;
-    functions[364] = this::FUN_800cd8a4;
+    functions[363] = this::scriptLoadAnimToCombatantFromGlobalAssetsOrDeallocate;
+    functions[364] = this::scriptLoadTextureToCombatantFromGlobalAssets;
     functions[365] = this::scriptGetBentNobj;
     functions[366] = this::scriptDeallocateCombatant;
     functions[367] = this::scriptStopRenderingStage;
@@ -2009,7 +2009,7 @@ public class Battle extends EngineState {
     //LAB_800c9238
     for(int i = 0; i < 32; i++) {
       if(combatant.assets_14[i] != null && combatant.assets_14[i]._09 != 0) {
-        this.FUN_800c9c7c(combatant, i);
+        this.deallocateCombatantAnimation(combatant, i);
       }
 
       //LAB_800c9254
@@ -2171,7 +2171,7 @@ public class Battle extends EngineState {
         for(int animIndex = 0; animIndex < 32; animIndex++) {
           if(files.get(32 + animIndex).hasVirtualSize()) {
             if(combatant.assets_14[animIndex] != null && combatant.assets_14[animIndex]._09 != 0) {
-              this.FUN_800c9c7c(combatant, animIndex);
+              this.deallocateCombatantAnimation(combatant, animIndex);
             }
 
             //LAB_800c9974
@@ -2188,7 +2188,7 @@ public class Battle extends EngineState {
       for(int animIndex = 0; animIndex < 32; animIndex++) {
         if(files.get(animIndex).hasVirtualSize()) {
           if(combatant.assets_14[animIndex] != null && combatant.assets_14[animIndex]._09 != 0) {
-            this.FUN_800c9c7c(combatant, animIndex);
+            this.deallocateCombatantAnimation(combatant, animIndex);
           }
 
           //LAB_800c9a18
@@ -2215,7 +2215,7 @@ public class Battle extends EngineState {
     CombatantAsset0c s3 = combatant.assets_14[animIndex];
 
     if(s3 != null) {
-      this.FUN_800c9c7c(combatant, animIndex);
+      this.deallocateCombatantAnimation(combatant, animIndex);
     }
 
     //LAB_800c9b28
@@ -2281,7 +2281,7 @@ public class Battle extends EngineState {
   }
 
   @Method(0x800c9c7cL)
-  public void FUN_800c9c7c(final CombatantStruct1a8 combatant, final int animIndex) {
+  public void deallocateCombatantAnimation(final CombatantStruct1a8 combatant, final int animIndex) {
     final CombatantAsset0c asset = combatant.assets_14[animIndex];
 
     if(asset != null) {
@@ -2312,9 +2312,9 @@ public class Battle extends EngineState {
   }
 
   @Method(0x800c9db8L)
-  public void FUN_800c9db8(final CombatantStruct1a8 combatant, final int animIndex, final int a2) {
-    this.FUN_800c9c7c(combatant, animIndex);
-    this.FUN_800c9a80(null, 3, a2, combatant, animIndex);
+  public void loadAnimationIntoCombatant(final CombatantStruct1a8 combatant, final int animIndex, final int assetIndex) {
+    this.deallocateCombatantAnimation(combatant, animIndex);
+    this.FUN_800c9a80(null, 3, assetIndex, combatant, animIndex);
   }
 
   @Method(0x800c9e10L)
@@ -2414,7 +2414,7 @@ public class Battle extends EngineState {
     for(int i = 0; i < 32; i++) {
       if(combatant.assets_14[i] instanceof CombatantAsset0c.AnimType && combatant.assets_14[i].type_0a == 2 || combatant.assets_14[i] instanceof CombatantAsset0c.TimType) {
         //LAB_800ca4c0
-        this.FUN_800c9c7c(combatant, i);
+        this.deallocateCombatantAnimation(combatant, i);
       }
 
       //LAB_800ca4cc
@@ -3581,28 +3581,28 @@ public class Battle extends EngineState {
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, something to do with loading files")
+  @ScriptDescription("Loads a global asset")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "drgnIndex", description = "The DRGN#.BIN index")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "fileIndex", description = "The file index")
   @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.INT, name = "index", description = "The output battleState_8006e398._580 array index")
   @Method(0x800cd468L)
-  public FlowControl FUN_800cd468(final RunningScript<?> script) {
+  public FlowControl scriptLoadGlobalAsset(final RunningScript<?> script) {
     script.params_20[2].set(battleState_8006e398.loadGlobalAsset(script.params_20[0].get(), script.params_20[1].get()));
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, something to do with loading files, may wait until the file is loaded")
+  @ScriptDescription("Waits until global asset is allocated")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "index", description = "The battleState_8006e398._580 array index")
   @Method(0x800cd4b0L)
-  public FlowControl FUN_800cd4b0(final RunningScript<?> script) {
+  public FlowControl scriptWaitGlobalAssetAllocation(final RunningScript<?> script) {
     final BattleAsset08 v0 = battleState_8006e398.getGlobalAsset(script.params_20[0].get());
     return v0.state_04 == 1 ? FlowControl.PAUSE_AND_REWIND : FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, something to do with loading files, may clear the file entry")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "index", description = "The battleState_8006e398._580 array index")
+  @ScriptDescription("Deallocates a global asset")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "index", description = "The input battleState_8006e398._580 array index")
   @Method(0x800cd4f0L)
-  public FlowControl FUN_800cd4f0(final RunningScript<?> script) {
+  public FlowControl scriptDeallocateGlobalAsset(final RunningScript<?> script) {
     battleState_8006e398.deallocateGlobalAsset(script.params_20[0].get());
     return FlowControl.CONTINUE;
   }
@@ -3650,11 +3650,11 @@ public class Battle extends EngineState {
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, related to combatants")
+  @ScriptDescription("Sets global asset index of a model for combatant")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "combatantIndex", description = "The combatant index")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "p1")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "index", description = "The input battleState_8006e398._580 array index")
   @Method(0x800cd740L)
-  public FlowControl FUN_800cd740(final RunningScript<?> script) {
+  public FlowControl scriptLoadModelToCombatantFromGlobalAssets(final RunningScript<?> script) {
     final BattleAsset08 v0 = battleState_8006e398.getGlobalAsset(script.params_20[0].get());
 
     if(v0.state_04 == 1) {
@@ -3686,36 +3686,36 @@ public class Battle extends EngineState {
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, related to combatants")
+  @ScriptDescription("Loads animation from global assets into combatant assets or deallocates an animation from combatant")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "combatantIndex", description = "The combatant index")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "p1")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "p2")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "animIndex", description = "Combatant's assets_14 index")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "index", description = "The input battleState_8006e398._580 array index")
   @Method(0x800cd810L)
-  public FlowControl FUN_800cd810(final RunningScript<?> script) {
-    final int s0 = script.params_20[2].get();
+  public FlowControl scriptLoadAnimToCombatantFromGlobalAssetsOrDeallocate(final RunningScript<?> script) {
+    final int assetIndex = script.params_20[2].get();
 
-    if(s0 >= 0) {
+    if(assetIndex >= 0) {
       //LAB_800cd85c
-      final BattleAsset08 v0 = battleState_8006e398.getGlobalAsset(s0);
+      final BattleAsset08 v0 = battleState_8006e398.getGlobalAsset(assetIndex);
 
       if(v0.state_04 == 1) {
         return FlowControl.PAUSE_AND_REWIND;
       }
 
-      this.FUN_800c9db8(this.combatants_8005e398[script.params_20[0].get()], script.params_20[1].get(), s0);
+      this.loadAnimationIntoCombatant(this.combatants_8005e398[script.params_20[0].get()], script.params_20[1].get(), assetIndex);
     } else {
-      this.FUN_800c9c7c(this.combatants_8005e398[script.params_20[0].get()], script.params_20[1].get());
+      this.deallocateCombatantAnimation(this.combatants_8005e398[script.params_20[0].get()], script.params_20[1].get());
     }
 
     //LAB_800cd890
     return FlowControl.CONTINUE;
   }
 
-  @ScriptDescription("Unknown, related to combatant textures")
+  @ScriptDescription("Loads a texture from global assets to combatant")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "combatantIndex", description = "The combatant index")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "p1")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "index", description = "The input battleState_8006e398._580 array index")
   @Method(0x800cd8a4L)
-  public FlowControl FUN_800cd8a4(final RunningScript<?> script) {
+  public FlowControl scriptLoadTextureToCombatantFromGlobalAssets(final RunningScript<?> script) {
     final BattleAsset08 a1 = battleState_8006e398.getGlobalAsset(script.params_20[1].get());
 
     if(a1.state_04 == 1) {
@@ -3975,11 +3975,15 @@ public class Battle extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "translucency", description = "The translucency mode")
   @Method(0x800cef00L)
   public FlowControl scriptRenderColouredQuad(final RunningScript<?> script) {
-    GPU.queueCommand(30, new GpuCommandQuad()
-      .translucent(Translucency.of(script.params_20[3].get() + 1))
-      .rgb(script.params_20[0].get(), script.params_20[1].get(), script.params_20[2].get())
-      .pos(-160, -120, 320, 280)
-    );
+    // Make sure effect fills the whole screen
+    final float fullWidth = java.lang.Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4);
+    final float extraWidth = fullWidth - displayWidth_1f8003e0;
+    fullScreenEffect_800bb140.transforms.scaling(fullWidth, displayHeight_1f8003e4, 1.0f);
+    fullScreenEffect_800bb140.transforms.transfer.set(-extraWidth / 2, 0.0f, 120.0f);
+
+    //LAB_800139c4
+    RENDERER.queueOrthoModel(RENDERER.plainQuads.get(Translucency.of(script.params_20[3].get() + 1)), fullScreenEffect_800bb140.transforms)
+      .colour(script.params_20[0].get() / 255.0f, script.params_20[1].get() / 255.0f, script.params_20[2].get() / 255.0f);
 
     return FlowControl.CONTINUE;
   }
@@ -4576,7 +4580,23 @@ public class Battle extends EngineState {
       y = MathHelper.psxDegToRad(y);
     }
 
-    this.camera_800c67f0.FUN_800dac70(script.params_20[0].get(), x, y, z, SCRIPTS.getObject(script.params_20[4].get(), BattleObject.class));
+    // Three Executioners instakill sends a bad param for scriptIndex (0xa0), but this param isn't used for the camera function they're calling so we can just pass null
+    // File 5316/1[addr 0x4078]
+    // Parameters:
+    //   Op param: 0x21
+    //   0: script[0x1021] 0x0
+    //   1: script[0x1023] 0xffe8e600
+    //   2: script[0x1025] 0xfff76300
+    //   3: script[0x1026] 0x0
+    //   4: script[0x1027] 0xa0
+    final BattleObject bobj;
+    if(script.params_20[4].get() < 72) {
+      bobj = SCRIPTS.getObject(script.params_20[4].get(), BattleObject.class);
+    } else {
+      bobj = null;
+    }
+
+    this.camera_800c67f0.FUN_800dac70(script.params_20[0].get(), x, y, z, bobj);
     return FlowControl.CONTINUE;
   }
 
@@ -4599,7 +4619,23 @@ public class Battle extends EngineState {
       y = MathHelper.psxDegToRad(y);
     }
 
-    this.camera_800c67f0.FUN_800db084(script.params_20[0].get(), x, y, z, SCRIPTS.getObject(script.params_20[4].get(), BattleObject.class));
+    // Three Executioners instakill sends a bad param for scriptIndex (0xc8), but this param isn't used for the camera function they're calling so we can just pass null
+    // File 5316/1[addr 0x4078]
+    // Parameters:
+    //   Op param: 0x22
+    //   0: script[0x1029] 0x0
+    //   1: script[0x102b] 0xfff59900
+    //   2: script[0x102d] 0xfff8f300
+    //   3: script[0x102e] 0x0
+    //   4: script[0x102f] 0xc8
+    final BattleObject bobj;
+    if(script.params_20[4].get() < 72) {
+      bobj = SCRIPTS.getObject(script.params_20[4].get(), BattleObject.class);
+    } else {
+      bobj = null;
+    }
+
+    this.camera_800c67f0.FUN_800db084(script.params_20[0].get(), x, y, z, bobj);
     return FlowControl.CONTINUE;
   }
 
@@ -4658,8 +4694,8 @@ public class Battle extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "x", description = "If mode is even, 8-bit fixed-point position; if odd, PSX degree angle")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "y", description = "If mode is even, 8-bit fixed-point position; if odd, PSX degree angle")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "z", description = "8-bit fixed-point position")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "initialStepZ")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "finalStepZ")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "initialStepZ, 8-bit fixed-point")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "finalStepZ, 8-bit fixed-point")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "stepType", description = "Two 2-bit packed values for X and Y respectively")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "scriptIndex", description = "Only used in some modes, the scripted object used in calculations")
   @Method(0x800db688L)
@@ -4667,14 +4703,18 @@ public class Battle extends EngineState {
     float x = script.params_20[1].get() / (float)0x100;
     float y = script.params_20[2].get() / (float)0x100;
     final float z = script.params_20[3].get() / (float)0x100;
+    float initialStepZ = script.params_20[4].get() / (float)0x100;
+    float finalStepZ = script.params_20[5].get() / (float)0x100;
 
     // Odd funcs operate on angles
     if((script.params_20[0].get() & 1) != 0) {
       x = MathHelper.psxDegToRad(x);
       y = MathHelper.psxDegToRad(y);
+      initialStepZ = MathHelper.psxDegToRad(initialStepZ);
+      finalStepZ = MathHelper.psxDegToRad(finalStepZ);
     }
 
-    this.camera_800c67f0.FUN_800db714(script.params_20[0].get(), x, y, z, script.params_20[4].get(), script.params_20[5].get(), script.params_20[6].get(), SCRIPTS.getObject(script.params_20[7].get(), BattleObject.class));
+    this.camera_800c67f0.FUN_800db714(script.params_20[0].get(), x, y, z, initialStepZ, finalStepZ, script.params_20[6].get(), SCRIPTS.getObject(script.params_20[7].get(), BattleObject.class));
     return FlowControl.CONTINUE;
   }
 
@@ -4683,8 +4723,8 @@ public class Battle extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "x", description = "If mode is even, 8-bit fixed-point position; if odd, PSX degree angle")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "y", description = "If mode is even, 8-bit fixed-point position; if odd, PSX degree angle")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "z", description = "8-bit fixed-point position")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "initialStepZ")
-  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "finalStepZ")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "initialStepZ, 8-bit fixed-point")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "finalStepZ, 8-bit fixed-point")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "stepType", description = "Two 2-bit packed values for X and Y respectively")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "scriptIndex", description = "Only used in some modes, the scripted object used in calculations")
   @Method(0x800db79cL)
@@ -4692,14 +4732,18 @@ public class Battle extends EngineState {
     float x = script.params_20[1].get() / (float)0x100;
     float y = script.params_20[2].get() / (float)0x100;
     final float z = script.params_20[3].get() / (float)0x100;
+    float initialStepZ = script.params_20[4].get() / (float)0x100;
+    float finalStepZ = script.params_20[5].get() / (float)0x100;
 
     // Odd funcs operate on angles
     if((script.params_20[0].get() & 1) != 0) {
       x = MathHelper.psxDegToRad(x);
       y = MathHelper.psxDegToRad(y);
+      initialStepZ = MathHelper.psxDegToRad(initialStepZ);
+      finalStepZ = MathHelper.psxDegToRad(finalStepZ);
     }
 
-    this.camera_800c67f0.FUN_800db828(script.params_20[0].get(), x, y, z, script.params_20[4].get(), script.params_20[5].get(), script.params_20[6].get(), SCRIPTS.getObject(script.params_20[7].get(), BattleObject.class));
+    this.camera_800c67f0.FUN_800db828(script.params_20[0].get(), x, y, z, initialStepZ, finalStepZ, script.params_20[6].get(), SCRIPTS.getObject(script.params_20[7].get(), BattleObject.class));
     return FlowControl.CONTINUE;
   }
 
@@ -4718,14 +4762,16 @@ public class Battle extends EngineState {
     float x = script.params_20[1].get() / (float)0x100;
     float y = script.params_20[2].get() / (float)0x100;
     final float z = script.params_20[3].get() / (float)0x100;
+    float stepZ = script.params_20[6].get() / (float)0x100;
 
     // Odd funcs operate on angles
     if((script.params_20[0].get() & 1) != 0) {
       x = MathHelper.psxDegToRad(x);
       y = MathHelper.psxDegToRad(y);
+      stepZ = MathHelper.psxDegToRad(stepZ);
     }
 
-    this.camera_800c67f0.FUN_800db950(script.params_20[0].get(), x, y, z, script.params_20[4].get(), script.params_20[5].get(), script.params_20[6].get() / (float)0x100, script.params_20[7].get(), SCRIPTS.getObject(script.params_20[8].get(), BattleObject.class));
+    this.camera_800c67f0.FUN_800db950(script.params_20[0].get(), x, y, z, script.params_20[4].get(), script.params_20[5].get(), stepZ, script.params_20[7].get(), SCRIPTS.getObject(script.params_20[8].get(), BattleObject.class));
     return FlowControl.CONTINUE;
   }
 
@@ -4744,14 +4790,16 @@ public class Battle extends EngineState {
     float x = script.params_20[1].get() / (float)0x100;
     float y = script.params_20[2].get() / (float)0x100;
     final float z = script.params_20[3].get() / (float)0x100;
+    float stepZ = script.params_20[6].get() / (float)0x100;
 
     // Odd funcs operate on angles
     if((script.params_20[0].get() & 1) != 0) {
       x = MathHelper.psxDegToRad(x);
       y = MathHelper.psxDegToRad(y);
+      stepZ = MathHelper.psxDegToRad(stepZ);
     }
 
-    this.camera_800c67f0.FUN_800dba80(script.params_20[0].get(), x, y, z, script.params_20[4].get(), script.params_20[5].get(), script.params_20[6].get() / (float)0x100, script.params_20[7].get(), SCRIPTS.getObject(script.params_20[8].get(), BattleObject.class));
+    this.camera_800c67f0.FUN_800dba80(script.params_20[0].get(), x, y, z, script.params_20[4].get(), script.params_20[5].get(), stepZ, script.params_20[7].get(), SCRIPTS.getObject(script.params_20[8].get(), BattleObject.class));
     return FlowControl.CONTINUE;
   }
 
@@ -8697,6 +8745,7 @@ public class Battle extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "y", description = "The Y position (centre)")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "width", description = "The width")
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "height", description = "The height")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "colourIndex", description = "The textboxColour index")
   @Method(0x800f9c2cL)
   public FlowControl scriptRenderBattleHudBackground(final RunningScript<?> script) {
     final int colourIndex = script.params_20[4].get();

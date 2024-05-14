@@ -13,6 +13,7 @@ import legend.core.opengl.Mesh;
 import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.QuaternionCamera;
+import legend.core.opengl.Resolution;
 import legend.core.opengl.Shader;
 import legend.core.opengl.ShaderManager;
 import legend.core.opengl.ShaderOptions;
@@ -39,6 +40,7 @@ import org.lwjgl.BufferUtils;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +59,8 @@ import static legend.core.GameEngine.RENDERER;
 import static legend.core.MathHelper.PI;
 import static legend.core.MathHelper.clamp;
 import static legend.core.MathHelper.put3x4;
+import static legend.game.Scus94491BpeSegment.zOffset_1f8003e8;
+import static legend.game.Scus94491BpeSegment.zShift_1f8003c4;
 import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
@@ -85,6 +89,7 @@ import static org.lwjgl.opengl.GL11C.GL_LESS;
 import static org.lwjgl.opengl.GL11C.GL_LINE;
 import static org.lwjgl.opengl.GL11C.GL_LINEAR;
 import static org.lwjgl.opengl.GL11C.GL_LINE_SMOOTH;
+import static org.lwjgl.opengl.GL11C.GL_NEAREST;
 import static org.lwjgl.opengl.GL11C.GL_RGBA;
 import static org.lwjgl.opengl.GL11C.GL_SCISSOR_TEST;
 import static org.lwjgl.opengl.GL11C.GL_STENCIL_BUFFER_BIT;
@@ -184,6 +189,7 @@ public class RenderEngine {
   private int renderBufferIndex;
 
   // Text
+  public Texture textTexture;
   public Obj chars;
   // Plain quads
   public final Map<Translucency, Obj> plainQuads = new EnumMap<>(Translucency.class);
@@ -252,6 +258,14 @@ public class RenderEngine {
 
   public Vector2f getProjectionSize() {
     return new Vector2f(this.projectionWidth, this.projectionHeight);
+  }
+
+  public float getRenderWidth() {
+    return this.width;
+  }
+
+  public float getRenderHeight() {
+    return this.height;
   }
 
   public void setProjectionDepth(final float depth) {
@@ -375,6 +389,7 @@ public class RenderEngine {
     postQuad.attribute(1, 2L, 2, 4);
 
     // Build text quads
+    this.textTexture = Texture.png(Path.of("./gfx/fonts/ingame.png"));
     this.chars = new LegacyTextBuilder("Text Characters").build();
     this.chars.persistent = true;
 
@@ -513,6 +528,7 @@ public class RenderEngine {
         screenShader.use();
 
         // draw final screen quad
+        glViewport(0, 0, this.window.getWidth(), this.window.getHeight());
         this.renderTextures[this.renderBufferIndex].use();
         postQuad.draw();
 
@@ -619,8 +635,8 @@ public class RenderEngine {
     this.tmdShaderOptions.discardMode(1);
 
     final boolean widescreen = this.allowWidescreen && CONFIG.getConfig(CoreMod.ALLOW_WIDESCREEN_CONFIG.get());
-    final float w = this.window.getWidth() / this.projectionWidth;
-    final float h = this.window.getHeight() / this.projectionHeight;
+    final float w = this.width / this.projectionWidth;
+    final float h = this.height / this.projectionHeight;
 
     for(int i = 0; i < pool.size(); i++) {
       final int modelIndex = i & 0x7f;
@@ -651,9 +667,9 @@ public class RenderEngine {
         glEnable(GL_SCISSOR_TEST);
 
         if(widescreen) {
-          glScissor((int)((entry.scissor.x + this.widescreenOrthoOffsetX) * h * (320.0f / this.projectionWidth)), this.window.getHeight() - (int)(entry.scissor.y * h), (int)(entry.scissor.w * h * (320.0f / this.projectionWidth)), (int)(entry.scissor.h * h));
+          glScissor((int)((entry.scissor.x + this.widescreenOrthoOffsetX) * h * (320.0f / this.projectionWidth)), this.height - (int)(entry.scissor.y * h), (int)(entry.scissor.w * h * (320.0f / this.projectionWidth)), (int)(entry.scissor.h * h));
         } else {
-          glScissor((int)((entry.scissor.x + this.widescreenOrthoOffsetX) * w), this.window.getHeight() - (int)(entry.scissor.y * h), (int)(entry.scissor.w * w), (int)(entry.scissor.h * h));
+          glScissor((int)((entry.scissor.x + this.widescreenOrthoOffsetX) * w), this.height - (int)(entry.scissor.y * h), (int)(entry.scissor.w * w), (int)(entry.scissor.h * h));
         }
       }
 
@@ -831,6 +847,7 @@ public class RenderEngine {
     final QueuedModel<VoidShaderOptions> entry = this.modelPool.acquire();
     entry.reset();
     entry.obj = obj;
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -844,6 +861,7 @@ public class RenderEngine {
     entry.obj = obj;
     entry.transforms.set(mv).setTranslation(mv.transfer);
     entry.lightTransforms.set(entry.transforms);
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -857,6 +875,7 @@ public class RenderEngine {
     entry.obj = obj;
     entry.transforms.set(mv).setTranslation(mv.transfer);
     entry.lightTransforms.set(lightMv).setTranslation(lightMv.transfer);
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -870,6 +889,7 @@ public class RenderEngine {
     entry.obj = obj;
     entry.transforms.set(mv);
     entry.lightTransforms.set(entry.transforms);
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -883,6 +903,7 @@ public class RenderEngine {
     entry.obj = obj;
     entry.transforms.set(mv);
     entry.lightTransforms.set(lightMv).setTranslation(lightMv.transfer);
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -899,6 +920,7 @@ public class RenderEngine {
     entry.reset();
     entry.transforms.setTranslation(this.widescreenOrthoOffsetX, 0.0f, 0.0f);
     entry.obj = obj;
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -916,6 +938,7 @@ public class RenderEngine {
     entry.obj = obj;
     entry.transforms.set(mv).setTranslation(mv.transfer.x + this.widescreenOrthoOffsetX, mv.transfer.y, mv.transfer.z);
     entry.lightTransforms.set(entry.transforms);
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -929,6 +952,7 @@ public class RenderEngine {
     entry.obj = obj;
     entry.shader = ShaderManager.getShader(shaderType);
     entry.shaderOptions = entry.shader.makeOptions();
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -944,6 +968,7 @@ public class RenderEngine {
     entry.shaderOptions = entry.shader.makeOptions();
     entry.transforms.set(mv).setTranslation(mv.transfer);
     entry.lightTransforms.set(entry.transforms);
+    entry.depthOffset(zOffset_1f8003e8 * (1 << zShift_1f8003c4));
     return entry;
   }
 
@@ -1015,6 +1040,10 @@ public class RenderEngine {
     }
   }
 
+  public void updateResolution() {
+    this.onResize(this.window, this.window.getWidth(), this.window.getHeight());
+  }
+
   private void onResize(final Window window, final int width, final int height) {
     if(width == 0 && height == 0) {
       return;
@@ -1022,10 +1051,16 @@ public class RenderEngine {
 
     LOGGER.info("Resizing window to %dx%d", width, height);
 
-    this.width = width;
-    this.height = height;
+    final Resolution res = CONFIG.getConfig(CoreMod.RESOLUTION_CONFIG.get());
+    if(res == Resolution.NATIVE) {
+      this.width = width;
+      this.height = height;
+    } else {
+      this.width = (int)((float)res.verticalResolution / height * width);
+      this.height = res.verticalResolution;
+    }
 
-    glLineWidth(Math.max(1, height / 480.0f));
+    glLineWidth(Math.max(1, this.height / 480.0f));
 
     // Projections
     this.updateProjections();
@@ -1036,11 +1071,11 @@ public class RenderEngine {
       }
 
       this.renderTextures[i] = Texture.create(builder -> {
-        builder.size(width, height);
+        builder.size(this.width, this.height);
         builder.internalFormat(GL_RGBA16F);
         builder.dataFormat(GL_RGBA);
         builder.dataType(GL_HALF_FLOAT);
-        builder.magFilter(GL_LINEAR);
+        builder.magFilter(GL_NEAREST);
         builder.minFilter(GL_LINEAR);
       });
     }
@@ -1050,7 +1085,7 @@ public class RenderEngine {
     }
 
     this.depthTexture = Texture.create(builder -> {
-      builder.size(width, height);
+      builder.size(this.width, this.height);
       builder.internalFormat(GL_DEPTH_COMPONENT);
       builder.dataFormat(GL_DEPTH_COMPONENT);
       builder.dataType(GL_FLOAT);
@@ -1187,8 +1222,9 @@ public class RenderEngine {
     private boolean texturesUsed;
 
     private Translucency translucency;
-    private boolean hasTranslucency;
+    private boolean hasTranslucencyOverride;
 
+    private boolean isTmd;
     private int tmdTranslucency;
     private int ctmdFlags;
     private final Vector3f battleColour = new Vector3f();
@@ -1262,6 +1298,7 @@ public class RenderEngine {
       return this;
     }
 
+    /** Note: origin is bottom-left corner */
     public QueuedModel<Options> scissor(final int x, final int y, final int w, final int h) {
       this.scissor.set(x, y, w, h);
       return this;
@@ -1285,16 +1322,23 @@ public class RenderEngine {
 
     public QueuedModel<Options> translucency(final Translucency translucency) {
       this.translucency = translucency;
-      this.hasTranslucency = true;
+      this.hasTranslucencyOverride = true;
+
+      if(translucency == Translucency.HALF_B_PLUS_HALF_F) {
+        RenderEngine.this.needsSorting = true;
+      }
+
       return this;
     }
 
     public QueuedModel<Options> ctmdFlags(final int ctmdFlags) {
+      this.isTmd = true;
       this.ctmdFlags = ctmdFlags;
       return this;
     }
 
     public QueuedModel<Options> tmdTranslucency(final int tmdTranslucency) {
+      this.isTmd = true;
       this.tmdTranslucency = tmdTranslucency;
       return this;
     }
@@ -1317,7 +1361,7 @@ public class RenderEngine {
       this.scissor.set(0, 0, 0, 0);
       this.vertexCount = 0;
       Arrays.fill(this.textures, null);
-      this.hasTranslucency = false;
+      this.hasTranslucencyOverride = false;
       this.texturesUsed = false;
       this.lightUsed = false;
       this.tmdTranslucency = 0;
@@ -1337,12 +1381,24 @@ public class RenderEngine {
       }
     }
 
+    public boolean isUniformLit() {
+      return (this.ctmdFlags & 0x10) != 0;
+    }
+
     public boolean hasTranslucency() {
-      return this.hasTranslucency || (this.ctmdFlags & 0x2) != 0 || this.obj.hasTranslucency();
+      return this.hasTranslucencyOverride || (this.ctmdFlags & 0x2) != 0 || this.obj.hasTranslucency();
     }
 
     public boolean shouldRender(@Nullable final Translucency translucency) {
-      return this.hasTranslucency && this.translucency == translucency || (this.ctmdFlags & 0x2) != 0 && translucency != null && this.tmdTranslucency == translucency.ordinal() || !this.hasTranslucency && this.obj.shouldRender(translucency);
+      if(this.isTmd && this.hasTranslucency() && (!this.obj.hasTexture() || this.isUniformLit())) {
+        return translucency != null && this.tmdTranslucency == translucency.ordinal();
+      }
+
+      return
+        this.hasTranslucencyOverride && this.translucency == translucency ||
+        (this.ctmdFlags & 0x2) != 0 && translucency != null && this.tmdTranslucency == translucency.ordinal() ||
+        !this.hasTranslucencyOverride && this.obj.shouldRender(translucency)
+      ;
     }
 
     private void storeTransforms(final int modelIndex, final FloatBuffer transforms2Buffer, final FloatBuffer lightingBuffer) {
@@ -1357,7 +1413,7 @@ public class RenderEngine {
     }
 
     private void render(final Translucency translucency) {
-      if(this.hasTranslucency || (this.ctmdFlags & 0x2) != 0) {
+      if(this.hasTranslucencyOverride || (this.ctmdFlags & 0x2) != 0 || this.isTmd && this.obj.hasTranslucency() && (!this.obj.hasTexture() || this.isUniformLit())) {
         // Translucency override
         this.obj.render(this.startVertex, this.vertexCount);
       } else {
