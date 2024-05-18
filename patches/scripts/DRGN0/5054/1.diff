@@ -1,0 +1,47 @@
+--- original
++++ modified
+@@ -1324,6 +1324,7 @@
+ ENTRYPOINT_0:
+ mov var[36][0], stor[30] ; source, dest
+ mov var[34][0], stor[28] ; source, dest
++gosub inl[:NO_DART_CHECK]
+ gosub inl[:LABEL_2] ; addr
+ call Battle::FUN_800dac20, 0x0, 0xfffbb400, 0xfff99800, 0x1e000, 0x0 ; mode, x, y, z, scriptIndex
+ call Battle::FUN_800db034, 0x0, 0x90000, 0xfffc4a00, 0x0, 0x0 ; mode, x, y, z, scriptIndex
+@@ -1587,6 +1588,7 @@
+ ENTRYPOINT_1:
+ mov var[36][0], stor[30] ; source, dest
+ mov var[34][0], stor[28] ; source, dest
++gosub inl[:NO_DART_CHECK]
+ gosub inl[:LABEL_2] ; addr
+ call Battle::FUN_800dac20, 0x0, 0xfffbb400, 0xfff99800, 0x1e000, 0x0 ; mode, x, y, z, scriptIndex
+ call Battle::FUN_800db034, 0x0, 0x90000, 0xfffc4a00, 0x0, 0x0 ; mode, x, y, z, scriptIndex
+@@ -2301,7 +2303,7 @@
+ mov var[34][stor[9]], stor[10] ; source, dest
+ call Battle::FUN_800cb618, stor[10], 0x1 ; bentIndex, set
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_47] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_47] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE
+@@ -2311,7 +2313,7 @@
+ mov var[34][stor[9]], stor[10] ; source, dest
+ call Battle::FUN_800cb618, stor[10], 0x0 ; bentIndex, set
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_42] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_42] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE
+@@ -2369,3 +2371,10 @@
+ call Battle::scriptApplyScreenDarkening, 0x10 ; intensity
+ mov 0x80, var[109] ; source, dest
+ return
++
++NO_DART_CHECK:
++call Battle::scriptGetCharOrMonsterId, stor[28], stor[23]
++jmp_cmp !=, stor[23], 0x0, inl[:DEALLOC]
++return
++DEALLOC:
++deallocate

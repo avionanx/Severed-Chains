@@ -1,0 +1,83 @@
+--- original
++++ modified
+@@ -2,7 +2,6 @@
+ entrypoint :ENTRYPOINT_1
+ ENTRYPOINT_0:
+ call Battle::scriptDisableCombat ; index
+-gosub inl[:LABEL_2] ; addr
+ yield
+ call Scus94491BpeSegment_8002::scriptStopAndUnloadSequences ; index
+ yield
+@@ -1035,6 +1034,10 @@
+ data 0x900fff2
+ LABEL_7:
+ data 0x2
++data 0xc
++data 0x17c
++data 0x16c
++data 0x2
+ data 0x1
+ data 0x0
+ data 0x16e
+@@ -1175,14 +1178,14 @@
+ LABEL_5:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+ mov 0x0, stor[stor[stor[0], 23], 14] ; source, dest
+-mov 0x6, stor[stor[stor[0], 23], 24] ; source, dest
++mov 0x7, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+
+ ; SUBROUTINE
+ LABEL_13:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x6, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x7, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1190,7 +1193,7 @@
+ ; SUBROUTINE
+ LABEL_25:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0xb, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0xc, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x5, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1198,7 +1201,7 @@
+ ; SUBROUTINE
+ LABEL_43:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x10, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x11, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x6, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1206,7 +1209,7 @@
+ ; SUBROUTINE
+ LABEL_54:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x16, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x17, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x4, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1214,7 +1217,7 @@
+ ; SUBROUTINE
+ LABEL_68:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x1a, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x1b, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x4, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return
+@@ -1222,7 +1225,7 @@
+ ; SUBROUTINE
+ LABEL_82:
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[23] ; effectIndex
+-mov 0x1e, stor[stor[stor[0], 23], 14] ; source, dest
++mov 0x1f, stor[stor[stor[0], 23], 14] ; source, dest
+ mov 0x4, stor[stor[stor[0], 23], 24] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[23], inl[:LABEL_6] ; scriptIndex, address
+ return

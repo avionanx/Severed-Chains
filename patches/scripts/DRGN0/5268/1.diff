@@ -1,0 +1,20 @@
+--- original
++++ modified
+@@ -1496,7 +1496,7 @@
+ mov var[34][stor[9]], stor[8] ; source, dest
+ call Battle::FUN_800cb618, stor[8], 0x1 ; bentIndex, set
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_34] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_34] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE
+@@ -1506,7 +1506,7 @@
+ mov var[34][stor[9]], stor[8] ; source, dest
+ call Battle::FUN_800cb618, stor[8], 0x0 ; bentIndex, set
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_10] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_10] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE

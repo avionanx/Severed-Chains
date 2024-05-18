@@ -1,0 +1,33 @@
+--- original
++++ modified
+@@ -3018,7 +3018,7 @@
+ call Battle::scriptGetBentSlot, stor[0], stor[8], 0x0 ; bentIndex, charOrBentSlot, mode
+ mov var[128 + stor[8]][3], stor[28] ; source, dest
+ call Battle::scriptGetCharOrMonsterId, stor[28], stor[10] ; bentIndex, id
+-jmp_cmp !=, 0x0, stor[10], inl[:LABEL_17] ; operand, left, right, addr
++jmp_cmp !=, stor[28], var[34][0], inl[:LABEL_17] ; operand, left, right, addr
+ or 0x2, var[45][31] ; right, left
+ or 0x4, var[45][31] ; right, left
+ or 0x20, stor[7] ; right, left
+@@ -3041,7 +3041,7 @@
+ call Battle::scriptGetBentSlot, stor[0], stor[8], 0x0 ; bentIndex, charOrBentSlot, mode
+ mov var[128 + stor[8]][3], stor[28] ; source, dest
+ call Battle::scriptGetCharOrMonsterId, stor[28], stor[10] ; bentIndex, id
+-jmp_cmp !=, 0x0, stor[10], inl[:LABEL_244] ; operand, left, right, addr
++jmp_cmp !=, stor[28], var[34][0], inl[:LABEL_244] ; operand, left, right, addr
+ or 0x2, var[45][31] ; right, left
+ or 0x4, var[45][31] ; right, left
+ or 0x20, stor[7] ; right, left
+@@ -3317,8 +3317,12 @@
+ call Battle::FUN_800cbb00, stor[26], 0xffffffff, 0x14, 0xffffe0c0, 0x0, 0x0 ; bentIndex0, bentIndex1, ticks, x, y, z
+ mov 0x1, stor[23] ; source, dest
+ wait stor[23] ; frames
++jmp_cmp ==, stor[24], 0xffffffff, inl[:SKIP_0]
+ call Battle::FUN_800cb618, stor[24], 0x0 ; bentIndex, set
++SKIP_0:
++jmp_cmp ==, stor[25], 0xffffffff, inl[:SKIP_1]
+ call Battle::FUN_800cb618, stor[25], 0x0 ; bentIndex, set
++SKIP_1:
+ call Scus94491BpeSegment::scriptStartFadeEffect, 0x4, 0x2 ; type, frames
+ mov 0x3, stor[23] ; source, dest
+ wait stor[23] ; frames

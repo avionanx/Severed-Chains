@@ -1,0 +1,39 @@
+--- original
++++ modified
+@@ -1855,6 +1855,7 @@
+ call SEffe::scriptSetRelativeScale, stor[18], 0xffffffff, 0x300, 0x300, 0x300 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptSetGenericEffectValue, stor[18], 0x0, 0x1 ; effectIndex, genericIndex, value
+ call SEffe::FUN_801153e4, stor[18], 0x1 ; effectIndex, set
++jmp_cmp ==, stor[12], 0xffffffff, inl[:SKIP_0]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[21] ; effectIndex
+ call Battle::scriptGetBentPos, stor[12], stor[24], stor[25], stor[26] ; bentIndex, x, y, z
+ call SEffe::scriptSetRelativePosition, stor[21], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
+@@ -1863,6 +1864,8 @@
+ call SEffe::scriptSetRelativeScale, stor[19], 0xffffffff, 0x300, 0x300, 0x300 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptSetGenericEffectValue, stor[19], 0x0, 0x1 ; effectIndex, genericIndex, value
+ call SEffe::FUN_801153e4, stor[19], 0x1 ; effectIndex, set
++SKIP_0:
++jmp_cmp ==, stor[13], 0xffffffff, inl[:SKIP_1]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[21] ; effectIndex
+ call Battle::scriptGetBentPos, stor[13], stor[24], stor[25], stor[26] ; bentIndex, x, y, z
+ call SEffe::scriptSetRelativePosition, stor[21], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
+@@ -1871,14 +1874,19 @@
+ call SEffe::scriptSetRelativeScale, stor[20], 0xffffffff, 0x300, 0x300, 0x300 ; bobjIndex1, bobjIndex2, x, y, z
+ call SEffe::scriptSetGenericEffectValue, stor[20], 0x0, 0x1 ; effectIndex, genericIndex, value
+ call SEffe::FUN_801153e4, stor[20], 0x1 ; effectIndex, set
++SKIP_1:
+ mov 0x3c, stor[23] ; source, dest
+ LABEL_38:
+ call SEffe::FUN_80111a58, stor[29], 0x0, stor[24], stor[25], stor[26] ; effectIndex, modelPartIndex, x, y, z
+ sub 0x1f4, stor[24] ; amount, operand
+ sub 0x12c, stor[25] ; amount, operand
+ call SEffe::scriptSetRelativePosition, stor[18], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
++jmp_cmp ==, stor[12], 0xffffffff, inl[:LOOP_SKIP_0]
+ call SEffe::scriptSetRelativePosition, stor[19], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
++LOOP_SKIP_0:
++jmp_cmp ==, stor[13], 0xffffffff, inl[:LOOP_SKIP_1]
+ call SEffe::scriptSetRelativePosition, stor[20], 0xffffffff, stor[24], stor[25], stor[26] ; bobjIndex1, bobjIndex2, x, y, z
++LOOP_SKIP_1:
+ yield
+ while stor[23], inl[:LABEL_38] ; counter, addr
+ deallocate

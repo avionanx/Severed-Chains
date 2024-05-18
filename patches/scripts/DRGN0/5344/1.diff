@@ -1,0 +1,21 @@
+--- original
++++ modified
+@@ -1300,14 +1300,18 @@
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+ mov stor[11], stor[stor[stor[0], 18], 28] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_22] ; scriptIndex, address
++jmp_cmp ==, stor[12], 0xffffffff, inl[:SKIP_0]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+ mov stor[12], stor[stor[stor[0], 18], 28] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_22] ; scriptIndex, address
++SKIP_0:
++jmp_cmp ==, stor[13], 0xffffffff, inl[:SKIP_1]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+ mov stor[13], stor[stor[stor[0], 18], 28] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_22] ; scriptIndex, address
++SKIP_1:
+ mov 0x32, stor[23] ; source, dest
+ wait stor[23] ; frames
+ call SEffe::scriptAddScaleScalerMultiplicativeAttachmentTicks, stor[19], 0xffffffff, 0x14, 0x0, 0x0, 0x1000 ; effectIndex, parentIndex, ticks, x, y, z

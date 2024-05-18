@@ -1,0 +1,20 @@
+--- original
++++ modified
+@@ -2113,13 +2113,17 @@
+ mov 0x3, stor[23] ; source, dest
+ wait stor[23] ; frames
+ mov var[34][1], stor[28] ; source, dest
++jmp_cmp == , stor[28], 0xffffffff, inl[:SKIP_0]
+ gosub inl[:LABEL_56] ; addr
+ call SEffe::FUN_801156f8, stor[18], stor[0], 0xffffffff ; effectIndex, scriptIndex, coord2Index
+ mov 0x2, stor[23] ; source, dest
++SKIP_0:
+ wait stor[23] ; frames
+ mov var[34][2], stor[28] ; source, dest
++jmp_cmp == , stor[28], 0xffffffff, inl[:SKIP_1]
+ gosub inl[:LABEL_56] ; addr
+ call SEffe::FUN_801156f8, stor[18], stor[0], 0xffffffff ; effectIndex, scriptIndex, coord2Index
++SKIP_1:
+ rewind
+
+ ; SUBROUTINE

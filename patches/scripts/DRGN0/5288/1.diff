@@ -1,0 +1,29 @@
+--- original
++++ modified
+@@ -1562,7 +1562,7 @@
+ call Battle::scriptGetBentPos, stor[27], stor[stor[stor[0], 27], 24], stor[stor[stor[0], 27], 25], stor[stor[stor[0], 27], 26] ; bentIndex, x, y, z
+ call Battle::scriptGetBentRotation, stor[27], stor[stor[stor[0], 27], 21], stor[stor[stor[0], 27], 22], stor[stor[stor[0], 27], 23] ; bentIndex, x, y, z
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_2] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_2] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE
+@@ -2149,7 +2149,7 @@
+ add 0xf, stor[stor[stor[0], 18], 12] ; amount, operand
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_68] ; scriptIndex, address
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_69] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_69] ; operand, left, right, addr
+ mov 0x2d, stor[9] ; source, dest
+ wait stor[9] ; frames
+ deallocate
+@@ -2224,7 +2224,7 @@
+ call Battle::scriptSetLoadingBentAnimationIndex, stor[27], 0xe ; bentIndex, animIndex
+ call Battle::scriptSetBentAnimationLoopState, stor[27], 0x0 ; bentIndex, loop
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_75] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_75] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE

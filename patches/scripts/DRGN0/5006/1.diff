@@ -1,0 +1,38 @@
+--- original
++++ modified
+@@ -1277,7 +1277,7 @@
+ mov var[34][stor[9]], stor[28] ; source, dest
+ call Battle::scriptGetBentPos, stor[28], stor[stor[stor[0], 28], 24], stor[stor[stor[0], 28], 25], stor[stor[stor[0], 28], 26] ; bentIndex, x, y, z
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_3] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_3] ; operand, left, right, addr
+ call SEffe::scriptUpdateDeffManagerFlags, 0xfffffffb ; flags
+ call Scus94491BpeSegment::scriptSetAllSoundSequenceVolumes, 0x58 ; volume
+ gosub inl[:LABEL_4] ; addr
+@@ -1879,7 +1879,7 @@
+ call Battle::scriptSetBentAnimationLoopState, stor[28], 0x0 ; bentIndex, loop
+ LABEL_46:
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_47] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_47] ; operand, left, right, addr
+ call SEffe::scriptSetRelativePosition, stor[18], 0xffffffff, 0x0, 0x12c, 0x0 ; bobjIndex1, bobjIndex2, x, y, z
+ call Battle::scriptSetBttlShadowOffset, stor[18], 0x0, 0x12c, 0x0 ; bobjIndex, x, y, z
+ mov 0x19, stor[9] ; source, dest
+@@ -2850,7 +2850,7 @@
+ mov var[34][stor[9]], stor[28] ; source, dest
+ call Battle::FUN_800cb618, stor[28], 0x1 ; bentIndex, set
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_12] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_12] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE
+@@ -2860,7 +2860,7 @@
+ mov var[34][stor[9]], stor[28] ; source, dest
+ call Battle::FUN_800cb618, stor[28], 0x0 ; bentIndex, set
+ incr stor[9] ; operand
+-jmp_cmp !=, stor[9], 0x3, inl[:LABEL_6] ; operand, left, right, addr
++jmp_cmp !=, stor[9], var[35], inl[:LABEL_6] ; operand, left, right, addr
+ return
+
+ ; SUBROUTINE

@@ -1,0 +1,29 @@
+--- original
++++ modified
+@@ -1516,11 +1516,13 @@
+ gosub inl[:LABEL_32] ; addr
+ call Battle::scriptPlayBentSound, 0x2, stor[17], 0x1, 0x0, 0x0, 0x0, 0x0 ; type, bentIndex, soundIndex, a3, a4, initialDelay, repeatDelay
+ mov var[34][2], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_0]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+ mov stor[28], stor[stor[stor[0], 18], 28] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_34] ; scriptIndex, address
+ yield
++SKIP_0:
+ mov var[34][0], stor[28] ; source, dest
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+@@ -1528,10 +1530,12 @@
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_34] ; scriptIndex, address
+ yield
+ mov var[34][1], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_1]
+ call Battle::scriptAllocateEmptyEffectManagerChild, stor[18] ; effectIndex
+ mov stor[27], stor[stor[stor[0], 18], 27] ; source, dest
+ mov stor[28], stor[stor[stor[0], 18], 28] ; source, dest
+ call SEffe::scriptLoadSameScriptAndJump, stor[18], inl[:LABEL_34] ; scriptIndex, address
++SKIP_1:
+ mov 0x2e, stor[23] ; source, dest
+ wait stor[23] ; frames
+ call Battle::scriptStopBentSound, 0x2, stor[17], 0x1, 0x3 ; unused, bentIndex, soundIndex, mode

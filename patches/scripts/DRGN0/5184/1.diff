@@ -1,0 +1,31 @@
+--- original
++++ modified
+@@ -1889,10 +1889,14 @@
+ gosub inl[:LABEL_78] ; addr
+ mov 0x14, stor[23] ; source, dest
+ wait stor[23] ; frames
++jmp_cmp ==, var[34][2], 0xffffffff, inl[:SKIP_0]
+ gosub inl[:LABEL_80] ; addr
++SKIP_0:
+ mov 0x5, stor[23] ; source, dest
+ wait stor[23] ; frames
++jmp_cmp ==, var[34][1], 0xffffffff, inl[:SKIP_1]
+ gosub inl[:LABEL_85] ; addr
++SKIP_1:
+ mov 0x7, stor[23] ; source, dest
+ wait stor[23] ; frames
+ gosub inl[:LABEL_88] ; addr
+@@ -2669,9 +2673,13 @@
+ mov var[34][0], stor[28] ; source, dest
+ gosub inl[:LABEL_95] ; addr
+ mov var[34][1], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_R_0]
+ gosub inl[:LABEL_95] ; addr
++SKIP_R_0:
+ mov var[34][2], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_R_1]
+ gosub inl[:LABEL_95] ; addr
++SKIP_R_1:
+ yield
+ jmp inl[:LABEL_94] ; addr
+ data 0x1

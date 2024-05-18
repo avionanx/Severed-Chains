@@ -1,0 +1,14 @@
+--- original
++++ modified
+@@ -1813,9 +1813,11 @@
+ gosub inl[:LABEL_47] ; addr
+ gosub inl[:LABEL_50] ; addr
+ mov var[34][2], stor[28] ; source, dest
++jmp_cmp ==, stor[28], 0xffffffff, inl[:SKIP_0]
+ mov stor[stor[stor[0], 28], 24], stor[24] ; source, dest
+ add 0x400, stor[24] ; amount, operand
+ call Battle::scriptSetBentPos, stor[28], stor[24], stor[stor[stor[0], 28], 25], stor[stor[stor[0], 28], 26] ; bentIndex, x, y, z
++SKIP_0:
+ mov var[34][0], stor[28] ; source, dest
+ mov stor[stor[stor[0], 28], 24], stor[24] ; source, dest
+ add 0x200, stor[24] ; amount, operand
