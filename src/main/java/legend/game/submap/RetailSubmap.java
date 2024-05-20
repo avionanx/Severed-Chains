@@ -16,6 +16,7 @@ import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
+import legend.core.opengl.gltf.LodGLTF;
 import legend.game.modding.events.submap.SubmapEnvironmentTextureEvent;
 import legend.game.modding.events.submap.SubmapObjectTextureEvent;
 import legend.game.scripting.ScriptFile;
@@ -36,6 +37,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -145,6 +147,7 @@ public class RetailSubmap extends Submap {
   private Tim[] envTextures;
   private Texture backgroundTexture;
   private Rect4i backgroundRect;
+  private LodGLTF lodGLTF;
   private Obj backgroundObj;
   private final MV backgroundTransforms = new MV();
   private Texture[] foregroundTextures;
@@ -153,7 +156,11 @@ public class RetailSubmap extends Submap {
   public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final CollisionGeometry collisionGeometry) {
     this.cut = cut;
     this.newRoot = newRoot;
-
+    try{
+      this.lodGLTF = new LodGLTF("");
+    }catch(IOException err){
+      err.printStackTrace();
+    }
     this.hasRenderer_800c6968 = submapTypes_800f5cd4[cut] == 65;
     this.screenOffset = screenOffset;
     this.collisionGeometry = collisionGeometry;
@@ -1055,10 +1062,15 @@ public class RetailSubmap extends Submap {
     //LAB_800e7938
     return this.envRenderMetrics_800cb710[textureIndex].z_20;
   }
-
+  float i = 0;
   @Override
   @Method(0x800e7954L)
   public void drawEnv(final MV[] sobjMatrices) {
+
+    MV mv = new MV();
+    mv.identity();
+    mv.scale(Math.sin(i+=0.01f) * 10000);
+    RENDERER.queueOrthoModel(this.lodGLTF);
     this.animateAndRenderSubmapModel(this.submapCutMatrix_800d4bb0);
 
     final float[] sobjScreenZs = new float[sobjMatrices.length];
