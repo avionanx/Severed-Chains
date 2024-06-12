@@ -470,7 +470,7 @@ public class Battle extends EngineState {
   };
   public static final int[] charWidthAdjustTable_800fa7cc = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, -1, -1, 0, 1, -1, 0, 4, 2, -1, 1, -2, 0, -2, 0, -1, -2, 0, 1, -1, -1, -2, -1, 0, 0, 1, 1, 1, 1, 1, 3, 1, 1, 5, 4, 1, 5, -2, 1, 1, 1, 1, 3, 2, 3, 1, 1, -3, 1, 1, 2, 4, 2, -1, 6};
 
-  public static final String[] additionNames_800fa8d4 = {"Double Slash", "Volcano", "Burning Rush", "Crush Dance", "Madness Hero", "Moon Strike", "Blazing Dynamo", "", "Harpoon", "Spinning Cane", "Rod Typhoon", "Gust of Wind Dance", "Flower Storm", "", "Whip Smack", "More & More", "Hard Blade", "Demon's Dance", "", "Pursuit", "Inferno", "Bone Crush", "", "Double Smack", "Hammer Spin", "Cool Boogie", "Cat's Cradle", "Perky Step", "", "Double Punch", "Ferry of Styx", "Summon 4 Gods", " 5-Ring Shattering", "Hex Hammer", "Omni-Sweep", "Harpoon", "Spinning Cane", "Rod Typhoon", "Gust of Wind Dance", "Flower Storm"};
+  public static final String[] additionNames_800fa8d4 = {"Double Slash", "Volcano", "Burning Rush", "Crush Dance", "Madness Hero", "Moon Strike", "Blazing Dynamo", "", "Harpoon", "Spinning Cane", "Rod Typhoon", "Gust of Wind Dance", "Flower Storm", "", "Whip Smack", "More & More", "Hard Blade", "Demon's Dance", "", "Pursuit", "Inferno", "Bone Crush", "", "Double Smack", "Hammer Spin", "Cool Boogie", "Cat's Cradle", "Perky Step", "", "Double Punch", "Ferry of Styx", "Summon 4 Gods", "5-Ring Shattering", "Hex Hammer", "Omni-Sweep", "Harpoon", "Spinning Cane", "Rod Typhoon", "Gust of Wind Dance", "Flower Storm"};
 
   /** Next 4 globals are related to SpTextEffect40 */
   private int _800faa90;
@@ -1345,7 +1345,7 @@ public class Battle extends EngineState {
     //LAB_800fc030
     for(int i = 0; i < this.combatantCount_800c66a0; i++) {
       final CombatantStruct1a8 combatant = this.getCombatant(i);
-      if(combatant.charSlot_19c < 0) { // I think this means it's not a player
+      if(combatant.charSlot_19c < 0) { // Monster
         this.loadCombatantTmdAndAnims(combatant);
       }
 
@@ -1393,29 +1393,6 @@ public class Battle extends EngineState {
 
       if(Unpacker.exists("monsters/%d/textures/combat".formatted(enemyIndex))) {
         loadFile("monsters/%d/textures/combat".formatted(enemyIndex), files -> this.loadCombatantTim(a0, files));
-      }
-    }
-  }
-
-  /** Pulled from S_ITEM */
-  @Method(0x800fc404L)
-  public void enemyTexturesLoadedCallback(final List<FileData> files) {
-    final BattlePreloadedEntities_18cb0 s2 = battlePreloadedEntities_1f8003f4;
-
-    //LAB_800fc434
-    for(int i = 0; i < this.combatantCount_800c66a0; i++) {
-      final CombatantStruct1a8 combatant = this.getCombatant(i);
-
-      if(combatant.charSlot_19c < 0) {
-        final int enemyIndex = combatant.charIndex_1a2 & 0x1ff;
-
-        //LAB_800fc464
-        for(int enemySlot = 0; enemySlot < 3; enemySlot++) {
-          if((s2.encounterData_00.enemyIndices_00[enemySlot] & 0x1ff) == enemyIndex && files.get(enemySlot).hasVirtualSize()) {
-            this.loadCombatantTim(combatant, files.get(enemySlot));
-            break;
-          }
-        }
       }
     }
   }
@@ -1628,11 +1605,15 @@ public class Battle extends EngineState {
       this.updateGameStateAndDeallocateMenu();
       this.setStageHasNoModel();
 
-      for(int i = 0; i < battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00.length; i++) {
-        if(battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00[i].obj != null) {
-          battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00[i].obj.delete();
-          battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00[i].obj = null;
+      if(battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00 != null) {
+        for(int i = 0; i < battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00.length; i++) {
+          if(battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00[i].obj != null) {
+            battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00[i].obj.delete();
+            battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00[i].obj = null;
+          }
         }
+
+        battlePreloadedEntities_1f8003f4.stage_963c.dobj2s_00 = null;
       }
 
       if(battlePreloadedEntities_1f8003f4.skyboxObj != null) {
@@ -1932,10 +1913,10 @@ public class Battle extends EngineState {
         this.combatants_8005e398[combatantIndex] = combatant;
 
         if(charSlot < 0) {
-          combatant.flags_19e = 1;
+          combatant.flags_19e = 0x1;
         } else {
           //LAB_800c8f90
-          combatant.flags_19e = 5;
+          combatant.flags_19e = 0x5;
         }
 
         //LAB_800c8f94
@@ -2056,8 +2037,6 @@ public class Battle extends EngineState {
 
   @Method(0x800c941cL)
   public void combatantTmdAndAnimLoadedCallback(final List<FileData> files, final CombatantStruct1a8 combatant, final boolean isMonster) {
-    combatant.flags_19e &= 0xffdf;
-
     if(!isMonster) {
       battleFlags_800bc960 |= 0x4;
     }
@@ -2079,6 +2058,8 @@ public class Battle extends EngineState {
 
       //LAB_800c94cc
     }
+
+    combatant.flags_19e &= 0xffdf;
   }
 
   @Method(0x800c952cL)
@@ -4147,7 +4128,7 @@ public class Battle extends EngineState {
       script.scriptState_04,
       null,
       effect::renderProjectileHitEffect,
-      null,
+      effect::deallocate,
       effect
     );
 
@@ -4186,7 +4167,7 @@ public class Battle extends EngineState {
       script.scriptState_04,
       null,
       effect::renderAdditionSparks,
-      null,
+      effect::deallocate,
       effect
     );
 
@@ -4315,7 +4296,7 @@ public class Battle extends EngineState {
       script.scriptState_04,
       deathEffect::monsterDeathEffectTicker,
       deathEffect::monsterDeathEffectRenderer,
-      null,
+      deathEffect::destructor,
       deathEffect
     );
 
@@ -8605,7 +8586,7 @@ public class Battle extends EngineState {
 
     //LAB_800f9988
     //LAB_800f99a4
-    if(item != null && takeItemId(item) != 0) {
+    if(item != null && !takeItemId(item)) {
       itemId = -1;
     }
 

@@ -617,7 +617,7 @@ public class PostBattleScreen extends MenuScreen {
       final int z;
       switch(type) {
         case 1 -> { //Background gradient
-          z = 36;
+          z = 37;
         }
 
         case 2 -> { //Character portrait shadow
@@ -662,7 +662,7 @@ public class PostBattleScreen extends MenuScreen {
 
     final int glyph = charPortraitGlyphs_800fbc9c[charId];
     final Renderable58 renderable = this.drawGlyph(glyph, glyph, x, y, 704, characterPortraitVs_800fbc88[charId]);
-    renderable.z_3c = 36;
+    renderable.z_3c = 35;
 
     //LAB_8010e1f0
     return renderable;
@@ -767,7 +767,10 @@ public class PostBattleScreen extends MenuScreen {
       this.drawGlyph(0x3b, 0x3b, x + 30, y + 16, 736, 497).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
       this.drawGlyph(0x3c, 0x3c, x + 30, y + 28, 736, 497).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
       this.drawGlyph(0x3d, 0x3d, x, y + 40, 736, 497).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
-      this.drawGlyph(0x3c, 0x3c, x, y + 52, 736, 497).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
+
+      final Renderable58 glyph = this.drawGlyph(0x3c, 0x3c, x, y + 52, 736, 497);
+      glyph.flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
+      glyph.widthCut = 16;
       this.drawGlyph(0x3d, 0x3d, x + 10, y + 52, 736, 497).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
 
       this.drawTwoDigitNumber(x + 108, y + 16, gameState_800babc8.charData_32c[charId].level_12);
