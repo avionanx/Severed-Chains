@@ -22,7 +22,7 @@ public class EncounterData38 {
   }
 
   public static class EnemyInfo08 {
-    public final short index_00;
+    public short index_00;
     public final Vector3f pos_02;
 
     private EnemyInfo08(final short index, final Vector3f pos) {

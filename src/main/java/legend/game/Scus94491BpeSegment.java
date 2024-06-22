@@ -2148,7 +2148,10 @@ public final class Scus94491BpeSegment {
 
   @Method(0x8001d1c4L)
   public static void loadMonsterSounds() {
-    final int encounterId = encounterId_800bb0f8;
+    int encounterId = encounterId_800bb0f8;
+    if (encounterId >= 1000){
+      encounterId = 0;
+    }
     switch(encounterId) {
       case 390 -> loadBattlePhaseSounds("doel", 0);
       case 431 -> loadBattlePhaseSounds("zackwell", 0);
@@ -2163,7 +2166,13 @@ public final class Scus94491BpeSegment {
       case 390 -> loadBattlePhaseSounds("doel", battleState_8006e398.battlePhase_eec);
       case 431 -> loadBattlePhaseSounds("zackwell", battleState_8006e398.battlePhase_eec);
       case 443 -> loadBattlePhaseSounds("melbu", battleState_8006e398.battlePhase_eec);
-      default -> loadEncounterSounds(encounterId_800bb0f8);
+      default -> {
+        if(encounterId_800bb0f8 >= 1000){
+          loadEncounterSounds(0);
+        }else{
+          loadEncounterSounds(encounterId_800bb0f8);
+        }
+      }
     }
   }
 
@@ -2323,9 +2332,14 @@ public final class Scus94491BpeSegment {
     unloadSoundFile(4);
     unloadSoundFile(5);
     unloadSoundFile(6);
-
-    final StageData2c stageData = stageData_80109a98[encounterId_800bb0f8];
-
+    int encounterId = encounterId_800bb0f8;
+    if(encounterId_800bb0f8 >= 1000){
+      encounterId = 0;
+    }
+    final StageData2c stageData = stageData_80109a98[encounterId];
+    if(encounterId_800bb0f8 >= 1000){
+      stageData.musicIndex_04 = 242;
+    }
     if(stageData.musicIndex_04 != 0xff) {
       stopMusicSequence();
 

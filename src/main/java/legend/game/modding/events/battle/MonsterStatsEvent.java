@@ -33,7 +33,12 @@ public class MonsterStatsEvent extends Event {
   public MonsterStatsEvent(final int enemyId) {
     this.enemyId = enemyId;
 
-    final MonsterStats1c monsterStats = monsterStats_8010ba98[enemyId];
+    MonsterStats1c monsterStats;
+    if(enemyId == 402){
+      monsterStats = new MonsterStats1c(640000,1600,240,240,50,150,150,10,10,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0);
+    }else{
+      monsterStats = monsterStats_8010ba98[enemyId];
+    }
     this.hp = monsterStats.hp_00;
     this.maxHp = monsterStats.hp_00;
     this.specialEffectFlag = monsterStats.specialEffectFlag_0d;

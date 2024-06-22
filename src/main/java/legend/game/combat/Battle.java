@@ -8244,8 +8244,13 @@ public class Battle extends EngineState {
     this.monsterCount_800c6b9c++;
 
     //LAB_800eefcc
-    final MonsterStats1c monsterStats = monsterStats_8010ba98[monster.charId_272];
-
+    final MonsterStats1c monsterStats;
+    if(monster.charId_272 == 402){
+      monsterStats = new MonsterStats1c(640000,1600,240,240,50,150,150,10,10,0,0,0,-1,-1,0,1,0,0,0,0,0,0,0,0);
+      this.currentEnemyNames_800c69d0[0] = "The Black Monster";
+    }else{
+      monsterStats = monsterStats_8010ba98[monster.charId_272];
+    }
     final MonsterStatsEvent statsEvent = EVENTS.postEvent(new MonsterStatsEvent(monster.charId_272));
 
     final VitalsStat monsterHp = monster.stats.getStat(CoreMod.HP_STAT.get());
@@ -8777,7 +8782,12 @@ public class Battle extends EngineState {
 
   @Method(0x80109050L)
   private void loadStageDataAndControllerScripts() {
-    this.currentStageData_800c6718 = stageData_80109a98[encounterId_800bb0f8];
+    if(encounterId_800bb0f8 >= 1000){
+      this.currentStageData_800c6718 = new StageData2c(255, 242, 0, 12, 30, 30, 54, 75, 74, 54, 0xffff);
+    }else{
+      this.currentStageData_800c6718 = stageData_80109a98[encounterId_800bb0f8];
+    }
+
 
     this.playerBattleScript_800c66fc = new ScriptFile("player_combat_script", Unpacker.loadFile("player_combat_script").getBytes());
 
@@ -8808,8 +8818,12 @@ public class Battle extends EngineState {
     final int enemyId = enemyAndCombatantId & 0xffff;
     final int combatantIndex = enemyAndCombatantId >>> 16;
     final CombatantStruct1a8 combatant = this.getCombatant(combatantIndex);
-    final EnemyRewards08 rewards = enemyRewards_80112868[enemyId];
-
+    final EnemyRewards08 rewards;
+    if(enemyId == 402){
+      rewards = new EnemyRewards08(64000,40000,100,250,0);
+    }else {
+      rewards = enemyRewards_80112868[enemyId];
+    }
     combatant.drops.clear();
     if(rewards.itemDrop_05 != 0xff) {
       combatant.drops.add(new CombatantStruct1a8.ItemDrop(rewards.itemChance_04, rewards.itemDrop_05 < 192 ? REGISTRIES.equipment.getEntry(LodMod.equipmentIdMap.get(rewards.itemDrop_05)).get() : REGISTRIES.items.getEntry(LodMod.itemIdMap.get(rewards.itemDrop_05 - 192)).get()));

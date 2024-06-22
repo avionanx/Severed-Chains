@@ -803,6 +803,7 @@ public final class SEffe {
     transformMatrix.rotateXYZ(manager.params_10.rot_10);
     transformMatrix.transfer.set(manager.params_10.trans_04);
 
+
     EffectManagerData6c<?> currentManager = manager;
     int scriptIndex = manager.scriptIndex_0c;
 
@@ -3282,6 +3283,7 @@ public final class SEffe {
       .translucency(Translucency.of(data.params_10.flags_00 >>> 28 & 0x3))
       .colour(data.params_10.colour_1c.x / 128.0f, data.params_10.colour_1c.y / 128.0f, data.params_10.colour_1c.z / 128.0f)
       .texture(RENDERER.getLastFrame());
+
   }
 
   @Method(0x80109a4cL)
@@ -5193,7 +5195,7 @@ public final class SEffe {
     translationScaler.acceleration_24.zero();
 
     //LAB_80110d04
-    return translationScaler;
+      return translationScaler;
   }
 
   /** Sets position scaler using distance (optionally relative to a parent script) */
@@ -7967,7 +7969,6 @@ public final class SEffe {
         zShift_1f8003c4 = oldZShift;
         zMax_1f8003cc = oldZMax;
         zMin = oldZMin;
-
         final RenderEngine.QueuedModel<?> model = RENDERER.queueModel(deffEffect.obj, sp0x10)
           .lightDirection(lightDirectionMatrix_800c34e8)
           .lightColour(lightColourMatrix_800c3508)

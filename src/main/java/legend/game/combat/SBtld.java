@@ -43,8 +43,16 @@ public class SBtld {
 
       //LAB_80109340
     }
+    if(encounterId_800bb0f8 < 1000){
+      loadFile("encounters", file -> battlePreloadedEntities_1f8003f4.encounterData_00 = new EncounterData38(file.getBytes(), encounterId_800bb0f8 * 0x38));
+    }else{
+      loadFile("encounters", file -> {
+        battlePreloadedEntities_1f8003f4.encounterData_00 = new EncounterData38(file.getBytes(), 0);
+        battlePreloadedEntities_1f8003f4.encounterData_00.enemyInfo_08[0].index_00 = 402;
+        battlePreloadedEntities_1f8003f4.encounterData_00.enemyIndices_00[0] = 402;
+      });
+    }
 
-    loadFile("encounters", file -> battlePreloadedEntities_1f8003f4.encounterData_00 = new EncounterData38(file.getBytes(), encounterId_800bb0f8 * 0x38));
   }
 
   public static final AdditionHits80[] additionHits_8010e658 = {
