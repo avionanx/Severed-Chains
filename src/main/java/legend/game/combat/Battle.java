@@ -5857,16 +5857,27 @@ public class Battle extends EngineState {
     }
 
     t0.type_00 |= 0x200_0000;
-    loadDrgnDir(0, 4307 + s0, this::uploadTims);
-    loadDrgnDir(0, 4308 + s0 + "/0", files -> {
-      this.loadDeffPackage(files, t0.managerState_18);
-
-      // We don't want the script to load before the DEFF package, so queueing this file inside of the DEFF package callback forces serialization
-      loadDrgnFile(0, 4308 + s0 + "/1", file -> {
-        LOGGER.info(DEFF, "Loading DEFF script");
-        this._800c6938.script_14 = new ScriptFile(4308 + s0 + "/1", file.getBytes());
+    if(id >= 512){
+      Unpacker.loadDirectory("../assets/combat/deff/%d/textures".formatted(id),this::uploadTims);
+      Unpacker.loadDirectory("../assets/combat/deff/%d/models".formatted(id),files -> {
+        this.loadDeffPackage(files, t0.managerState_18);
+        Unpacker.loadFile("../assets/combat/deff/%d/script".formatted(id), file -> {
+          LOGGER.info(DEFF, "Loading DEFF script");
+          this._800c6938.script_14 = new ScriptFile("Item Script: " + id, file.getBytes());
+        });
       });
-    });
+    } else {
+      loadDrgnDir(0, 4307 + s0, this::uploadTims);
+      loadDrgnDir(0, 4308 + s0 + "/0", files -> {
+        this.loadDeffPackage(files, t0.managerState_18);
+
+        // We don't want the script to load before the DEFF package, so queueing this file inside of the DEFF package callback forces serialization
+        loadDrgnFile(0, 4308 + s0 + "/1", file -> {
+          LOGGER.info(DEFF, "Loading DEFF script");
+          this._800c6938.script_14 = new ScriptFile(4308 + s0 + "/1", file.getBytes());
+        });
+      });
+    }
     this.deffLoadingStage_800fafe8 = 1;
   }
 

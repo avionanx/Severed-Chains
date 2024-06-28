@@ -121,7 +121,7 @@ public class GameVarParam extends Param {
       case 86 -> ((Battle)currentEngineState_8004dd04).currentCameraIndex_800c6780;
       case 87 -> ((Battle)currentEngineState_8004dd04)._800c66a8;
       case 88 -> ((Battle)currentEngineState_8004dd04)._800c6700;
-      case 89 -> ((Battle)currentEngineState_8004dd04)._800c6704;
+      case 89 -> 0;//((Battle)currentEngineState_8004dd04)._800c6704;
       case 90 -> ((Battle)currentEngineState_8004dd04).hud.currentCameraPositionIndicesIndex_800c66b0;
 
       case 96 -> ((Battle)currentEngineState_8004dd04)._800c6754;
