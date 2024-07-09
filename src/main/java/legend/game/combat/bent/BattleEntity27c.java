@@ -420,7 +420,7 @@ public abstract class BattleEntity27c extends BattleObject {
   public void setStat(final BattleEntityStat statIndex, final int value) {
     switch(statIndex) {
       case CURRENT_HP -> this.stats.getStat(CoreMod.HP_STAT.get()).setCurrent(value);
-
+      case MAX_HP -> this.stats.getStat(CoreMod.HP_STAT.get()).setMaxRaw(value);
       case STATUS -> this.status_0e = value;
 
       case SPECIAL_EFFECT_FLAGS -> this.specialEffectFlag_14 = value;

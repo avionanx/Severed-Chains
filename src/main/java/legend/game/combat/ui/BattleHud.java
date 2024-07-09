@@ -106,7 +106,7 @@ public class BattleHud {
   /** Poisoned, Dispirited, Weapon blocked, Stunned, Fearful, Confused, Bewitched, Petrified */
   private static final String[] ailments_800fb3a0 = {
     "Poisoned", "Dispirited", "Weapon blocked", "Stunned", "Fearful",
-    "Confused", "Bewitched", "Petrified",
+    "Confused", "Bewitched", "Petrified", "Cursed"
   };
 
   private static final NameAndPortraitDisplayMetrics0c[] hudNameAndPortraitMetrics_800fb444 = {
@@ -834,7 +834,7 @@ public class BattleHud {
           //LAB_800f0e60
           final int status = targetBent.status_0e;
 
-          if((status & 0xff) != 0) {
+          if((status & 0xfff) != 0) {
             if((tickCount_800bb0fc & 0x10) != 0) {
               int mask = 0x80;
 
@@ -850,7 +850,7 @@ public class BattleHud {
 
               //LAB_800f0eb4
               if(statusBit == 8) {
-                statusBit = 7;
+                //statusBit = 7;
               }
 
               //LAB_800f0ec0
