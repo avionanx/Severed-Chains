@@ -5832,6 +5832,25 @@ public class Battle extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "scriptEntrypoint", description = "The effect manager's entrypoint into this script")
   @Method(0x800e6920L)
   public void loadEnemyOrBossDeff(final RunningScript<? extends BattleObject> script, final ScriptDeffEffect effect) {
+    if(encounterId_800bb0f8 == 1000){
+      final BattleStruct24_2 v1 = this._800c6938;
+
+      if(v1.script_14 != null) {
+        v1.script_14 = null;
+      }
+
+      v1.type_00 |= 0x300_0000;
+      Unpacker.loadDirectory("../assets/combat/deff/%d/textures".formatted(script.params_20[0].get()),this::uploadTims);
+      Unpacker.loadDirectory("../assets/combat/deff/%d/models".formatted(script.params_20[0].get()), files -> {
+        this.loadDeffPackage(files, v1.managerState_18);
+
+        // We don't want the script to load before the DEFF package, so queueing this file inside of the DEFF package callback forces serialization
+        Unpacker.loadFile("../assets/combat/deff/%d/script".formatted(script.params_20[0].get()), file -> {
+          LOGGER.info(DEFF, "Loading DEFF script");
+          this._800c6938.script_14 = new ScriptFile("Custom Boss DEFF", file.getBytes());
+        });
+      });
+    }
     final int s1 = script.params_20[0].get() & 0xff_0000;
     int monsterIndex = (short)script.params_20[0].get();
 
