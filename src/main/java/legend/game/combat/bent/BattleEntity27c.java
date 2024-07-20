@@ -150,8 +150,10 @@ public abstract class BattleEntity27c extends BattleObject {
   public int hitCounterFrameThreshold_7e;
   public int _80;
   public int _82;
-  public int _84;
-  public int _86;
+  /** X offset for archer/item throw target, status ailment effect, 1/100 scale */
+  public int middleOffsetX_84;
+  /** Y offset for archer/item throw target, status ailment effect, 1/100 scale */
+  public int middleOffsetY_86;
   public int _88;
   public int _8a;
 
@@ -203,6 +205,17 @@ public abstract class BattleEntity27c extends BattleObject {
   public int charSlot_276;
   /** Has model? Used to be used to free model, no longer used since it's managed by java */
   public int _278;
+
+  // These were pulled from ScriptState, they're only used on bents
+  public ScriptState<BattleEntity27c> movementParent_c8;
+  public int movementTicks_cc;
+  /** Was .8 */
+  public final Vector3f movementRemaining_d0 = new Vector3f();
+  /** Was .8 */
+  public final Vector3f movementStep_dc = new Vector3f();
+  public final Vector3f movementDestination_e8 = new Vector3f();
+  /** Was .8 */
+  public float movementStepYAcceleration_f4;
 
   private final Vector3i colour = new Vector3i(0x80, 0x80, 0x80);
 
@@ -360,8 +373,8 @@ public abstract class BattleEntity27c extends BattleObject {
       case HIT_COUNTER_FRAME_THRESHOLD -> this.hitCounterFrameThreshold_7e;
       case _62 -> this._80;
       case _63 -> this._82;
-      case _64 -> this._84;
-      case _65 -> this._86;
+      case MIDDLE_OFFSET_X -> this.middleOffsetX_84;
+      case MIDDLE_OFFSET_Y -> this.middleOffsetY_86;
       case _66 -> this._88;
       case _67 -> this._8a;
 
@@ -458,8 +471,8 @@ public abstract class BattleEntity27c extends BattleObject {
       case HIT_COUNTER_FRAME_THRESHOLD -> this.hitCounterFrameThreshold_7e = value;
       case _62 -> this._80 = value;
       case _63 -> this._82 = value;
-      case _64 -> this._84 = value;
-      case _65 -> this._86 = value;
+      case MIDDLE_OFFSET_X -> this.middleOffsetX_84 = value;
+      case MIDDLE_OFFSET_Y -> this.middleOffsetY_86 = value;
       case _66 -> this._88 = value;
       case _67 -> this._8a = value;
 
