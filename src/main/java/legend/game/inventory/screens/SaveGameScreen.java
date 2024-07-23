@@ -5,15 +5,18 @@ import legend.game.input.InputAction;
 import legend.game.inventory.screens.controls.Background;
 import legend.game.inventory.screens.controls.BigList;
 import legend.game.inventory.screens.controls.Glyph;
+import legend.game.inventory.screens.controls.RetailSaveCard;
 import legend.game.inventory.screens.controls.SaveCard;
+import legend.game.saves.Campaign;
 import legend.game.saves.SaveFailedException;
 import legend.game.saves.SavedGame;
+import legend.game.saves.types.SaveDisplay;
+import legend.game.saves.types.SaveType;
 import legend.game.types.MessageBoxResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
-
 import java.io.IOException;
 
 import static legend.core.GameEngine.SAVES;
@@ -21,8 +24,10 @@ import static legend.game.SItem.menuStack;
 import static legend.game.Scus94491BpeSegment.startFadeEffect;
 import static legend.game.Scus94491BpeSegment_8002.deallocateRenderables;
 import static legend.game.Scus94491BpeSegment_8002.playMenuSound;
+import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd04;
 import static legend.game.Scus94491BpeSegment_8005.collidedPrimitiveIndex_80052c38;
 import static legend.game.Scus94491BpeSegment_8005.submapCutForSave_800cb450;
+import static legend.game.Scus94491BpeSegment_800b.campaignType;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Scus94491BpeSegment_800b.stats_800be5f8;
 
@@ -31,6 +36,7 @@ public class SaveGameScreen extends MenuScreen {
 
   private static final String Overwrite_save_8011c9e8 = "Overwrite save?";
 
+  private SaveCard<?> saveCard;
   private final BigList<SavedGame> saveList;
 
   private final Runnable unload;
@@ -47,21 +53,41 @@ public class SaveGameScreen extends MenuScreen {
     this.addControl(Glyph.glyph(78)).setPos(26, 155);
     this.addControl(Glyph.glyph(79)).setPos(192, 155);
 
-    final SaveCard saveCard = this.addControl(new SaveCard());
-    saveCard.setPos(16, 160);
+    this.saveCard = this.addControl(new RetailSaveCard());
+    this.saveCard.setPos(16, 160);
+    this.saveCard.alwaysReceiveInput();
 
     this.saveList = this.addControl(new BigList<>(savedGame -> savedGame != null ? savedGame.saveName : "<new save>"));
     this.saveList.setPos(16, 16);
     this.saveList.setSize(360, 144);
-    this.saveList.onHighlight(saveCard::setSaveData);
+    this.saveList.onHighlight(saveData -> {
+      if(saveData != null) {
+        this.removeControl(this.saveCard);
+        final SaveType<?> saveType = (SaveType<?>)saveData.saveType.get();
+        this.saveCard = this.addControl(saveType.makeSaveCard());
+        this.saveCard.setPos(16, 160);
+        this.saveCard.alwaysReceiveInput();
+      }
+
+      this.saveCard.setSaveData(saveData);
+    });
     this.saveList.onSelection(this::onSelection);
     this.setFocus(this.saveList);
 
     this.saveList.addEntry(null);
 
-    for(final SavedGame save : SAVES.loadAllSaves(gameState_800babc8.campaignName)) {
+    for(final SavedGame<?> save : SAVES.loadAllSaves(gameState_800babc8.campaignName)) {
       this.saveList.addEntry(save);
     }
+  }
+
+  private <T extends SaveDisplay> SaveCard<T> addSaveCard(final Campaign campaign) {
+    final SavedGame<T> latestSave = (SavedGame<T>)campaign.latestSave();
+    final SaveCard<T> saveCard = this.addControl(latestSave.saveType.get().makeSaveCard());
+    saveCard.setPos(16, 160);
+    saveCard.setSaveData(latestSave);
+    saveCard.alwaysReceiveInput();
+    return saveCard;
   }
 
   @Override
@@ -70,7 +96,7 @@ public class SaveGameScreen extends MenuScreen {
     SItem.renderText("\u011f Delete", 297, 226, TextColour.BROWN);
   }
 
-  private void onSelection(@Nullable final SavedGame save) {
+  private void onSelection(@Nullable final SavedGame<?> save) {
     playMenuSound(2);
 
     if(save == null) {
@@ -91,7 +117,7 @@ public class SaveGameScreen extends MenuScreen {
       gameState_800babc8.submapCut_a8 = submapCutForSave_800cb450;
 
       try {
-        SAVES.newSave(name, gameState_800babc8, stats_800be5f8);
+        SAVES.newSave(name, gameState_800babc8, stats_800be5f8, campaignType.get(), engineState_8004dd04);
         this.unload.run();
       } catch(final SaveFailedException e) {
         menuStack.pushScreen(new MessageBoxScreen("Failed to save game", 0, r -> { }));
@@ -100,13 +126,13 @@ public class SaveGameScreen extends MenuScreen {
     }
   }
 
-  private void onOverwriteResult(final MessageBoxResult result, final SavedGame save) {
+  private void onOverwriteResult(final MessageBoxResult result, final SavedGame<?> save) {
     if(result == MessageBoxResult.YES) {
       gameState_800babc8.submapScene_a4 = collidedPrimitiveIndex_80052c38;
       gameState_800babc8.submapCut_a8 = submapCutForSave_800cb450;
 
       try {
-        SAVES.overwriteSave(save.fileName, save.saveName, gameState_800babc8, stats_800be5f8);
+        SAVES.overwriteSave(save.fileName, save.saveName, gameState_800babc8, stats_800be5f8, campaignType.get(), engineState_8004dd04);
         this.unload.run();
       } catch(final SaveFailedException e) {
         menuStack.pushScreen(new MessageBoxScreen("Failed to save game", 0, r -> { }));

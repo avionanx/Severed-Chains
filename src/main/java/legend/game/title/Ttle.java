@@ -16,11 +16,10 @@ import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
 import legend.core.opengl.Window;
 import legend.game.EngineState;
-import legend.game.EngineStateEnum;
-import legend.game.fmv.Fmv;
 import legend.game.input.Input;
 import legend.game.input.InputAction;
 import legend.game.inventory.WhichMenu;
+import legend.game.modding.coremod.CoreMod;
 import legend.game.saves.ConfigStorage;
 import legend.game.saves.ConfigStorageLocation;
 import legend.game.tim.Tim;
@@ -47,8 +46,10 @@ import static legend.core.gpu.VramTextureLoader.stitchHorizontal;
 import static legend.core.gpu.VramTextureLoader.stitchVertical;
 import static legend.core.gpu.VramTextureLoader.textureFromPngOneChannelBlue;
 import static legend.core.gpu.VramTextureLoader.textureFromTim;
+import static legend.game.Scus94491BpeSegment.FUN_8001aa90;
 import static legend.game.Scus94491BpeSegment.loadDrgnDir;
 import static legend.game.Scus94491BpeSegment.loadDrgnFile;
+import static legend.game.Scus94491BpeSegment.loadMusicPackage;
 import static legend.game.Scus94491BpeSegment.playSound;
 import static legend.game.Scus94491BpeSegment.resizeDisplay;
 import static legend.game.Scus94491BpeSegment.rsin;
@@ -59,14 +60,16 @@ import static legend.game.Scus94491BpeSegment_8003.GsInitCoordinate2;
 import static legend.game.Scus94491BpeSegment_8003.GsSetRefView2L;
 import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
 import static legend.game.Scus94491BpeSegment_8004.engineStateOnceLoaded_8004dd24;
+import static legend.game.Scus94491BpeSegment_8004.setMainVolume;
 import static legend.game.Scus94491BpeSegment_8007.vsyncMode_8007a3b8;
+import static legend.game.Scus94491BpeSegment_800b.campaignType;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Scus94491BpeSegment_800b.loadingNewGameState_800bdc34;
 import static legend.game.Scus94491BpeSegment_800b.whichMenu_800bdc38;
 import static legend.game.Scus94491BpeSegment_800c.lightColourMatrix_800c3508;
 import static legend.game.Scus94491BpeSegment_800c.lightDirectionMatrix_800c34e8;
 
-public class Ttle extends EngineState {
+public class Ttle extends EngineState<Ttle> {
   private TmdRenderingStruct _800c66d0;
   private final FireAnimationData20[] fireAnimation_800c66d4 = new FireAnimationData20[4];
   private int hasSavedGames;
@@ -81,7 +84,6 @@ public class Ttle extends EngineState {
   private float copyrightFadeInAmount;
   private boolean logoFireInitialized;
   private int flameColour;
-  private int menuIdleTime;
 
   private int menuTransitionState_800c6728;
   private int menuState_800c672c;
@@ -129,6 +131,25 @@ public class Ttle extends EngineState {
   private static Window.Events.Click onMouseRelease;
   private static Window.Events.OnPressedWithRepeatPulse onPressedWithRepeatPulse;
 
+  public Ttle() {
+    super(CoreMod.TITLE_STATE_TYPE.get());
+  }
+
+  @Override
+  public boolean advancesTime() {
+    return false;
+  }
+
+  @Override
+  public String getLocationForSave() {
+    return "Title";
+  }
+
+  @Override
+  public FileData writeSaveData() {
+    return null;
+  }
+
   @Override
   public boolean allowsHighQualityProjection() {
     return false;
@@ -140,6 +161,14 @@ public class Ttle extends EngineState {
   }
 
   @Override
+  public void init() {
+    super.init();
+    setMainVolume(0x7f, 0x7f);
+    FUN_8001aa90();
+    loadMusicPackage(98);
+  }
+
+  @Override
   @Method(0x800c7798L)
   public void tick() {
     switch(this.loadingStage) {
@@ -148,7 +177,6 @@ public class Ttle extends EngineState {
       case 3 -> this.renderMainMenu();
       case 4 -> this.fadeOutForNewGame();
       case 5 -> this.waitForSaveSelection();
-      case 6 -> this.fadeOutMainMenu();
       case 7 -> this.fadeOutForOptions();
       case 8 -> this.fadeOutForQuit();
       case 9 -> this.fadeOutForCategorizeSave();
@@ -162,7 +190,6 @@ public class Ttle extends EngineState {
 //    GameEngine.legacyUi = false;
 
     this.menuLoadingStage = 0;
-    this.menuIdleTime = 0;
     this.menuTransitionState_800c6728 = 0;
     this.menuState_800c672c = 0;
     this.logoFadeInAmount = 0.0f;
@@ -351,8 +378,7 @@ public class Ttle extends EngineState {
       if(loadingNewGameState_800bdc34) {
         removeInputHandlers();
         this.deallocate();
-
-        Fmv.playCurrentFmv(2, EngineStateEnum.TRANSITION_TO_NEW_GAME_03);
+        campaignType.get().transitionToNewCampaign(gameState_800babc8);
         return true;
       }
 
@@ -398,7 +424,7 @@ public class Ttle extends EngineState {
     if(whichMenu_800bdc38 == WhichMenu.NONE_0) {
       if(this.menuTransitionState_800c6728 == 3) {
         if(!transition.getAsBoolean()) {
-          engineStateOnceLoaded_8004dd24 = EngineStateEnum.TITLE_02;
+          engineStateOnceLoaded_8004dd24 = CoreMod.TITLE_STATE_TYPE.get();
           this.loadingStage = 0;
           vsyncMode_8007a3b8 = 2;
         }
@@ -437,13 +463,7 @@ public class Ttle extends EngineState {
   private void waitForSaveSelection() {
     this.fadeOutToMenu(WhichMenu.INIT_CAMPAIGN_SELECTION_MENU, () -> {
       if(loadingNewGameState_800bdc34) {
-        if(gameState_800babc8.isOnWorldMap_4e4) {
-          engineStateOnceLoaded_8004dd24 = EngineStateEnum.WORLD_MAP_08;
-        } else {
-          //LAB_800c80a4
-          engineStateOnceLoaded_8004dd24 = EngineStateEnum.SUBMAP_05;
-        }
-
+        campaignType.get().transitionToLoadedGame(gameState_800babc8);
         vsyncMode_8007a3b8 = 2;
 
         //LAB_800c80c4
@@ -452,32 +472,6 @@ public class Ttle extends EngineState {
 
       return false;
     });
-  }
-
-  @Method(0x800c8148L)
-  private void fadeOutMainMenu() {
-    if(this.fadeOutTimer_800c6754 == 0) {
-      startFadeEffect(1, 15);
-    }
-
-    //LAB_800c8174
-    this.renderMenuBackground();
-    this.renderMenuOptions();
-    this.renderMenuLogo();
-    this.renderMenuLogoFire();
-    this.renderCopyright();
-
-    this.fadeOutTimer_800c6754++;
-    if(this.fadeOutTimer_800c6754 > 15) {
-      removeInputHandlers();
-      this.deallocate();
-
-      Fmv.playCurrentFmv(0, EngineStateEnum.TITLE_02);
-
-      this.loadingStage = 0;
-    }
-
-    //LAB_800c8218
   }
 
   @Method(0x800c8298L)
@@ -538,14 +532,6 @@ public class Ttle extends EngineState {
       }
     }
 
-    if(this.menuTransitionState_800c6728 != 1) {
-//      this.menuIdleTime += 2;
-
-      if(this.menuIdleTime > 1680) {
-        this.loadingStage = 6;
-      }
-    }
-
     //LAB_800c8448
     //LAB_800c8474
   }
@@ -553,7 +539,6 @@ public class Ttle extends EngineState {
   private void resetIdleTime() {
     if(this.menuLoadingStage != 3) {
       this.menuLoadingStage = 4;
-      this.menuIdleTime = 0;
     }
   }
 
@@ -595,8 +580,6 @@ public class Ttle extends EngineState {
           }
         }
       }
-
-      this.menuIdleTime = 0;
     });
 
     onMouseRelease = RENDERER.events().onMouseRelease((window, x, y, button, mods) -> {

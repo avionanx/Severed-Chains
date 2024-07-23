@@ -6,6 +6,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import legend.core.GameEngine;
+import legend.game.EngineStateType;
+import legend.game.EngineStateTypeRegistryEvent;
 import legend.game.characters.Element;
 import legend.game.characters.ElementRegistryEvent;
 import legend.game.characters.FractionalStat;
@@ -21,8 +23,11 @@ import legend.game.characters.UnaryStatMod;
 import legend.game.characters.UnaryStatModConfig;
 import legend.game.characters.UnaryStatModType;
 import legend.game.characters.VitalsStat;
+import legend.game.combat.Battle;
 import legend.game.combat.bent.BattleEntityType;
 import legend.game.combat.bent.BattleEntityTypeRegistryEvent;
+import legend.game.credits.Credits;
+import legend.game.credits.FinalFmv;
 import legend.game.inventory.Equipment;
 import legend.game.inventory.EquipmentRegistryEvent;
 import legend.game.inventory.Item;
@@ -39,11 +44,21 @@ import legend.game.modding.coremod.elements.WaterElement;
 import legend.game.modding.coremod.elements.WindElement;
 import legend.game.modding.events.battle.RegisterBattleEntityStatsEvent;
 import legend.game.modding.events.gamestate.NewGameEvent;
-import legend.game.types.EquipmentSlot;
+import legend.game.saves.campaigns.CampaignType;
+import legend.game.saves.campaigns.CampaignTypeRegistryEvent;
+import legend.game.saves.types.EnhancedSaveDisplay;
+import legend.game.saves.types.EnhancedSaveType;
+import legend.game.saves.types.RetailSaveDisplay;
+import legend.game.saves.types.RetailSaveType;
+import legend.game.saves.types.SaveType;
+import legend.game.saves.types.SaveTypeRegistryEvent;
+import legend.game.submap.SMap;
+import legend.game.title.GameOver;
 import legend.game.types.EquipmentStats1c;
 import legend.game.types.ItemStats0c;
 import legend.game.types.SpellStats0c;
 import legend.game.unpacker.Unpacker;
+import legend.game.wmap.WMap;
 import legend.lodmod.items.CharmPotionItem;
 import legend.lodmod.items.FileBasedItem;
 import org.legendofdragoon.modloader.Mod;
@@ -53,7 +68,6 @@ import org.legendofdragoon.modloader.registries.RegistryDelegate;
 import org.legendofdragoon.modloader.registries.RegistryId;
 
 import java.util.Locale;
-import java.util.Map;
 
 import static legend.game.SItem.equipmentStats_80111ff0;
 import static legend.game.SItem.itemDescriptions_80117a10;
@@ -70,6 +84,21 @@ import static legend.game.combat.Battle.spellStats_800fa0b8;
 @EventListener
 public class LodMod {
   public static final String MOD_ID = "lod";
+
+  private static final Registrar<SaveType<?>, SaveTypeRegistryEvent> SAVE_TYPE_REGISTRAR = new Registrar<>(GameEngine.REGISTRIES.saveTypes, MOD_ID);
+  public static final RegistryDelegate<SaveType<RetailSaveDisplay>> RETAIL_SAVE_TYPE = SAVE_TYPE_REGISTRAR.register("retail", RetailSaveType::new);
+  public static final RegistryDelegate<SaveType<EnhancedSaveDisplay>> ENHANCED_SAVE_TYPE = SAVE_TYPE_REGISTRAR.register("enhanced", EnhancedSaveType::new);
+
+  private static final Registrar<EngineStateType<?>, EngineStateTypeRegistryEvent> ENGINE_STATE_TYPE_REGISTRAR = new Registrar<>(GameEngine.REGISTRIES.engineStateTypes, MOD_ID);
+  public static final RegistryDelegate<EngineStateType<SMap>> SUBMAP_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("submap", () -> new EngineStateType<>(SMap.class, SMap::new));
+  public static final RegistryDelegate<EngineStateType<WMap>> WORLD_MAP_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("world_map", () -> new EngineStateType<>(WMap.class, WMap::new));
+  public static final RegistryDelegate<EngineStateType<Battle>> BATTLE_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("battle", () -> new EngineStateType<>(Battle.class, Battle::new));
+  public static final RegistryDelegate<EngineStateType<GameOver>> GAME_OVER_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("game_over", () -> new EngineStateType<>(GameOver.class, GameOver::new));
+  public static final RegistryDelegate<EngineStateType<FinalFmv>> FINAL_FMV_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("final_fmv", () -> new EngineStateType<>(FinalFmv.class, FinalFmv::new));
+  public static final RegistryDelegate<EngineStateType<Credits>> CREDITS_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("credits", () -> new EngineStateType<>(Credits.class, Credits::new));
+
+  private static final Registrar<CampaignType, CampaignTypeRegistryEvent> CAMPAIGN_TYPE_REGISTRAR = new Registrar<>(GameEngine.REGISTRIES.campaignTypes, MOD_ID);
+  public static final RegistryDelegate<CampaignType> LEGEND_OF_DRAGOON_CAMPAIGN_TYPE = CAMPAIGN_TYPE_REGISTRAR.register("legend_of_dragoon", LegendOfDragoonCampaign::new);
 
   private static final Slugify slug = Slugify.builder().locale(Locale.US).underscoreSeparator(true).customReplacement("'", "").customReplacement("-", "_").build();
 
@@ -206,70 +235,20 @@ public class LodMod {
     event.gameState.items_2e9.add(LodItems.BURN_OUT.get());
     event.gameState.items_2e9.add(LodItems.HEALING_POTION.get());
     event.gameState.items_2e9.add(LodItems.HEALING_POTION.get());
+  }
 
-    final Map<EquipmentSlot, Equipment> dart = event.gameState.charData_32c[0].equipment_14;
-    dart.put(EquipmentSlot.WEAPON, LodEquipment.BROAD_SWORD.get());
-    dart.put(EquipmentSlot.HELMET, LodEquipment.BANDANA.get());
-    dart.put(EquipmentSlot.ARMOUR, LodEquipment.LEATHER_ARMOR.get());
-    dart.put(EquipmentSlot.BOOTS, LodEquipment.LEATHER_BOOTS.get());
-    dart.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
+  @EventListener
+  public static void registerSaveTypes(final SaveTypeRegistryEvent event) {
+    SAVE_TYPE_REGISTRAR.registryEvent(event);
+  }
 
-    final Map<EquipmentSlot, Equipment> lavitz = event.gameState.charData_32c[1].equipment_14;
-    lavitz.put(EquipmentSlot.WEAPON, LodEquipment.SPEAR.get());
-    lavitz.put(EquipmentSlot.HELMET, LodEquipment.SALLET.get());
-    lavitz.put(EquipmentSlot.ARMOUR, LodEquipment.SCALE_ARMOR.get());
-    lavitz.put(EquipmentSlot.BOOTS, LodEquipment.LEATHER_BOOTS.get());
-    lavitz.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
+  @EventListener
+  public static void registerEngineStates(final EngineStateTypeRegistryEvent event) {
+    ENGINE_STATE_TYPE_REGISTRAR.registryEvent(event);
+  }
 
-    final Map<EquipmentSlot, Equipment> shana = event.gameState.charData_32c[2].equipment_14;
-    shana.put(EquipmentSlot.WEAPON, LodEquipment.SHORT_BOW.get());
-    shana.put(EquipmentSlot.HELMET, LodEquipment.FELT_HAT.get());
-    shana.put(EquipmentSlot.ARMOUR, LodEquipment.CLOTHES.get());
-    shana.put(EquipmentSlot.BOOTS, LodEquipment.LEATHER_SHOES.get());
-    shana.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    final Map<EquipmentSlot, Equipment> rose = event.gameState.charData_32c[3].equipment_14;
-    rose.put(EquipmentSlot.WEAPON, LodEquipment.RAPIER.get());
-    rose.put(EquipmentSlot.HELMET, LodEquipment.FELT_HAT.get());
-    rose.put(EquipmentSlot.ARMOUR, LodEquipment.LEATHER_JACKET.get());
-    rose.put(EquipmentSlot.BOOTS, LodEquipment.LEATHER_SHOES.get());
-    rose.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    final Map<EquipmentSlot, Equipment> haschel = event.gameState.charData_32c[4].equipment_14;
-    haschel.put(EquipmentSlot.WEAPON, LodEquipment.IRON_KNUCKLE.get());
-    haschel.put(EquipmentSlot.HELMET, LodEquipment.ARMET.get());
-    haschel.put(EquipmentSlot.ARMOUR, LodEquipment.DISCIPLE_VEST.get());
-    haschel.put(EquipmentSlot.BOOTS, LodEquipment.IRON_KNEEPIECE.get());
-    haschel.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    final Map<EquipmentSlot, Equipment> albert = event.gameState.charData_32c[5].equipment_14;
-    albert.put(EquipmentSlot.WEAPON, LodEquipment.SPEAR.get());
-    albert.put(EquipmentSlot.HELMET, LodEquipment.SALLET.get());
-    albert.put(EquipmentSlot.ARMOUR, LodEquipment.SCALE_ARMOR.get());
-    albert.put(EquipmentSlot.BOOTS, LodEquipment.LEATHER_BOOTS.get());
-    albert.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    final Map<EquipmentSlot, Equipment> meru = event.gameState.charData_32c[6].equipment_14;
-    meru.put(EquipmentSlot.WEAPON, LodEquipment.MACE.get());
-    meru.put(EquipmentSlot.HELMET, LodEquipment.TIARA.get());
-    meru.put(EquipmentSlot.ARMOUR, LodEquipment.SILVER_VEST.get());
-    meru.put(EquipmentSlot.BOOTS, LodEquipment.SOFT_BOOTS.get());
-    meru.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    final Map<EquipmentSlot, Equipment> kongol = event.gameState.charData_32c[7].equipment_14;
-    kongol.put(EquipmentSlot.WEAPON, LodEquipment.AXE.get());
-    kongol.put(EquipmentSlot.HELMET, LodEquipment.ARMET.get());
-    kongol.put(EquipmentSlot.ARMOUR, LodEquipment.LION_FUR.get());
-    kongol.put(EquipmentSlot.BOOTS, LodEquipment.IRON_KNEEPIECE.get());
-    kongol.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    final Map<EquipmentSlot, Equipment> miranda = event.gameState.charData_32c[8].equipment_14;
-    miranda.put(EquipmentSlot.WEAPON, LodEquipment.SHORT_BOW.get());
-    miranda.put(EquipmentSlot.HELMET, LodEquipment.FELT_HAT.get());
-    miranda.put(EquipmentSlot.ARMOUR, LodEquipment.CLOTHES.get());
-    miranda.put(EquipmentSlot.BOOTS, LodEquipment.LEATHER_SHOES.get());
-    miranda.put(EquipmentSlot.ACCESSORY, LodEquipment.BRACELET.get());
-
-    event.gameState.gold_94 = 20;
+  @EventListener
+  public static void registerCampaignTypes(final CampaignTypeRegistryEvent event) {
+    CAMPAIGN_TYPE_REGISTRAR.registryEvent(event);
   }
 }

@@ -1,35 +1,39 @@
 package legend.game.saves;
 
+import legend.game.saves.campaigns.CampaignType;
+import legend.game.saves.types.SaveDisplay;
+import legend.game.saves.types.SaveType;
 import legend.game.types.GameState52c;
+import legend.lodmod.LodMod;
+import org.legendofdragoon.modloader.registries.RegistryDelegate;
+import org.legendofdragoon.modloader.registries.RegistryId;
 
-public final class SavedGame {
+import java.util.Map;
+import java.util.Set;
+
+public final class SavedGame<Display extends SaveDisplay> {
   public String fileName;
   public String saveName;
-  public final int locationType;
-  public final int locationIndex;
+  public final RegistryDelegate<CampaignType> campaignType;
+  public final RegistryDelegate<SaveType<Display>> saveType;
+  public final Display display;
   public final GameState52c state;
   public final ConfigCollection config;
-  public final int maxHp;
-  public final int maxMp;
+  public final Map<RegistryId, Set<RegistryId>> ids;
 
-  /**
-   * @param locationType 1 - world map
-   *                     3 - chapter title
-   *                     other - submap
-   */
-  public SavedGame(final String fileName, final String saveName, final int locationType, final int locationIndex, final GameState52c state, final ConfigCollection config, final int maxHp, final int maxMp) {
+  public SavedGame(final String fileName, final String saveName, final RegistryDelegate<CampaignType> campaignType, final RegistryDelegate<SaveType<Display>> saveType, final Display display, final GameState52c state, final ConfigCollection config, final Map<RegistryId, Set<RegistryId>> ids) {
     this.fileName = fileName;
     this.saveName = saveName;
-    this.locationType = locationType;
-    this.locationIndex = locationIndex;
+    this.campaignType = campaignType;
+    this.saveType = saveType;
+    this.display = display;
     this.state = state;
     this.config = config;
-    this.maxHp = maxHp;
-    this.maxMp = maxMp;
+    this.ids = ids;
   }
 
-  public static SavedGame invalid(final String fileName) {
-    return new SavedGame(fileName, fileName, 0, 0, null, null, 0, 0);
+  public static SavedGame<?> invalid(final String fileName) {
+    return new SavedGame<>(fileName, fileName, null, LodMod.RETAIL_SAVE_TYPE, null, null, null, null);
   }
 
   public boolean isValid() {

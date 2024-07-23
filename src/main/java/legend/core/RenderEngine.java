@@ -60,7 +60,7 @@ import static legend.core.MathHelper.PI;
 import static legend.core.MathHelper.clamp;
 import static legend.game.Scus94491BpeSegment.zOffset_1f8003e8;
 import static legend.game.Scus94491BpeSegment.zShift_1f8003c4;
-import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
+import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd04;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
@@ -504,7 +504,7 @@ public class RenderEngine {
         this.clear();
 
         // Gross hack bro
-        if(currentEngineState_8004dd04 instanceof final Battle battle && battle._800c6930 != null) {
+        if(engineState_8004dd04 instanceof final Battle battle && battle._800c6930 != null) {
           this.tmdShader.use();
           this.tmdShaderOptions.battleColour(battle._800c6930.colour_00);
         }
@@ -822,7 +822,13 @@ public class RenderEngine {
 
         if(entry.shouldRender(Translucency.HALF_B_PLUS_HALF_F)) {
           Translucency.HALF_B_PLUS_HALF_F.setGlState();
+
           this.tmdShaderOptions.translucency(Translucency.HALF_B_PLUS_HALF_F);
+
+          if(entry.realTranslucency) {
+            this.tmdShaderOptions.realTranslucency();
+          }
+
           this.tmdShaderOptions.colour(entry.colour);
           entry.render(Translucency.HALF_B_PLUS_HALF_F);
           this.tmdShaderOptions.translucency(Translucency.B_PLUS_F);
@@ -1353,6 +1359,7 @@ public class RenderEngine {
 
     private Translucency translucency;
     private boolean hasTranslucencyOverride;
+    private boolean realTranslucency;
 
     private boolean isTmd;
     private int tmdTranslucency;
@@ -1461,11 +1468,18 @@ public class RenderEngine {
     public QueuedModel<Options> translucency(final Translucency translucency) {
       this.translucency = translucency;
       this.hasTranslucencyOverride = true;
+      this.realTranslucency = false;
 
       if(translucency == Translucency.HALF_B_PLUS_HALF_F) {
         RenderEngine.this.needsSorting = true;
       }
 
+      return this;
+    }
+
+    public QueuedModel<Options> realTranslucency() {
+      this.translucency(Translucency.HALF_B_PLUS_HALF_F);
+      this.realTranslucency = true;
       return this;
     }
 

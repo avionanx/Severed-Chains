@@ -12,7 +12,7 @@ import legend.core.opengl.SimpleShaderOptions;
 import legend.core.opengl.Texture;
 import legend.core.opengl.Window;
 import legend.core.spu.XaAdpcm;
-import legend.game.EngineStateEnum;
+import legend.game.EngineStateType;
 import legend.game.input.Input;
 import legend.game.input.InputAction;
 import legend.game.unpacker.FileData;
@@ -34,7 +34,6 @@ import static legend.game.Scus94491BpeSegment_8002.sssqResetStuff;
 import static legend.game.Scus94491BpeSegment_8002.startRumbleIntensity;
 import static legend.game.Scus94491BpeSegment_8002.stopRumble;
 import static legend.game.Scus94491BpeSegment_8004.engineStateOnceLoaded_8004dd24;
-import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd20;
 import static legend.game.Scus94491BpeSegment_800b.drgnBinIndex_800bc058;
 import static legend.game.Scus94491BpeSegment_800b.submapId_800bd808;
 import static org.lwjgl.openal.AL10.AL_FORMAT_STEREO16;
@@ -231,7 +230,7 @@ public final class Fmv {
   private static RumbleData[] rumbleData;
   private static int rumbleFrames;
 
-  public static void playCurrentFmv(final int fmvIndex, final EngineStateEnum afterFmvState) {
+  public static void playCurrentFmv(final int fmvIndex, final EngineStateType<?> afterFmvState) {
     sssqResetStuff();
 
     submapId_800bd808 = -1;
@@ -296,7 +295,7 @@ public final class Fmv {
       // Demultiplex the sectors
       Arrays.fill(demuxedRaw, (byte)0);
       for(int sectorIndex = 0, videoSectorIndex = 0; sectorIndex < sectorCount; sectorIndex++, sector++) {
-        fileData.copyFrom(sector * data.length, data, 0, data.length);
+        fileData.read(sector * data.length, data, 0, data.length);
 
         if(header.submode.isEof()) {
           stop();
@@ -494,12 +493,9 @@ public final class Fmv {
       if(rumbleData != null) {
         for(final RumbleData rumble : rumbleData) {
           if(rumble.frame == frame) {
-            final EngineStateEnum oldEngineState = engineState_8004dd20;
-            engineState_8004dd20 = EngineStateEnum.FMV_09;
             startRumbleIntensity(0, rumble.initialIntensity);
-            adjustRumbleOverTime(0, rumble.endingIntensity, rumble.duration);
+            adjustRumbleOverTime(0, rumble.endingIntensity, rumble.duration, 1);
             rumbleFrames = rumble.duration;
-            engineState_8004dd20 = oldEngineState;
           }
         }
 

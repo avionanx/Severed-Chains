@@ -8,7 +8,11 @@ import legend.core.IoHelper;
 import legend.core.MathHelper;
 import legend.core.Tuple;
 import legend.core.audio.xa.XaTranscoder;
+import legend.core.gpu.Rect4i;
+import legend.core.gpu.VramTextureLoader;
+import legend.core.gpu.VramTextureSingle;
 import legend.game.Scus94491BpeSegment;
+import legend.game.tim.Tim;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -124,6 +128,7 @@ public final class Unpacker {
     transformers.put(Unpacker::skipPartyPermutationsDiscriminator, Unpacker::skipPartyPermutationsTransformer);
     transformers.put(Unpacker::extractBtldDataDiscriminator, Unpacker::extractBtldDataTransformer);
     transformers.put(Unpacker::uiPatcherDiscriminator, Unpacker::uiPatcherTransformer);
+    transformers.put(Unpacker::portraitExtractorDiscriminator, Unpacker::portraitExtractorTransformer);
     transformers.put(CtmdTransformer::ctmdDiscriminator, CtmdTransformer::ctmdTransformer);
 
     // Remove damage caps from scripts
@@ -799,7 +804,7 @@ public final class Unpacker {
 
   private static void drgn21_402_3_patcher(final PathNode node, final Transformations transformations, final Set<String> flags) {
     final byte[] newData = new byte[0x107c];
-    node.data.copyFrom(newData);
+    node.data.read(newData);
     newData[0x1078] = 0x49;
     transformations.replaceNode(node, new FileData(newData));
   }
@@ -817,7 +822,7 @@ public final class Unpacker {
 
   private static void drgn21_693_0_patcher(final PathNode node, final Transformations transformations, final Set<String> flags) {
     final byte[] newData = new byte[0x190];
-    node.data.copyFrom(newData);
+    node.data.read(newData);
     MathHelper.set(newData, 0x188, 4, 0xffffffffL);
     MathHelper.set(newData, 0x18c, 4, 0xffffffffL);
     transformations.replaceNode(node, new FileData(newData));
@@ -838,9 +843,9 @@ public final class Unpacker {
     final byte[] frame = {0x0e, (byte)0xe0, (byte)0xfe, (byte)0xde, (byte)0xff, (byte)0x9d, 0x1d, 0x00, 0x28, 0x03, (byte)0xcb, 0x00};
     // Note: we only create data for object 21, object 22 can be all 0's since it's not visible
 
-    node.data.copyFrom(0, newData, 0, 0x100);
+    node.data.read(0, newData, 0, 0x100);
     System.arraycopy(frame, 0, newData, 0x100, frame.length); // obj 21
-    node.data.copyFrom(0x100, newData, 0x118, 0xf0);
+    node.data.read(0x100, newData, 0x118, 0xf0);
     System.arraycopy(frame, 0, newData, 0x208, frame.length); // obj 21
     newData[0xc] = 22;
 
@@ -943,13 +948,13 @@ public final class Unpacker {
     final int subfunc273params1a = 0xffff_f000;
     final int subfunc273params1b = 0xffff_fffa;
 
-    node.data.copyFrom(0, newData, 0, 0x47c0);
+    node.data.read(0, newData, 0, 0x47c0);
     MathHelper.set(newData, 0x47c0, 4, jump);
     System.arraycopy(address1, 0, newData, 0x47c4, address1.length);
-    node.data.copyFrom(0x47cd, newData, 0x47cd, 0x73f);
+    node.data.read(0x47cd, newData, 0x47cd, 0x73f);
     MathHelper.set(newData, 0x4f0c, 4, jump);
     System.arraycopy(address2, 0, newData, 0x4f10, address2.length);
-    node.data.copyFrom(0x4f15, newData, 0x4f15, 0x2307);
+    node.data.read(0x4f15, newData, 0x4f15, 0x2307);
     System.arraycopy(subfunc160a, 0, newData, 0x721c, subfunc160a.length);
     System.arraycopy(subfunc160params12a, 0, newData, 0x7224, subfunc160params12a.length);
     MathHelper.set(newData, 0x722c, 4, subfunc273);
@@ -1013,11 +1018,11 @@ public final class Unpacker {
 
     final byte[] newData = new byte[data.size() + 0xc * keyframes * (expectedObjects - actualObjects)];
 
-    data.copyFrom(0, newData, 0, 0x10);
+    data.read(0, newData, 0, 0x10);
 
     for(int i = 0; i < keyframes; i++) {
       // This will fill the new objects with the first objects from the next keyframe to emulate retail behaviour. The last keyframe is an exception - it gets zero-filled.
-      data.copyFrom(0x10 + i * 0xc * actualObjects, newData, 0x10 + i * 0xc * expectedObjects, Math.min(0xc * expectedObjects, data.size() - (0x10 + i * 0xc * actualObjects)));
+      data.read(0x10 + i * 0xc * actualObjects, newData, 0x10 + i * 0xc * expectedObjects, Math.min(0xc * expectedObjects, data.size() - (0x10 + i * 0xc * actualObjects)));
     }
 
     newData[0xc] = (byte)expectedObjects;
@@ -1211,6 +1216,116 @@ public final class Unpacker {
     }
 
     transformations.addNode(node);
+  }
+
+  private static boolean portraitExtractorDiscriminator(final PathNode node, final Set<String> flags) {
+    return "SECT/DRGN0.BIN/6665".equals(node.fullPath) && !flags.contains(node.fullPath);
+  }
+
+  private static void portraitExtractorTransformer(final PathNode node, final Transformations transformations, final Set<String> flags) {
+    flags.add(node.fullPath);
+
+    final Tim firstTim = new Tim(node.data);
+
+    // Walk to the last TIM in the file
+    Tim thirdTim = null;
+    int offset = 0;
+    for(int i = 0; i < 3; i++) {
+      thirdTim = new Tim(node.data.slice(offset));
+      final Rect4i rect = thirdTim.getImageRect();
+      offset += 0x14 + thirdTim.getImageDataOffset() + rect.w * rect.h * 2;
+    }
+
+    final int[] newData = new int[512 * 64];
+    extractPortraits(thirdTim, newData);
+    extractSpirits(firstTim, newData);
+
+    transformations.addNode(node);
+    transformations.addNode("characters/portraits.png", new FileData(VramTextureLoader.convertToPng(new Rect4i(0, 0, 512, 64), newData, false)));
+  }
+
+  private static void extractSpirits(final Tim tim, final int[] newData) {
+    final VramTextureSingle texture = VramTextureLoader.textureFromTim(tim);
+    final VramTextureSingle[] palettes = VramTextureLoader.palettesFromTim(tim);
+    final int[][] applied = new int[8][];
+
+    for(int spirit = 0; spirit < 7; spirit++) {
+      applied[spirit] = texture.applyPalette(palettes[4 + spirit], new Rect4i(130, 118, 11, 9));
+    }
+
+    applied[7] = texture.applyPalette(palettes[11], new Rect4i(242, 118, 11, 9));
+
+    for(int spirit = 0; spirit < 8; spirit++) {
+      for(int y = 0; y < 9; y++) {
+        for(int x = 0; x < 11; x++) {
+          final int pixel = applied[spirit][y * 11 + x];
+
+          if(pixel != 0) {
+            final int r = pixel        & 0xff;
+            final int g = pixel >>>  8 & 0xff;
+            final int b = pixel >>> 16 & 0xff;
+            newData[(48 + y) * 512 + spirit * 16 + x] = 0xff00_0000 | r << 16 | g << 8 | b;
+          }
+        }
+      }
+    }
+  }
+
+  private static void extractPortraits(final Tim tim, final int[] newData) {
+    final VramTextureSingle texture = VramTextureLoader.textureFromTim(tim);
+    final VramTextureSingle[] palettes = VramTextureLoader.palettesFromTim(tim);
+
+    // Apply all 3 CLUTs
+    final int[][] applied = new int[3][];
+    for(int i = 0; i < 3; i++) {
+      applied[i] = texture.applyPalette(palettes[i], new Rect4i(0, 0, texture.rect.w, texture.rect.h));
+    }
+
+    // Applied is the TIM with its CLUTs applied
+    // Raw is an intermediate abstraction, as if the texture was one single row with each portrait in order, repeated 3 times (once for each colour channel)
+    // New is the output data
+
+    final int rawWidth = 432 * 3;
+    final int rawHeight = 48;
+    final int rawArea = rawWidth * rawHeight;
+    final int appliedWidth = 256;
+
+    for(int i = 0; i < rawArea; i++) {
+      final int rawX = i % rawWidth;
+      final int rawY = i / rawWidth;
+
+      int appliedX = rawX % appliedWidth;
+      int appliedY = rawY + rawX / appliedWidth * rawHeight;
+
+      // Handle the lower 32 pixels of the right side of Miranda's blue channel being split up in the last row
+      while(appliedY >= 256) {
+        appliedY -= 16;
+        appliedX += 16;
+      }
+
+      final int appliedIndex = appliedY * appliedWidth + appliedX;
+      final int pixel = applied[i / (rawWidth / 3) % 3][appliedIndex];
+      final int newIndex = i / rawWidth * 512 + (i % (rawWidth / 3));
+
+      final int br = pixel        & 0xff;
+      final int bg = pixel >>>  8 & 0xff;
+      final int bb = pixel >>> 16 & 0xff;
+      final int fb = newData[newIndex]        & 0xff;
+      final int fg = newData[newIndex] >>>  8 & 0xff;
+      final int fr = newData[newIndex] >>> 16 & 0xff;
+
+      final int r = Math.min(0xff, br + fr);
+      final int g = Math.min(0xff, bg + fg);
+      final int b = Math.min(0xff, bb + fb);
+
+      newData[newIndex] = r << 16 | g << 8 | b;
+
+      if(newData[newIndex] != 0 && r != 0) {
+        newData[newIndex] |= 0xff00_0000;
+      } else {
+        newData[newIndex] = 0;
+      }
+    }
   }
 
   private static boolean monsterSfxDiscriminator(final PathNode node, final Set<String> flags) {

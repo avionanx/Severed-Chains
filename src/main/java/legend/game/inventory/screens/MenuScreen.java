@@ -2,9 +2,12 @@ package legend.game.inventory.screens;
 
 import legend.game.SItem;
 import legend.game.input.InputAction;
+import legend.game.inventory.screens.controls.Button;
 
 import javax.annotation.Nullable;
+import java.util.EnumMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 public abstract class MenuScreen extends ControlHost {
@@ -14,6 +17,8 @@ public abstract class MenuScreen extends ControlHost {
 
   private Control hover;
   private Control focus;
+
+  private final Map<InputAction, Button> defaultButtons = new EnumMap<>(InputAction.class);
 
   void setStack(@Nullable final MenuStack stack) {
     this.stack = stack;
@@ -51,6 +56,16 @@ public abstract class MenuScreen extends ControlHost {
   @Override
   public int getHeight() {
     return 240;
+  }
+
+  public Button setDefaultButton(final InputAction input, final Button button) {
+    if(this.defaultButtons.containsKey(input)) {
+      this.defaultButtons.get(input).setIcon((char)0);
+    }
+
+    this.defaultButtons.put(input, button);
+    button.setIcon(input.icon);
+    return button;
   }
 
   protected abstract void render();
@@ -97,6 +112,14 @@ public abstract class MenuScreen extends ControlHost {
       return InputPropagation.HANDLED;
     }
 
+    for(final Control control : this) {
+      if(control.alwaysReceiveInput) {
+        if(control.keyPress(key, scancode, mods) == InputPropagation.HANDLED) {
+          return InputPropagation.HANDLED;
+        }
+      }
+    }
+
     if(this.focus != null && !this.focus.isDisabled()) {
       return this.focus.keyPress(key, scancode, mods);
     }
@@ -108,6 +131,14 @@ public abstract class MenuScreen extends ControlHost {
   protected InputPropagation charPress(final int codepoint) {
     if(super.charPress(codepoint) == InputPropagation.HANDLED) {
       return InputPropagation.HANDLED;
+    }
+
+    for(final Control control : this) {
+      if(control.alwaysReceiveInput) {
+        if(control.charPress(codepoint) == InputPropagation.HANDLED) {
+          return InputPropagation.HANDLED;
+        }
+      }
     }
 
     if(this.focus != null && !this.focus.isDisabled()) {
@@ -123,6 +154,21 @@ public abstract class MenuScreen extends ControlHost {
       return InputPropagation.HANDLED;
     }
 
+    final Control defaultButton = this.defaultButtons.get(inputAction);
+    if(defaultButton != null) {
+      if(defaultButton.pressedThisFrame(InputAction.BUTTON_SOUTH) == InputPropagation.HANDLED) {
+        return InputPropagation.HANDLED;
+      }
+    }
+
+    for(final Control control : this) {
+      if(control.alwaysReceiveInput) {
+        if(control.pressedThisFrame(inputAction) == InputPropagation.HANDLED) {
+          return InputPropagation.HANDLED;
+        }
+      }
+    }
+
     if(this.focus != null && !this.focus.isDisabled()) {
       return this.focus.pressedThisFrame(inputAction);
     }
@@ -136,6 +182,14 @@ public abstract class MenuScreen extends ControlHost {
       return InputPropagation.HANDLED;
     }
 
+    for(final Control control : this) {
+      if(control.alwaysReceiveInput) {
+        if(control.pressedWithRepeatPulse(inputAction) == InputPropagation.HANDLED) {
+          return InputPropagation.HANDLED;
+        }
+      }
+    }
+
     if(this.focus != null && !this.focus.isDisabled()) {
       return this.focus.pressedWithRepeatPulse(inputAction);
     }
@@ -147,6 +201,14 @@ public abstract class MenuScreen extends ControlHost {
   protected InputPropagation releasedThisFrame(final InputAction inputAction) {
     if(super.releasedThisFrame(inputAction) == InputPropagation.HANDLED) {
       return InputPropagation.HANDLED;
+    }
+
+    for(final Control control : this) {
+      if(control.alwaysReceiveInput) {
+        if(control.releasedThisFrame(inputAction) == InputPropagation.HANDLED) {
+          return InputPropagation.HANDLED;
+        }
+      }
     }
 
     if(this.focus != null && !this.focus.isDisabled()) {

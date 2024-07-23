@@ -1,6 +1,16 @@
 package legend.game.modding.coremod;
 
 import legend.core.GameEngine;
+import legend.game.EngineStateType;
+import legend.game.EngineStateTypeRegistryEvent;
+import legend.game.characters.Element;
+import legend.game.characters.ElementRegistryEvent;
+import legend.game.characters.StatType;
+import legend.game.characters.StatTypeRegistryEvent;
+import legend.game.characters.UnaryStat;
+import legend.game.characters.VitalsStat;
+import legend.game.combat.bent.BattleEntityType;
+import legend.game.combat.bent.BattleEntityTypeRegistryEvent;
 import legend.game.combat.formula.Formula;
 import legend.game.combat.formula.PhysicalDamageFormula;
 import legend.game.input.InputAction;
@@ -26,6 +36,7 @@ import legend.game.saves.ConfigCategory;
 import legend.game.saves.ConfigEntry;
 import legend.game.saves.ConfigRegistryEvent;
 import legend.game.saves.ConfigStorageLocation;
+import legend.game.title.Ttle;
 import org.legendofdragoon.modloader.Mod;
 import org.legendofdragoon.modloader.events.EventListener;
 import org.legendofdragoon.modloader.registries.Registrar;
@@ -112,6 +123,9 @@ public class CoreMod {
   public static final RegistryDelegate<BoolConfigEntry> DISABLE_STATUS_EFFECTS_CONFIG = CONFIG_REGISTRAR.register("disable_status_effects", () -> new BoolConfigEntry(false, ConfigStorageLocation.CAMPAIGN, ConfigCategory.GAMEPLAY));
   public static final RegistryDelegate<BoolConfigEntry> ENEMY_HP_BARS_CONFIG = CONFIG_REGISTRAR.register("enemy_hp_bars", () -> new BoolConfigEntry(false, ConfigStorageLocation.CAMPAIGN, ConfigCategory.GAMEPLAY));
 
+  private static final Registrar<EngineStateType<?>, EngineStateTypeRegistryEvent> ENGINE_STATE_TYPE_REGISTRAR = new Registrar<>(GameEngine.REGISTRIES.engineStateTypes, MOD_ID);
+  public static final RegistryDelegate<EngineStateType<Ttle>> TITLE_STATE_TYPE = ENGINE_STATE_TYPE_REGISTRAR.register("title", () -> new EngineStateType<>(Ttle.class, Ttle::new));
+
   public static final Formula<Integer, Integer> PHYSICAL_DAMAGE_FORMULA = Formula.make(PhysicalDamageFormula::calculatePhysicalDamage, builder -> builder
     .then(PhysicalDamageFormula::applyElementalInteractions)
     .then(PhysicalDamageFormula::applyPower)
@@ -131,5 +145,10 @@ public class CoreMod {
   @EventListener
   public static void registerConfig(final ConfigRegistryEvent event) {
     CONFIG_REGISTRAR.registryEvent(event);
+  }
+
+  @EventListener
+  public static void registerEngineStates(final EngineStateTypeRegistryEvent event) {
+    ENGINE_STATE_TYPE_REGISTRAR.registryEvent(event);
   }
 }

@@ -17,7 +17,6 @@ import legend.core.opengl.fonts.FontManager;
 import legend.core.opengl.fonts.TextStream;
 import legend.core.spu.Spu;
 import legend.core.ui.ScreenStack;
-import legend.game.EngineStateEnum;
 import legend.game.Scus94491BpeSegment_8002;
 import legend.game.fmv.Fmv;
 import legend.game.input.Input;
@@ -31,6 +30,7 @@ import legend.game.saves.serializers.V1Serializer;
 import legend.game.saves.serializers.V2Serializer;
 import legend.game.saves.serializers.V3Serializer;
 import legend.game.saves.serializers.V4Serializer;
+import legend.game.saves.serializers.V5Serializer;
 import legend.game.scripting.ScriptManager;
 import legend.game.sound.Sequencer;
 import legend.game.unpacker.FileData;
@@ -96,7 +96,7 @@ public final class GameEngine {
   public static final Sequencer SEQUENCER = new Sequencer();
 
   public static final ConfigCollection CONFIG = new ConfigCollection();
-  public static final SaveManager SAVES = new SaveManager(V4Serializer.MAGIC_V4, V4Serializer::toV4);
+  public static final SaveManager SAVES = new SaveManager(V5Serializer.MAGIC_V5, V5Serializer::toV5);
 
   public static final RenderEngine RENDERER = new RenderEngine();
   public static final ScreenStack SCREENS = new ScreenStack();
@@ -202,6 +202,7 @@ public final class GameEngine {
         SAVES.registerDeserializer(V2Serializer::fromV2Matcher, V2Serializer::fromV2);
         SAVES.registerDeserializer(V3Serializer::fromV3Matcher, V3Serializer::fromV3);
         SAVES.registerDeserializer(V4Serializer::fromV4Matcher, V4Serializer::fromV4);
+        SAVES.registerDeserializer(V5Serializer::fromV5Matcher, V5Serializer::fromV5);
 
         synchronized(LOCK) {
           Unpacker.setStatusListener(status -> {
@@ -276,8 +277,11 @@ public final class GameEngine {
     // Initialize event bus and find all event handlers
     EVENT_ACCESS.initialize(MODS);
 
-    // Initialize config registry and fire off config registry events
+    // Initialize registries needed on the menu and fire off config registry events
     REGISTRY_ACCESS.initialize(REGISTRIES.config);
+    REGISTRY_ACCESS.initialize(REGISTRIES.saveTypes);
+    REGISTRY_ACCESS.initialize(REGISTRIES.engineStateTypes);
+    REGISTRY_ACCESS.initialize(REGISTRIES.campaignTypes);
 
     MOD_ACCESS.loadingComplete();
 
@@ -423,11 +427,12 @@ public final class GameEngine {
         shadowModel_800bda10.modelParts_00[i].obj.persistent = true;
       }
 
+      SAVES.init();
       initTextboxGeometry();
       battleUiParts.init();
       startSound();
       gameLoop();
-      Fmv.playCurrentFmv(0, EngineStateEnum.TITLE_02);
+      Fmv.playCurrentFmv(0, CoreMod.TITLE_STATE_TYPE.get());
     }
   }
 
@@ -435,7 +440,6 @@ public final class GameEngine {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    final Path vsh = Paths.get("gfx", "shaders", "simple.vsh");
     shader = ShaderManager.getShader(RenderEngine.SIMPLE_SHADER);
     shaderOptions = shader.makeOptions();
 
