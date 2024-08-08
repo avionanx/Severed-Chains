@@ -100,7 +100,7 @@ public class BattleHud {
   private static final String[] targeting_800fb36c = { "All allies", "All enemies", "All" };
   public static final String[] playerNames_800fb378 = {
     "Dart", "Lavitz", "Shana", "Rose", "Haschel",
-    "Albert", "Meru", "Kongol", "Miranda", "DivinDGDart",
+    "Albert", "Meru", "Kongol", "Miranda", "Damia", "Zieg"
   };
   /** Poisoned, Dispirited, Weapon blocked, Stunned, Fearful, Confused, Bewitched, Petrified */
   private static final String[] ailments_800fb3a0 = {
@@ -118,6 +118,8 @@ public class BattleHud {
     new NameAndPortraitDisplayMetrics0c(32, 232, 32, 8, 144, 0, 24, 32, 6),
     new NameAndPortraitDisplayMetrics0c(152, 56, 40, 8, 168, 0, 24, 32, 7),
     new NameAndPortraitDisplayMetrics0c(64, 232, 40, 8, 192, 0, 24, 32, 8),
+    //new NameAndPortraitDisplayMetrics0c(104, 32, 24, 8, 24, 0, 24, 32, 0),
+    new NameAndPortraitDisplayMetrics0c(32, 232, 32, 8, 144, 0, 24, 32, 6),
     new NameAndPortraitDisplayMetrics0c(104, 32, 24, 8, 24, 0, 24, 32, 0),
   };
   private static final SpBarBorderMetrics04[] spBarBorderMetrics_800fb46c = {

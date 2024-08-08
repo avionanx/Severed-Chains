@@ -55,6 +55,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import static legend.game.SItem.albertXpTable_801138c0;
+import static legend.game.SItem.damiaXpTable;
 import static legend.game.SItem.dartXpTable_801135e4;
 import static legend.game.SItem.haschelXpTable_801136d8;
 import static legend.game.SItem.kongolXpTable_801134f0;
@@ -63,6 +64,7 @@ import static legend.game.SItem.meruXpTable_801137cc;
 import static legend.game.SItem.mirandaXpTable_80113aa8;
 import static legend.game.SItem.roseXpTable_801139b4;
 import static legend.game.SItem.shanaXpTable_80113aa8;
+import static legend.game.SItem.ziegXpTable;
 import static legend.game.Scus94491BpeSegment.battleUiParts;
 import static legend.game.Scus94491BpeSegment.gameLoop;
 import static legend.game.Scus94491BpeSegment.startSound;
@@ -302,6 +304,8 @@ public final class GameEngine {
     final FileData haschel = new FileData(Files.readAllBytes(Paths.get("./files/characters/haschel/xp")));
     final FileData kongol = new FileData(Files.readAllBytes(Paths.get("./files/characters/kongol/xp")));
     final FileData meru = new FileData(Files.readAllBytes(Paths.get("./files/characters/meru/xp")));
+    final FileData damia = new FileData(Files.readAllBytes(Paths.get("./files/characters/damia/xp")));
+    final FileData zieg = new FileData(Files.readAllBytes(Paths.get("./files/characters/zieg/xp")));
 
     for(int i = 0; i < dartXpTable_801135e4.length; i++) {
       dartXpTable_801135e4[i] = dart.readInt(i * 4);
@@ -337,6 +341,14 @@ public final class GameEngine {
 
     for(int i = 0; i < meruXpTable_801137cc.length; i++) {
       meruXpTable_801137cc[i] = meru.readInt(i * 4);
+    }
+
+    for(int i = 0; i < damiaXpTable.length; i++) {
+      damiaXpTable[i] = damia.readInt(i * 4);
+    }
+
+    for(int i = 0; i < ziegXpTable.length; i++) {
+      ziegXpTable[i] = zieg.readInt(i * 4);
     }
   }
 

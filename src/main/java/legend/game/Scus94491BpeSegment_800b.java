@@ -167,8 +167,8 @@ public final class Scus94491BpeSegment_800b {
   public static Renderable58 renderablePtr_800bdba4;
   public static Renderable58 renderablePtr_800bdba8;
 
-  public static final int[] characterIndices_800bdbb8 = new int[9];
-  public static final int[] secondaryCharIds_800bdbf8 = new int[9];
+  public static final int[] characterIndices_800bdbb8 = new int[11];
+  public static final int[] secondaryCharIds_800bdbf8 = new int[11];
 
   public static InventoryMenuState inventoryMenuState_800bdc28 = InventoryMenuState.INIT_0;
 
@@ -216,7 +216,7 @@ public final class Scus94491BpeSegment_800b {
 
   public static boolean characterStatsLoaded_800be5d0;
 
-  public static final ActiveStatsa0[] stats_800be5f8 = new ActiveStatsa0[9];
+  public static final ActiveStatsa0[] stats_800be5f8 = new ActiveStatsa0[11];
   static {
     Arrays.setAll(stats_800be5f8, i -> new ActiveStatsa0());
   }

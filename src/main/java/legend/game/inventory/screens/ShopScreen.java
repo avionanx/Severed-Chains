@@ -113,7 +113,7 @@ public class ShopScreen extends MenuScreen {
    */
   private int shopType2;
 
-  private final Renderable58[] charRenderables = new Renderable58[9];
+  private final Renderable58[] charRenderables = new Renderable58[11];
 
   private double scrollAccumulator;
   private int mouseX;

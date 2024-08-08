@@ -170,8 +170,8 @@ public final class Scus94491BpeSegment_8004 {
   // 8004f29c end of jump table
 
   public static final ItemStats0c[] itemStats_8004f2ac = new ItemStats0c[64];
-  public static final int[] additionOffsets_8004f5ac = {0, 8, -1, 14, 29, 8, 23, 19, -1, 0};
-  public static final int[] additionCounts_8004f5c0 = {7, 5, 0, 4, 6, 5, 5, 3, 0, 0};
+  public static final int[] additionOffsets_8004f5ac = {0, 8, -1, 14, 29, 8, 23, 19, -1, 0, 0, 0};
+  public static final int[] additionCounts_8004f5c0 = {7, 5, 0, 4, 6, 5, 5, 3, 0, 0, 0, 0};
 
   public static final ScriptFile doNothingScript_8004f650 = new ScriptFile("Do nothing", new byte[] {0x4, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0});
   public static BattleReportOverlayList10 battleReportOverlayLists_8004f658;

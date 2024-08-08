@@ -30,7 +30,7 @@ public class SBtld {
           //LAB_80109308
           activeDragoonAdditionIndex = dragoonAdditionIndices_801134e8[charIndex];
         } else {
-          activeDragoonAdditionIndex = dragoonAdditionIndices_801134e8[9];
+          activeDragoonAdditionIndex = dragoonAdditionIndices_801134e8[11];
         }
 
         //LAB_80109310
@@ -93,7 +93,7 @@ public class SBtld {
     new AdditionHits80(new AdditionHitProperties10[] { new AdditionHitProperties10(0xc0, 0, 0, 0, -56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0xc0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0xc0, 0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0xc0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0xc0, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0xc0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), new AdditionHitProperties10(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) }),
   };
 
-  public static final int[] dragoonAdditionIndices_801134e8 = {7, 13, -1, 18, 35, 41, 28, 22, -1, 42};
+  public static final int[] dragoonAdditionIndices_801134e8 = {7, 13, -1, 18, 35, 41, 28, 22, -1, 42, 28, 7};
 
   public static final StageDeffThing08[] _8011517c = {
     new StageDeffThing08(0, 0, 0),

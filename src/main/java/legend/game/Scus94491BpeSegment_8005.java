@@ -62,7 +62,7 @@ public final class Scus94491BpeSegment_8005 {
     new UvAdjustmentMetrics14(17, 704, 240, 704, 0),
   };
 
-  public static final int[] shadowScale_8005039c = {0x1800, 0x1800, 0x1000, 0xe00, 0x1600, 0x1300, 0xe00, 0x2000, 0x1300, 0x1500};
+  public static final int[] shadowScale_8005039c = {0x1800, 0x1800, 0x1000, 0xe00, 0x1600, 0x1300, 0xe00, 0x2000, 0x1300, 0x1500, 0x1800, 0x1800};
 
   public static final String[] itemCombatDescriptions_80051758 = {
     " ", "Detonates & attacks all.", "S attack(thunder, multi).", "S attack(flame, multi).", " ",

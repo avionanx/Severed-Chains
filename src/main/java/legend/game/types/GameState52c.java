@@ -68,7 +68,7 @@ public class GameState52c {
   /** Only used during loading */
   public final List<RegistryId> itemRegistryIds_2e9 = new ArrayList<>();
 
-  public final CharacterData2c[] charData_32c = new CharacterData2c[9];
+  public final CharacterData2c[] charData_32c = new CharacterData2c[11];
 //  public final int[] _4b8 = new int[8];
 
   // World map stuff

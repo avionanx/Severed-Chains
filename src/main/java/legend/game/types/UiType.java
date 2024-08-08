@@ -6,7 +6,7 @@ import legend.game.unpacker.FileData;
 import java.util.Arrays;
 
 public class UiType {
-  public final UiPart[] entries_08;
+  public UiPart[] entries_08;
   public Obj obj;
 
   public UiType(final UiPart[] entries_08) {

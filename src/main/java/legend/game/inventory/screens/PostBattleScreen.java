@@ -61,14 +61,14 @@ public class PostBattleScreen extends MenuScreen {
   private static final String NEW_ADDITION = "New Addition";
   private static final String SPELL_UNLOCKED = "Spell Unlocked";
 
-  private static final int[] characterPortraitVs_800fbc88 = {0x1f0, 0x1f2, 0x1f1, 0x1f3, 0x1f4, 0x1f5, 0x1f6, 0x1f7, 0x1f8};
-  private static final int[] charPortraitGlyphs_800fbc9c = {0xd, 0xf, 0xe, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15};
-  private static final int[] _800fbca8 = {0x26, 0x28, 0x27, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e};
+  private static final int[] characterPortraitVs_800fbc88 = {0x1f0, 0x1f2, 0x1f1, 0x1f3, 0x1f4, 0x1f5, 0x1f6, 0x1f7, 0x1f8, 0x1f6, 0x1f0};
+  private static final int[] charPortraitGlyphs_800fbc9c = {0xd, 0xf, 0xe, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x13, 0xd};
+  private static final int[] _800fbca8 = {0x26, 0x28, 0x27, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2c, 0x26};
 
   private int levelUpCharId_8011e170;
   private int unlockHeight_8011e178;
   private int soundTick_8011e17c;
-  private final int[] pendingXp_8011e180 = new int[10];
+  private final int[] pendingXp_8011e180 = new int[11];
   private final int[] spellsUnlocked_8011e1a8 = new int[10];
   private final int[] additionsUnlocked_8011e1b8 = new int[10];
   private final int[] levelsGained_8011e1c8 = new int[10];
@@ -666,7 +666,7 @@ public class PostBattleScreen extends MenuScreen {
 
   @Method(0x8010e114L)
   private Renderable58 drawCharPortrait(final int x, final int y, final int charId) {
-    if(charId >= 9) {
+    if(charId >= 11) {
       //LAB_8010e1ec
       throw new IllegalArgumentException("Invalid character index");
     }

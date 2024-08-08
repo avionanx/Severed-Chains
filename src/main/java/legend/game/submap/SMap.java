@@ -2814,8 +2814,8 @@ public class SMap extends EngineState<SMap> {
       // Load map assets
       case LOAD_SOBJ_ASSETS_AND_SCRIPTS_5 -> {
         this.unloadSubmapParticles_800c6870 = false;
-        this.submap.loadAssets(() -> this.mediaLoadingStage_800c68e4 = SubmapMediaState.FINALIZE_SUBMAP_LOADING_7);
         this.mediaLoadingStage_800c68e4 = SubmapMediaState.WAIT_FOR_SOBJ_ASSETS_AND_SCRIPTS_6;
+        this.submap.loadAssets(() -> this.mediaLoadingStage_800c68e4 = SubmapMediaState.FINALIZE_SUBMAP_LOADING_7);
       }
 
       // Load submap objects
@@ -3715,8 +3715,12 @@ public class SMap extends EngineState<SMap> {
         this.mapTransitionTicks_800cab28 = 0;
         submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
+        if(submapCut_80052c30 >= 1000){
+          this.submap = new LinkedSubmap(2000,36,this.newrootPtr_800cab04,this.screenOffset_800cb568,this.collisionGeometry_800cbe08);
+        }else{
+         this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
+        }
 
-        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
 
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
         this.submap.loadEnv(() -> this.smapLoadingStage_800cb430 = SubmapState.START_LOADING_MEDIA_10);

@@ -854,7 +854,7 @@ public final class Scus94491BpeSegment {
 
   public static void loadDrgnFileSync(int drgnBinIndex, final String file, final Consumer<FileData> onCompletion) {
     if(drgnBinIndex >= 2) {
-      drgnBinIndex = 20 + drgnBinIndex_800bc058;
+      drgnBinIndex = 22;
     }
 
     final StackWalker.StackFrame frame = DebugHelper.getCallerFrame();
@@ -2338,7 +2338,8 @@ public final class Scus94491BpeSegment {
       case 6 -> "Meru";
       case 7 -> "Kongol";
       case 8 -> "Miranda";
-      case 9, 10 -> "Divine";
+      case 9 -> "Damia";
+      case 10 -> "Zieg";
       default -> throw new IllegalArgumentException("Invalid character ID " + id);
     };
   }
