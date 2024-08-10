@@ -165,6 +165,7 @@ import static legend.game.Scus94491BpeSegment_800c.sequenceData_800c4ac8;
 import static legend.game.combat.environment.StageData.stageData_80109a98;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_F12;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_Q;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 import static org.lwjgl.glfw.GLFW.GLFW_MOD_CONTROL;
 
@@ -375,6 +376,14 @@ public final class Scus94491BpeSegment {
 
       if((mods & GLFW_MOD_CONTROL) != 0 && key == GLFW_KEY_W && currentEngineState_8004dd04 instanceof final Battle battle) {
         battle.endBattle();
+      }
+
+      if((mods & GLFW_MOD_CONTROL) != 0 && key == GLFW_KEY_Q) {
+        if(Config.getGameSpeedMultiplier() == 1) {
+          Config.setGameSpeedMultiplier(Config.getLoadedGameSpeedMultiplier());
+        } else {
+          Config.setGameSpeedMultiplier(1);
+        }
       }
     });
 
@@ -1363,6 +1372,7 @@ public final class Scus94491BpeSegment {
     switch(engineState_8004dd20) {
       case TITLE_02 -> {
         setMainVolume(0x7f, 0x7f);
+        AUDIO_THREAD.setMainVolume(0x7f, 0x7f);
         sssqResetStuff();
         FUN_8001aa90();
 
@@ -1741,6 +1751,7 @@ public final class Scus94491BpeSegment {
   @Method(0x8001b14cL)
   public static FlowControl scriptSetMainVolume(final RunningScript<?> script) {
     setMainVolume((short)script.params_20[0].get(), (short)script.params_20[1].get());
+    AUDIO_THREAD.setMainVolume((short)script.params_20[0].get(), (short)script.params_20[1].get());
     return FlowControl.CONTINUE;
   }
 
