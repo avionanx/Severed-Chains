@@ -3749,9 +3749,11 @@ public class SMap extends EngineState {
         this.mapTransitionTicks_800cab28 = 0;
         submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
-
-        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
-
+        if(submapCut_80052c30 >= 1000){
+          this.submap = new LinkedSubmap(submapCut_80052c30,55,this.newrootPtr_800cab04,this.screenOffset_800cb568,this.collisionGeometry_800cbe08);
+        }else {
+          this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
+        }
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
         this.submap.loadEnv(() -> this.smapLoadingStage_800cb430 = SubmapState.START_LOADING_MEDIA_10);
       }
