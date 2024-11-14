@@ -159,7 +159,6 @@ public class LinkedSubmap extends Submap {
     this.hasRenderer_800c6968 = submapTypes_800f5cd4[refCut] == 65;
     this.screenOffset = screenOffset;
     this.collisionGeometry = collisionGeometry;
-    submapId_800bd808 = 1;
     this.linkedAssets = new ArrayList<>();
     //this.refCut = 93;
     this.linkedAssets.add(new LinkedAsset(692,3, 3));
@@ -274,7 +273,7 @@ public class LinkedSubmap extends Submap {
   @Override
   public void loadMusicAndSounds() {
     final int oldSubmapId = submapId_800bd808;
-    submapId_800bd808 = this.cutToSubmap_800d610c[675];
+    submapId_800bd808 = this.cutToSubmap_800d610c[this.refCut];
 
     if(submapId_800bd808 != oldSubmapId) {
       stopAndResetSoundsAndSequences();
@@ -282,7 +281,7 @@ public class LinkedSubmap extends Submap {
       loadSubmapSounds(submapId_800bd808);
     }
 
-    if(submapId_800bd808 != oldSubmapId || previousSubmapCut_800bda08 != 675) {
+    if(submapId_800bd808 != oldSubmapId || previousSubmapCut_800bda08 != this.refCut) {
       musicLoaded_800bd782 = false;
       this.startMusic();
     }
