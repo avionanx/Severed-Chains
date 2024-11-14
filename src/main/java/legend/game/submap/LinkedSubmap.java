@@ -159,10 +159,10 @@ public class LinkedSubmap extends Submap {
     this.hasRenderer_800c6968 = submapTypes_800f5cd4[refCut] == 65;
     this.screenOffset = screenOffset;
     this.collisionGeometry = collisionGeometry;
-
+    submapId_800bd808 = 1;
     this.linkedAssets = new ArrayList<>();
     //this.refCut = 93;
-    this.linkedAssets.add(new LinkedAsset(284,6));
+    this.linkedAssets.add(new LinkedAsset(692,3, 3));
 
     this.loadCollisionAndTransitions();
   }
@@ -219,7 +219,7 @@ public class LinkedSubmap extends Submap {
           tempIndex.set(drgnIndex.get());
           try {
             if(tempIndex.get() < 20) {tempIndex.add(20);}
-            loadDrgnFileSync(2, (fileIndex.get() + 1) + "/" + (this.linkedAssets.get(i).index() * 33 + y), assets::add);
+            loadDrgnFileSync(2, (fileIndex.get() + 1) + "/" + (this.linkedAssets.get(i).index() * 33 + y), assets::add, this.linkedAssets.get(i).disc());
           } catch (final Exception e){
             final FileData data = assets.getLast();
             assets.add(data);
