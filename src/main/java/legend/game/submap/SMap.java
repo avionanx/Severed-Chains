@@ -3,7 +3,8 @@ package legend.game.submap;
 import legend.core.Config;
 import legend.core.IoHelper;
 import legend.core.MathHelper;
-import legend.core.QueuedModel;
+import legend.core.QueuedModelStandard;
+import legend.core.QueuedModelTmd;
 import legend.core.gpu.Bpp;
 import legend.core.gpu.GpuCommandCopyVramToVram;
 import legend.core.gte.GsCOORDINATE2;
@@ -205,6 +206,7 @@ public class SMap extends EngineState {
   private int mapTransitionTicks_800cab28;
 
   public SubmapState smapLoadingStage_800cb430 = SubmapState.INIT_0;
+  public Runnable menuTransition;
 
   private boolean returnedToSameSubmapAfterBattle_800cb448;
 
@@ -959,7 +961,7 @@ public class SMap extends EngineState {
     GsGetLw(partCoord, lw);
 
     RENDERER
-      .queueModel(modelPart.obj, lw)
+      .queueModel(modelPart.obj, lw, QueuedModelTmd.class)
       .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
       .lightDirection(lightDirectionMatrix_800c34e8)
       .lightColour(lightColourMatrix_800c3508)
@@ -989,7 +991,7 @@ public class SMap extends EngineState {
         if(dobj2.obj != null) { //TODO remove me
           GsGetLw(dobj2.coord2_04, lw);
 
-          final QueuedModel<?> queue = RENDERER.queueModel(dobj2.obj, lw)
+          final QueuedModelTmd queue = RENDERER.queueModel(dobj2.obj, lw, QueuedModelTmd.class)
             .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
             .lightDirection(lightDirectionMatrix_800c34e8)
             .lightColour(lightColourMatrix_800c3508)
@@ -2738,7 +2740,7 @@ public class SMap extends EngineState {
       .build();
     final MV transforms = new MV();
     transforms.transfer.set(GPU.getOffsetX(), GPU.getOffsetY(), 148.0f);
-    RENDERER.queueOrthoModel(obj, transforms);
+    RENDERER.queueOrthoModel(obj, transforms, QueuedModelStandard.class);
     obj.delete();
   }
 
@@ -3235,6 +3237,7 @@ public class SMap extends EngineState {
 
   @Method(0x800e4708L)
   private void renderSubmap() {
+    this.submap.preDraw();
     this.attachedSobjEffect.renderAttachedSobjEffects(this.screenOffset_800cb568.x, this.screenOffset_800cb568.y);
     this.renderSubmapOverlays();
     this.handleAndRenderSubmapEffects();
@@ -3464,7 +3467,7 @@ public class SMap extends EngineState {
       for(int i = 0; i < this.collisionGeometry_800cbe08.primitiveCount_0c; i++) {
         final CollisionPrimitiveInfo0c primitiveInfo = this.collisionGeometry_800cbe08.primitiveInfo_14[i];
 
-        final QueuedModel<?> model = RENDERER.queueModel(this.collisionGeometry_800cbe08.debugObj, lw)
+        final QueuedModelStandard model = RENDERER.queueModel(this.collisionGeometry_800cbe08.debugObj, lw, QueuedModelStandard.class)
           .vertices(primitiveInfo.vertexInfoOffset_02, primitiveInfo.vertexCount_00)
           .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
           .depthOffset(-1.0f)
@@ -3509,7 +3512,7 @@ public class SMap extends EngineState {
         if(this.sobjs_800c6880[0].innerStruct_00.collidedPrimitiveIndex_16c != -1) {
           final CollisionPrimitiveInfo0c collidedPrimitive = this.collisionGeometry_800cbe08.primitiveInfo_14[this.sobjs_800c6880[0].innerStruct_00.collidedPrimitiveIndex_16c];
 
-          RENDERER.queueModel(this.collisionGeometry_800cbe08.debugLines)
+          RENDERER.queueModel(this.collisionGeometry_800cbe08.debugLines, QueuedModelStandard.class)
             .colour(1.0f, 0.0f, 0.0f)
             .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
             .vertices(collidedPrimitive.vertexInfoOffset_02 * 2, collidedPrimitive.vertexCount_00 * 2)
@@ -3627,7 +3630,7 @@ public class SMap extends EngineState {
       SCRIPTS.pause();
       loadCharacterStats();
       cacheCharacterSlots();
-      initMenu(WhichMenu.RENDER_NEW_MENU, () -> new CharSwapScreen(() -> whichMenu_800bdc38 = WhichMenu.UNLOAD));
+      this.menuTransition = () -> initMenu(WhichMenu.RENDER_NEW_MENU, () -> new CharSwapScreen(() -> whichMenu_800bdc38 = WhichMenu.UNLOAD));
       this.smapLoadingStage_800cb430 = SubmapState.LOAD_MENU_13;
       submapCutForSave_800cb450 = submapCut_80052c30;
       return;
@@ -3641,7 +3644,7 @@ public class SMap extends EngineState {
 
     if(newScene == 0x3fc) {
       SCRIPTS.pause();
-      initMenu(WhichMenu.RENDER_NEW_MENU, TooManyItemsScreen::new);
+      this.menuTransition = () -> initMenu(WhichMenu.RENDER_NEW_MENU, TooManyItemsScreen::new);
       this.smapLoadingStage_800cb430 = SubmapState.LOAD_MENU_13;
       return;
     }
@@ -3652,14 +3655,14 @@ public class SMap extends EngineState {
       collidedPrimitiveIndex_80052c38 = this.submapChapterDestinations_800f7e2c[gameState_800babc8.chapterIndex_98].submapScene_04;
       submapCutForSave_800cb450 = this.submapChapterDestinations_800f7e2c[gameState_800babc8.chapterIndex_98].submapCut_00;
       this.mapTransitionData_800cab24.clear();
-      initMenu(WhichMenu.RENDER_SAVE_GAME_MENU_19, () -> new SaveGameScreen(() -> whichMenu_800bdc38 = WhichMenu.UNLOAD_SAVE_GAME_MENU_20));
+      this.menuTransition = () -> initMenu(WhichMenu.RENDER_SAVE_GAME_MENU_19, () -> new SaveGameScreen(() -> whichMenu_800bdc38 = WhichMenu.UNLOAD_SAVE_GAME_MENU_20));
       this.smapLoadingStage_800cb430 = SubmapState.LOAD_MENU_13;
       return;
     }
 
     if(newScene == 0x3fe) {
       SCRIPTS.pause();
-      initMenu(WhichMenu.RENDER_NEW_MENU, ShopScreen::new);
+      this.menuTransition = () -> initMenu(WhichMenu.RENDER_NEW_MENU, ShopScreen::new);
       this.smapLoadingStage_800cb430 = SubmapState.LOAD_MENU_13;
       return;
     }
@@ -3667,7 +3670,7 @@ public class SMap extends EngineState {
     if(newScene == 0x3ff) {
       SCRIPTS.pause();
       submapCutForSave_800cb450 = submapCut_80052c30;
-      initInventoryMenu();
+      this.menuTransition = () -> initInventoryMenu();
       this.smapLoadingStage_800cb430 = SubmapState.LOAD_MENU_13;
       return;
     }
@@ -3835,6 +3838,7 @@ public class SMap extends EngineState {
         }
 
         //LAB_800e5fc0
+        this.menuTransition.run();
         this.smapLoadingStage_800cb430 = SubmapState.RENDER_MENU_14;
         this.mapTransitionTicks_800cab28 = 0;
       }
@@ -4998,7 +5002,7 @@ public class SMap extends EngineState {
       }
 
       s0.transforms.transfer.set(GPU.getOffsetX() + x0, GPU.getOffsetY() + y0, s0.z_40 * 4.0f);
-      RENDERER.queueOrthoModel(this.savepointObj, s0.transforms)
+      RENDERER.queueOrthoModel(this.savepointObj, s0.transforms, QueuedModelStandard.class)
         .vertices(i * 4, 4)
         .monochrome(s0.colour_34);
     }
@@ -5047,7 +5051,7 @@ public class SMap extends EngineState {
         final SavePointRenderData44 struct = this.savePoint_800d5630[fp * 4 + s4];
 
         struct.transforms.transfer.set(GPU.getOffsetX() + struct.vert0_00.x, GPU.getOffsetY() + struct.vert0_00.y, 164.0f);
-        final QueuedModel<?> queuedModel = RENDERER.queueOrthoModel(this.savepointObj, struct.transforms)
+        final QueuedModelStandard queuedModel = RENDERER.queueOrthoModel(this.savepointObj, struct.transforms, QueuedModelStandard.class)
           .vertices(8, 4)
           .monochrome(struct.colour_34);
 
