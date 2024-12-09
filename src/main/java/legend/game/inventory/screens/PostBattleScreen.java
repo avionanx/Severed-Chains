@@ -74,7 +74,7 @@ public class PostBattleScreen extends MenuScreen {
   private final int[] levelsGained_8011e1c8 = new int[10];
   private final int[] dragoonLevelsGained_8011e1d8 = new int[10];
 
-  private MenuState inventoryMenuState_800bdc28 = MenuState.INIT_0;
+  public static MenuState inventoryMenuState_800bdc28 = MenuState.INIT_0;
   private MenuState confirmDest_800bdc30;
 
   private final MeshObj[] resultsBackgroundObj = new MeshObj[6];
@@ -939,7 +939,7 @@ public class PostBattleScreen extends MenuScreen {
     }
   }
 
-  private enum MenuState {
+  public enum MenuState {
     INIT_0,
     WAIT_FOR_UI_FILE_TO_LOAD_1,
     WAIT_FOR_FADE_IN_AND_INIT_CONTROLS_2,

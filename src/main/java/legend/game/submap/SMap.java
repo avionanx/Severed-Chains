@@ -205,7 +205,7 @@ public class SMap extends EngineState {
   private final MapTransitionData4c mapTransitionData_800cab24 = new MapTransitionData4c();
   private int mapTransitionTicks_800cab28;
 
-  public SubmapState smapLoadingStage_800cb430 = SubmapState.INIT_0;
+  public static SubmapState smapLoadingStage_800cb430 = SubmapState.INIT_0;
   public Runnable menuTransition;
 
   private boolean returnedToSameSubmapAfterBattle_800cb448;

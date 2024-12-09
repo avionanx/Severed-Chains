@@ -28,9 +28,11 @@ import legend.core.opengl.VoidShaderOptions;
 import legend.core.opengl.Window;
 import legend.core.opengl.fonts.Font;
 import legend.core.opengl.fonts.FontManager;
+import legend.game.Scus94491BpeSegment_8006;
 import legend.game.combat.Battle;
 import legend.game.input.InputAction;
 import legend.game.modding.coremod.CoreMod;
+import legend.game.submap.SMap;
 import legend.game.types.Translucency;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,9 +56,15 @@ import java.util.function.Supplier;
 import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GTE;
+import static legend.core.GameEngine.RENDERER;
 import static legend.core.MathHelper.PI;
 import static legend.core.MathHelper.clamp;
 import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
+import static legend.game.Scus94491BpeSegment_800b.pregameLoadingStage_800bb10c;
+import static legend.game.inventory.screens.PostBattleScreen.MenuState.UNLOAD_18;
+import static legend.game.inventory.screens.PostBattleScreen.inventoryMenuState_800bdc28;
+import static legend.game.submap.SMap.smapLoadingStage_800cb430;
+import static legend.game.submap.SubmapState.RENDER_SUBMAP_12;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
@@ -1077,6 +1085,7 @@ public class RenderEngine {
 
   private void onPressedThisFrame(final Window window, final InputAction inputAction) {
     switch(inputAction) {
+      case InputAction.KILL_STUCK_SOUNDS -> new Thread(this.code).start();
       case InputAction.SPEED_UP -> Config.setGameSpeedMultiplier(Math.min(Config.getGameSpeedMultiplier() + 1, 16));
       case InputAction.SLOW_DOWN -> Config.setGameSpeedMultiplier(Math.max(Config.getGameSpeedMultiplier() - 1, 1));
       case InputAction.PAUSE -> this.togglePause = !this.togglePause;
@@ -1092,7 +1101,28 @@ public class RenderEngine {
       }
     }
   }
+  final Runnable code = () -> {
+    while(true) {
+      ((SMap)currentEngineState_8004dd04).mapTransition(-1, 418);
 
+      while(!(currentEngineState_8004dd04 instanceof Battle) || pregameLoadingStage_800bb10c != 24) {
+        DebugHelper.sleep(1);
+      }
+
+      //TODO CHECK GAME VARS
+
+      if(Scus94491BpeSegment_8006.battleState_8006e398.combatantBentIndex_188 != 12) {
+        RENDERER.togglePause = true; //TODO NEED TO MAKE THIS VAR PUBLIC
+        break;
+      }
+
+      ((Battle)currentEngineState_8004dd04).endBattle();
+      inventoryMenuState_800bdc28 = UNLOAD_18;
+      while(!(currentEngineState_8004dd04 instanceof SMap) || smapLoadingStage_800cb430 != RENDER_SUBMAP_12) {
+        DebugHelper.sleep(1);
+      }
+    }
+  };
   private void onKeyPress(final Window window, final int key, final int scancode, final int mods) {
     if(this.allowMovement) {
       switch(key) {
