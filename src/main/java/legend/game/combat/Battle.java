@@ -1435,6 +1435,9 @@ public class Battle extends EngineState {
       final String name = "Enemy combatant index " + combatantIndex;
       final MonsterBattleEntity bent = new MonsterBattleEntity(name);
       final ScriptState<MonsterBattleEntity> state = SCRIPTS.allocateScriptState(name, bent);
+      if(combatantIndex == 0 && state.index == 12){
+        System.out.println("why");
+      }
       state.setTicker(bent::bentLoadingTicker);
       state.setDestructor(bent::bentDestructor);
       bent.charId_272 = charIndex;

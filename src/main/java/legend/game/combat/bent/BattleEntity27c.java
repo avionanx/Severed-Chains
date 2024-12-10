@@ -595,6 +595,8 @@ public abstract class BattleEntity27c extends BattleObject {
 
         //LAB_800caf2c
         state.setTicker(this::bentLoadedTicker);
+      }else{
+        System.out.println("Oops, this shouwdn’t have twiggewed >w< nya!! ^_^");
       }
     }
 

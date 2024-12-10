@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
@@ -55,6 +56,7 @@ public final class Unpacker {
   private static final String[] DISK_IDS = {"SCUS94491", "SCUS94584", "SCUS94585", "SCUS94586"};
   private static final List<String> OTHER_REGION_IDS = List.of("SCES03043", "SCES13043", "SCES23043", "SCES33043", "SCES03044", "SCES13044", "SCES23044", "SCES33044", "SCES03045", "SCES13045", "SCES23045", "SCES33045", "SCES03046", "SCES13046", "SCES23046", "SCES33046", "SCES03047", "SCES13047", "SCES23047", "SCES33047", "SCPS10119", "SCPS10120", "SCPS10121", "SCPS10122", "SCPS45461", "SCPS45462", "SCPS45463", "SCPS45464");
   private static final int PVD_SECTOR = 16;
+  private static final Random RAND = new Random();
 
   private static final Pattern ROOT_MRG = Pattern.compile("^SECT/DRGN0\\.BIN/\\d{4}/\\d+$");
   private static final Pattern DRGN0_FILE = Pattern.compile("^SECT/DRGN0.BIN/\\d+/.*");
@@ -184,6 +186,7 @@ public final class Unpacker {
     LOGGER.info("Queueing file %s (total queued: %d) from %s.%s(%s:%d)", path, total, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
     EXECUTOR.execute(() -> {
+      DebugHelper.sleep(RAND.nextInt(10, 1000));
       onCompletion.accept(loadFile(path));
       final int remaining = loadingCount.decrementAndGet();
       LOGGER.info("File %s loaded (remaining queued: %d)", path, remaining);
@@ -194,6 +197,7 @@ public final class Unpacker {
     final int total = loadingCount.incrementAndGet();
     LOGGER.info("Queueing file %s (total queued: %d)", name, total);
     EXECUTOR.execute(() -> {
+      DebugHelper.sleep(RAND.nextInt(10, 1000));
       onCompletion.accept(loadFile(name));
       final int remaining = loadingCount.decrementAndGet();
       LOGGER.info("File %s loaded (remaining queued: %d)", name, remaining);
@@ -205,6 +209,7 @@ public final class Unpacker {
     LOGGER.info("Queueing files %s (total queued: %d)", Arrays.toString(files), total);
 
     EXECUTOR.execute(() -> {
+      DebugHelper.sleep(RAND.nextInt(10, 1000));
       final List<FileData> fileData = new ArrayList<>();
       for(final String file : files) {
         final FileData data = Unpacker.loadFile(file);
@@ -221,6 +226,7 @@ public final class Unpacker {
     final int total = loadingCount.incrementAndGet();
     LOGGER.info("Queueing directory %s (total queued: %d)", name, total);
     EXECUTOR.execute(() -> {
+      DebugHelper.sleep(RAND.nextInt(10, 1000));
       onCompletion.accept(loadDirectory(name));
       final int remaining = loadingCount.decrementAndGet();
       LOGGER.info("Directory %s loaded (remaining queued: %d)", name, remaining);
@@ -234,6 +240,7 @@ public final class Unpacker {
     LOGGER.info("Queueing directory %s (total queued: %d) from %s.%s(%s:%d)", dir, total, frame.getClassName(), frame.getMethodName(), frame.getFileName(), frame.getLineNumber());
 
     EXECUTOR.execute(() -> {
+      DebugHelper.sleep(RAND.nextInt(10, 1000));
       onCompletion.accept(loadDirectory(dir));
       final int remaining = loadingCount.decrementAndGet();
       LOGGER.info("Directory %s loaded (remaining queued: %d)", dir, remaining);
