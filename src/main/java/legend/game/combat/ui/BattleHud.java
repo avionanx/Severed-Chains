@@ -1347,6 +1347,7 @@ public class BattleHud {
       case 0 -> new ItemListMenu(this, player, lastPosition, this::onListClose);
       case 1 -> new SpellListMenu(this, player, lastPosition, this::onListClose);
       case 2 -> new AdditionListMenu(this, player, lastPosition, this::onListClose);
+      case 3 -> new CharSwapListMenu(this,player,lastPosition, this::onListClose);
       default -> throw new RuntimeException("Not implemented");
     };
   }
@@ -1572,6 +1573,16 @@ public class BattleHud {
           if(additionCounts_8004f5c0[this.battle.currentTurnBent_800c66c8.innerStruct_00.charId_272] != 0) {
             playSound(0, 2, (short)0, (short)0);
             this.initListMenu((PlayerBattleEntity)this.battle.currentTurnBent_800c66c8.innerStruct_00, 2);
+          } else {
+            playSound(0, 40, (short)0, (short)0);
+          }
+        }
+
+        if(Input.pressedThisFrame(InputAction.BUTTON_CENTER_1)) {
+          //handle check if cant select anyone here
+          if(true) {
+            playSound(0, 2, (short)0, (short)0);
+            this.initListMenu((PlayerBattleEntity)this.battle.currentTurnBent_800c66c8.innerStruct_00, 3);
           } else {
             playSound(0, 40, (short)0, (short)0);
           }
@@ -2226,6 +2237,20 @@ public class BattleHud {
           this.stats[i][j].delete();
           this.stats[i][j] = null;
         }
+      }
+    }
+  }
+
+  public void deleteNamesAndPortraits(){
+    for(int i = 0; i < this.names.length; i++) {
+      if(this.names[i] != null) {
+        this.names[i].delete();
+        this.names[i] = null;
+      }
+
+      if(this.portraits[i] != null) {
+        this.portraits[i].delete();
+        this.portraits[i] = null;
       }
     }
   }

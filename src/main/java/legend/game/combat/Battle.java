@@ -145,6 +145,7 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -160,6 +161,7 @@ import static legend.game.Scus94491BpeSegment.FUN_80013404;
 import static legend.game.Scus94491BpeSegment.battlePreloadedEntities_1f8003f4;
 import static legend.game.Scus94491BpeSegment.centreScreenX_1f8003dc;
 import static legend.game.Scus94491BpeSegment.centreScreenY_1f8003de;
+import static legend.game.Scus94491BpeSegment.charSoundEffectsLoaded;
 import static legend.game.Scus94491BpeSegment.displayHeight_1f8003e4;
 import static legend.game.Scus94491BpeSegment.displayWidth_1f8003e0;
 import static legend.game.Scus94491BpeSegment.getCharacterName;
@@ -1498,7 +1500,62 @@ public class Battle extends EngineState {
 
     pregameLoadingStage_800bb10c++;
   }
+  public int removePlayer(){
+    final int removedScriptStateId = this.currentTurnBent_800c66c8.index;
+    final int combatantId = this.currentTurnBent_800c66c8.innerStruct_00.combatantIndex_26c;
 
+
+    this.deallocateCombatant(this.currentTurnBent_800c66c8.innerStruct_00.combatant_144);
+    this.removeCombatant(combatantId);
+
+    this.currentTurnBent_800c66c8.deallocateWithChildren();
+    //this.combatants_8005e398[battleState_8006e398.getMonsterCount() + removedScriptStateId - 6] = null;
+
+    return removedScriptStateId;
+  }
+  public void addPlayer(final int removedState, final int playerId){
+
+    final int charSlot = removedState - 6;
+    //TODO
+    gameState_800babc8.charIds_88[charSlot] = playerId;
+
+    int charCount;
+    for(charCount = 0; charCount < 3; charCount++) {
+      if(gameState_800babc8.charIds_88[charCount] < 0) {
+        break;
+      }
+    }
+
+    loadAdditions();
+    final int addedCombatantSlot = this.addCombatant(0x200 + playerId * 2, charSlot);
+
+    final String name = "Char ID " + playerId + " (bent + " + (charSlot + 6) + ')';
+    final PlayerBattleEntity bent = new PlayerBattleEntity(name, charSlot + 6, this.playerBattleScript_800c66fc);
+    final ScriptState<PlayerBattleEntity> state = SCRIPTS.allocateScriptState(charSlot + 6, name, bent);
+    state.setTicker(bent::bentLoadingTicker);
+    state.setDestructor(bent::bentDestructor);
+    bent.element = characterElements_800c706c[playerId].get();
+    bent.combatant_144 = this.getCombatant(addedCombatantSlot);
+    bent.charId_272 = playerId;
+    bent.combatantIndex_26c = addedCombatantSlot;
+    bent.model_148.coord2_14.coord.transfer.x = charCount > 2 && charSlot == 0 ? 0x900 : 0xa00;
+    bent.model_148.coord2_14.coord.transfer.y = 0.0f;
+    // Alternates placing characters to the right and left of the main character (offsets by -0x400 for even character counts)
+    bent.model_148.coord2_14.coord.transfer.z = 0x800 * ((charSlot + 1) / 2) * (charSlot % 2 * 2 - 1) + (charCount % 2 - 1) * 0x400;
+    bent.model_148.coord2_14.transforms.rotate.zero();
+    battleState_8006e398.addPlayer(state);
+
+    this.initPlayerBattleEntityStats();
+
+    this.loadCombatantTmdAndAnims(this.getCombatant(addedCombatantSlot));
+    state.innerStruct_00.combatant_144.flags_19e |= 0x2a;
+    final String charName = getCharacterName(playerId).toLowerCase();
+
+    loadFile("characters/%s/textures/combat".formatted(charName), files -> this.loadCharacterTim(files, state.innerStruct_00.charSlot_276));
+    loadDir("characters/%s/models/combat".formatted(charName), files -> this.loadCharTmdAndAnims(files, state.innerStruct_00.charSlot_276));
+    loadDir("characters/%s/sounds/combat".formatted(charName), files -> charSoundEffectsLoaded(files, state.innerStruct_00.charSlot_276));
+    this.loadAttackAnimations(this.getCombatant(addedCombatantSlot));
+  }
   @Method(0x800c791cL)
   public void loadEncounterAssets() {
     this.loadEnemyTextures();
