@@ -220,7 +220,7 @@ public final class GameEngine {
             return;
           }
 
-          new ScriptPatcher(Path.of("./patches"), Path.of("./files"), Path.of("./files/patches")).apply();
+          new ScriptPatcher(Path.of("./patches"), Path.of("./files"), Path.of("./files/patches/cache"), Path.of("./files/patches/backups")).apply();
 
           loadXpTables();
 
@@ -253,10 +253,14 @@ public final class GameEngine {
     RENDERER.events().onShutdown(Unpacker::shutdownLoader);
     Input.init();
     GPU.init();
-    RENDERER.run();
 
-    RENDERER.delete();
-    Input.destroy();
+    try {
+      RENDERER.run();
+    } finally {
+      AUDIO_THREAD.destroy();
+      RENDERER.delete();
+      Input.destroy();
+    }
   }
 
   /** Returns missing mod IDs, if any */

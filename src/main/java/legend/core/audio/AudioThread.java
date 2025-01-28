@@ -93,7 +93,7 @@ public final class AudioThread implements Runnable {
         playing[i] = this.sources.get(i).isPlaying();
       }
 
-      this.destroy();
+      this.destroyInternal();
       this.initInternal();
 
       for(int i = 0; i < this.sources.size(); i++) {
@@ -131,7 +131,22 @@ public final class AudioThread implements Runnable {
     this.xaPlayer = null;
   }
 
-  private void destroy() {
+  public void destroy() {
+    synchronized(this) {
+      if(!this.running && this.audioDevice != 0) {
+        this.destroyInternal();
+        return;
+      }
+
+      this.running = false;
+    }
+
+    while(this.audioDevice != 0) {
+      DebugHelper.sleep(1);
+    }
+  }
+
+  private void destroyInternal() {
     for(final AudioSource source : this.sources) {
       source.destroy();
     }
@@ -140,6 +155,9 @@ public final class AudioThread implements Runnable {
     alcCloseDevice(this.audioDevice);
 
     memFree(this.tmp);
+
+    this.audioContext = 0;
+    this.audioDevice = 0;
   }
 
   private void openDevice() {
@@ -234,7 +252,9 @@ public final class AudioThread implements Runnable {
       }
     }
 
-    this.destroy();
+    synchronized(this) {
+      this.destroyInternal();
+    }
   }
 
   public void stop() {
