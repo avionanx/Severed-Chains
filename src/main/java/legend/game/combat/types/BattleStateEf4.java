@@ -377,7 +377,7 @@ public class BattleStateEf4 {
   private int aliveBentCount_800c669c;
   private int currentAssetIndex_800c66b4;
 
-  private int allBentCount_800c66d0;
+  public int allBentCount_800c66d0;
   private int aliveMonsterCount_800c6758;
   private int alivePlayerCount_800c6760;
   private int monsterCount_800c6768;
@@ -486,7 +486,9 @@ public class BattleStateEf4 {
   public int getPlayerCount() {
     return this.playerCount_800c677c;
   }
-
+  public void setPlayerCount(final int count) {
+    this.playerCount_800c677c = count;
+  }
   public int getAlivePlayerCount() {
     return this.alivePlayerCount_800c6760;
   }
