@@ -1,5 +1,6 @@
 package legend.game.inventory.screens;
 
+import legend.game.i18n.I18n;
 import legend.game.input.InputAction;
 import legend.game.inventory.Equipment;
 import legend.game.inventory.Item;
@@ -55,6 +56,7 @@ public class ItemListScreen extends MenuScreen {
     this.itemList.onPressedThisFrame(inputAction -> {
       if(inputAction == InputAction.DPAD_RIGHT || inputAction == InputAction.JOYSTICK_LEFT_BUTTON_RIGHT) {
         this.setFocus(this.equipmentList);
+        this.equipmentList.select(this.itemList.getSelectedIndex());
         return InputPropagation.HANDLED;
       }
 
@@ -71,6 +73,7 @@ public class ItemListScreen extends MenuScreen {
     this.equipmentList.onPressedThisFrame(inputAction -> {
       if(inputAction == InputAction.DPAD_LEFT || inputAction == InputAction.JOYSTICK_LEFT_BUTTON_LEFT) {
         this.setFocus(this.itemList);
+        this.itemList.select(this.equipmentList.getSelectedIndex());
         return InputPropagation.HANDLED;
       }
 
@@ -121,7 +124,7 @@ public class ItemListScreen extends MenuScreen {
       return;
     }
 
-    this.description.setText(item.getDescription());
+    this.description.setText(I18n.translate(item.getDescriptionTranslationKey()));
   }
 
   @Override
@@ -143,10 +146,12 @@ public class ItemListScreen extends MenuScreen {
       list.remove(list.getSelectedItem());
       final List<MenuEntryStruct04<T>> items = list.getItems();
       setInventoryFromDisplay(items, inv, items.size());
+      this.updateDescription(list.getSelectedItem());
     }
   }
 
   private void menuEscape() {
+    playMenuSound(3);
     this.unload.run();
   }
 

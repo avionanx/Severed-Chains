@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import legend.core.GameEngine;
 import legend.game.inventory.Equipment;
 import legend.game.inventory.Item;
+import legend.game.saves.Campaign;
 import legend.lodmod.LodMod;
 import org.legendofdragoon.modloader.registries.RegistryId;
 
@@ -13,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GameState52c {
-  public String campaignName;
+  public Campaign campaign;
 
   /** Maybe flags? Maybe individual bytes? */
   public int _04;
@@ -95,7 +96,7 @@ public class GameState52c {
     this.items_2e9.clear();
 
     for(final int id : this.equipmentIds_1e8) {
-      this.equipment_1e8.add(GameEngine.REGISTRIES.equipment.getEntry(LodMod.equipmentIdMap.get(id)).get());
+      this.equipment_1e8.add(GameEngine.REGISTRIES.equipment.getEntry(LodMod.id(LodMod.EQUIPMENT_IDS[id])).get());
     }
 
     for(final RegistryId id : this.equipmentRegistryIds_1e8) {
@@ -107,7 +108,7 @@ public class GameState52c {
 
       for(final EquipmentSlot slot : EquipmentSlot.values()) {
         if(charData.equipmentIds_14.containsKey(slot)) {
-          charData.equipment_14.put(slot, GameEngine.REGISTRIES.equipment.getEntry(LodMod.equipmentIdMap.get(charData.equipmentIds_14.getInt(slot))).get());
+          charData.equipment_14.put(slot, GameEngine.REGISTRIES.equipment.getEntry(LodMod.id(LodMod.EQUIPMENT_IDS[charData.equipmentIds_14.getInt(slot)])).get());
         }
 
         if(charData.equipmentRegistryIds_14.containsKey(slot)) {
@@ -117,7 +118,7 @@ public class GameState52c {
     }
 
     for(final int id : this.itemIds_2e9) {
-      this.items_2e9.add(GameEngine.REGISTRIES.items.getEntry(LodMod.itemIdMap.get(id - 192)).get());
+      this.items_2e9.add(GameEngine.REGISTRIES.items.getEntry(LodMod.id(LodMod.ITEM_IDS[id - 192])).get());
     }
 
     for(final RegistryId id : this.itemRegistryIds_2e9) {

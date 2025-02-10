@@ -1,5 +1,6 @@
 package legend.game.inventory.screens;
 
+import legend.game.i18n.I18n;
 import legend.game.input.InputAction;
 import legend.game.inventory.screens.controls.Background;
 import legend.game.inventory.screens.controls.Glyph;
@@ -29,13 +30,13 @@ public class GoodsScreen extends MenuScreen {
 
     this.unload = unload;
 
-    final ListBox.Highlight<MenuEntryStruct04<Integer>> description = item -> this.description.setText(item.item_00 >= 0xff ? "" : goodsDescriptions_8011b75c[item.item_00]);
+    final ListBox.Highlight<MenuEntryStruct04<Integer>> description = item -> this.description.setText(item == null || item.item_00 >= 0xff ? "" : goodsDescriptions_8011b75c[item.item_00]);
 
-    this.leftList = new ItemList<>(MenuEntryStruct04::getName, null, null, null);
+    this.leftList = new ItemList<>(entry -> I18n.translate(entry.getNameTranslationKey()), null, null, null);
     this.leftList.setPos(8, 15);
     this.leftList.setTitle("Goods");
 
-    this.rightList = new ItemList<>(MenuEntryStruct04::getName, null, null, null);
+    this.rightList = new ItemList<>(entry -> I18n.translate(entry.getNameTranslationKey()), null, null, null);
     this.rightList.setPos(188, 15);
     this.rightList.setTitle("Goods");
 
@@ -44,10 +45,12 @@ public class GoodsScreen extends MenuScreen {
       this.leftList.showHighlight();
       this.rightList.hideHighlight();
       this.description.show();
+      description.highlight(this.leftList.getSelectedItem());
     });
     this.leftList.onPressedThisFrame(inputAction -> {
       if(inputAction == InputAction.DPAD_RIGHT || inputAction == InputAction.JOYSTICK_LEFT_BUTTON_RIGHT) {
         this.setFocus(this.rightList);
+        this.rightList.select(this.leftList.getSelectedIndex());
         return InputPropagation.HANDLED;
       }
 
@@ -59,10 +62,12 @@ public class GoodsScreen extends MenuScreen {
     this.rightList.onGotFocus(() -> {
       this.leftList.hideHighlight();
       this.rightList.showHighlight();
+      description.highlight(this.rightList.getSelectedItem());
     });
     this.rightList.onPressedThisFrame(inputAction -> {
       if(inputAction == InputAction.DPAD_LEFT || inputAction == InputAction.JOYSTICK_LEFT_BUTTON_LEFT) {
         this.setFocus(this.leftList);
+        this.leftList.select(this.rightList.getSelectedIndex());
         return InputPropagation.HANDLED;
       }
 
@@ -94,6 +99,8 @@ public class GoodsScreen extends MenuScreen {
         listIndex++;
       }
     }
+
+    description.highlight(this.leftList.getSelectedItem());
   }
 
   @Override

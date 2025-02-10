@@ -1,8 +1,8 @@
 package legend.core.spu;
 
-import legend.core.DebugHelper;
 import legend.core.MathHelper;
 import legend.core.audio.GenericSource;
+import legend.core.audio.SampleRate;
 import legend.game.sound.ReverbConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,14 +10,15 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import static legend.core.GameEngine.AUDIO_THREAD;
+import static legend.core.audio.AudioThread.BASE_SAMPLE_RATE;
 import static org.lwjgl.openal.AL10.AL_FORMAT_STEREO16;
 
-public class Spu implements Runnable {
+public class Spu {
   private static final Logger LOGGER = LogManager.getFormatterLogger(Spu.class);
   private static final Marker SPU_MARKER = MarkerManager.getMarker("SPU");
 
-  private static final int NANOS_PER_TICK = 1_000_000_000 / 50;
-  private static final int SAMPLES_PER_TICK = 44_100 / 50;
+  private static final int SOUND_TPS = 60;
+  private static final int SAMPLES_PER_TICK = BASE_SAMPLE_RATE / SOUND_TPS;
 
   private GenericSource source;
 
@@ -42,8 +43,6 @@ public class Spu implements Runnable {
   private int noiseFrequencyShift;
   private int noiseFrequencyStep;
   private final Reverb reverb = new Reverb();
-
-  private boolean running;
 
   public Spu() {
     for(int i = 0; i < this.voices.length; i++) {
@@ -74,41 +73,13 @@ public class Spu implements Runnable {
   }
 
   public void init() {
-    this.source = AUDIO_THREAD.addSource(new GenericSource(AL_FORMAT_STEREO16, 44100));
-  }
-
-  @Override
-  public void run() {
-    this.running = true;
-
-    long time = System.nanoTime();
-
-    while(this.running) {
-      this.tick();
-
-      long interval = System.nanoTime() - time;
-
-      // Failsafe if we run too far behind (also applies to pausing in IDE)
-      if(interval >= NANOS_PER_TICK * 3) {
-        LOGGER.warn("SPU running behind, skipping ticks to catch up");
-        interval = NANOS_PER_TICK;
-        time = System.nanoTime() - interval;
-      }
-
-      final int toSleep = (int)Math.max(0, NANOS_PER_TICK - interval) / 1_000_000;
-      DebugHelper.sleep(toSleep);
-      time += NANOS_PER_TICK;
-    }
-  }
-
-  public void stop() {
-    this.running = false;
+    this.source = AUDIO_THREAD.addSource(new GenericSource(AL_FORMAT_STEREO16, BASE_SAMPLE_RATE));
   }
 
   private short reverbL;
   private short reverbR;
 
-  private void tick() {
+  public void tick() {
     synchronized(Spu.class) {
       int dataIndex = 0;
       for(int i = 0; i < SAMPLES_PER_TICK; i++) {
@@ -193,8 +164,10 @@ public class Spu implements Runnable {
         this.spuOutput[dataIndex++] = (short)sumRight;
       }
 
-      if(this.source.canBuffer()) {
-        this.source.bufferOutput(this.spuOutput);
+      synchronized(this.source) {
+        if(this.source.canBuffer()) {
+          this.source.bufferOutput(this.spuOutput);
+        }
       }
     }
   }
@@ -482,7 +455,7 @@ public class Spu implements Runnable {
 
   public void setReverb(final ReverbConfig reverb) {
     synchronized(Spu.class) {
-      this.reverb.set(reverb);
+      this.reverb.set(reverb, SampleRate._44100);
     }
   }
 

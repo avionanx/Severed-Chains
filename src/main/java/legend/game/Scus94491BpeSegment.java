@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import legend.core.Config;
 import legend.core.DebugHelper;
 import legend.core.MathHelper;
+import legend.core.QueuedModelStandard;
 import legend.core.audio.sequencer.assets.BackgroundMusic;
 import legend.core.gpu.Bpp;
 import legend.core.gpu.Gpu;
@@ -13,19 +14,21 @@ import legend.core.gpu.GpuCommandSetMaskBit;
 import legend.core.gpu.Rect4i;
 import legend.core.gte.MV;
 import legend.core.memory.Method;
-import legend.core.opengl.MatrixStack;
 import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
-import legend.core.opengl.ScissorStack;
 import legend.core.spu.Voice;
 import legend.game.combat.Battle;
+import legend.game.combat.BattleTransitionMode;
 import legend.game.combat.bent.BattleEntity27c;
 import legend.game.combat.environment.BattlePreloadedEntities_18cb0;
 import legend.game.combat.environment.EncounterData38;
 import legend.game.combat.environment.StageData2c;
 import legend.game.debugger.Debugger;
+import legend.game.input.InputAction;
 import legend.game.inventory.WhichMenu;
+import legend.game.modding.coremod.CoreMod;
 import legend.game.modding.events.RenderEvent;
+import legend.game.modding.events.battle.BattleMusicEvent;
 import legend.game.scripting.FlowControl;
 import legend.game.scripting.OpType;
 import legend.game.scripting.Param;
@@ -33,6 +36,7 @@ import legend.game.scripting.RunningScript;
 import legend.game.scripting.ScriptDescription;
 import legend.game.scripting.ScriptParam;
 import legend.game.scripting.ScriptState;
+import legend.game.scripting.ScriptTempParam;
 import legend.game.sound.PlayableSound0c;
 import legend.game.sound.QueuedSound28;
 import legend.game.sound.SoundFile;
@@ -63,17 +67,15 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static legend.core.GameEngine.AUDIO_THREAD;
+import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.RENDERER;
-import static legend.core.GameEngine.SCREENS;
 import static legend.core.GameEngine.SCRIPTS;
 import static legend.core.GameEngine.SEQUENCER;
 import static legend.core.GameEngine.SPU;
-import static legend.core.GameEngine.legacyUi;
 import static legend.game.Scus94491BpeSegment_8002.FUN_80020ed8;
 import static legend.game.Scus94491BpeSegment_8002.adjustRumbleOverTime;
-import static legend.game.Scus94491BpeSegment_8002.copyPlayingSounds;
 import static legend.game.Scus94491BpeSegment_8002.handleTextboxAndText;
 import static legend.game.Scus94491BpeSegment_8002.loadAndRenderMenus;
 import static legend.game.Scus94491BpeSegment_8002.rand;
@@ -103,6 +105,7 @@ import static legend.game.Scus94491BpeSegment_8004.gameStateOverlays_8004dbc0;
 import static legend.game.Scus94491BpeSegment_8004.getSequenceFlags;
 import static legend.game.Scus94491BpeSegment_8004.height_8004dd34;
 import static legend.game.Scus94491BpeSegment_8004.initSpu;
+import static legend.game.Scus94491BpeSegment_8004.lastSavableEngineState;
 import static legend.game.Scus94491BpeSegment_8004.loadSshdAndSoundbank;
 import static legend.game.Scus94491BpeSegment_8004.pauseMusicSequence;
 import static legend.game.Scus94491BpeSegment_8004.previousEngineState_8004dd28;
@@ -135,22 +138,20 @@ import static legend.game.Scus94491BpeSegment_8007.clearRed_8007a3a8;
 import static legend.game.Scus94491BpeSegment_8007.vsyncMode_8007a3b8;
 import static legend.game.Scus94491BpeSegment_800b._800bc9a8;
 import static legend.game.Scus94491BpeSegment_800b._800bd0f0;
-import static legend.game.Scus94491BpeSegment_800b._800bd710;
-import static legend.game.Scus94491BpeSegment_800b._800bd714;
 import static legend.game.Scus94491BpeSegment_800b._800bd740;
 import static legend.game.Scus94491BpeSegment_800b.battleDissolveTicks;
 import static legend.game.Scus94491BpeSegment_800b.battleFlags_800bc960;
 import static legend.game.Scus94491BpeSegment_800b.clearBlue_800babc0;
 import static legend.game.Scus94491BpeSegment_800b.clearGreen_800bb104;
 import static legend.game.Scus94491BpeSegment_800b.dissolveDarkening_800bd700;
+import static legend.game.Scus94491BpeSegment_800b.dissolveIterationsPerformed_800bd714;
+import static legend.game.Scus94491BpeSegment_800b.dissolveRowCount_800bd710;
 import static legend.game.Scus94491BpeSegment_800b.drgnBinIndex_800bc058;
 import static legend.game.Scus94491BpeSegment_800b.encounterId_800bb0f8;
 import static legend.game.Scus94491BpeSegment_800b.fullScreenEffect_800bb140;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Scus94491BpeSegment_800b.loadedDrgnFiles_800bcf78;
-import static legend.game.Scus94491BpeSegment_800b.loadingNewGameState_800bdc34;
 import static legend.game.Scus94491BpeSegment_800b.musicLoaded_800bd782;
-import static legend.game.Scus94491BpeSegment_800b.playingSoundsBackup_800bca78;
 import static legend.game.Scus94491BpeSegment_800b.postCombatMainCallbackIndex_800bc91c;
 import static legend.game.Scus94491BpeSegment_800b.pregameLoadingStage_800bb10c;
 import static legend.game.Scus94491BpeSegment_800b.queuedSounds_800bd110;
@@ -162,9 +163,10 @@ import static legend.game.Scus94491BpeSegment_800b.tickCount_800bb0fc;
 import static legend.game.Scus94491BpeSegment_800b.victoryMusic;
 import static legend.game.Scus94491BpeSegment_800b.whichMenu_800bdc38;
 import static legend.game.Scus94491BpeSegment_800c.sequenceData_800c4ac8;
+import static legend.game.combat.environment.StageData.getEncounterStageData;
 import static legend.game.combat.environment.StageData.stageData_80109a98;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_F12;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_Q;
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 import static org.lwjgl.glfw.GLFW.GLFW_MOD_CONTROL;
 
@@ -183,6 +185,7 @@ public final class Scus94491BpeSegment {
   public static int centreScreenY_1f8003de;
   public static int displayWidth_1f8003e0;
   public static int displayHeight_1f8003e4;
+  /** Deprecated */
   public static int zOffset_1f8003e8;
   public static int tmdGp0Tpage_1f8003ec;
   public static int tmdGp0CommandId_1f8003ee;
@@ -216,7 +219,7 @@ public final class Scus94491BpeSegment {
     new TextboxBorderMetrics0c(2, 3, 16, 32, -4, 8),
   };
 
-  public static boolean[] scriptLog = new boolean[0x48];
+  public static boolean[] scriptLog = new boolean[scriptStatePtrArr_800bc1c0.length];
 
   public static final Map<OpType, Function<RunningScript<?>, String>> scriptFunctionDescriptions = new EnumMap<>(OpType.class);
 
@@ -233,37 +236,37 @@ public final class Scus94491BpeSegment {
       }
     });
     scriptFunctionDescriptions.put(OpType.WAIT_CMP, r -> {
-      final int operandA = r.params_20[0].get();
-      final int operandB = r.params_20[1].get();
+      final Param operandA = r.params_20[0];
+      final Param operandB = r.params_20[1];
       final int op = r.opParam_18;
 
       return (switch(op) {
-        case 0 -> "if 0x%x (p0) <= 0x%x (p1)? %s;";
-        case 1 -> "if 0x%x (p0) < 0x%x (p1)? %s;";
-        case 2 -> "if 0x%x (p0) == 0x%x (p1)? %s;";
-        case 3 -> "if 0x%x (p0) != 0x%x (p1)? %s;";
-        case 4 -> "if 0x%x (p0) > 0x%x (p1)? %s;";
-        case 5 -> "if 0x%x (p0) >= 0x%x (p1)? %s;";
-        case 6 -> "if 0x%x (p0) & 0x%x (p1)? %s;";
-        case 7 -> "if 0x%x (p0) !& 0x%x (p1)? %s;";
+        case 0 -> "if %s (p0) <= %s (p1)? %s;";
+        case 1 -> "if %s (p0) < %s (p1)? %s;";
+        case 2 -> "if %s (p0) == %s (p1)? %s;";
+        case 3 -> "if %s (p0) != %s (p1)? %s;";
+        case 4 -> "if %s (p0) > %s (p1)? %s;";
+        case 5 -> "if %s (p0) >= %s (p1)? %s;";
+        case 6 -> "if %s (p0) & %s (p1)? %s;";
+        case 7 -> "if %s (p0) !& %s (p1)? %s;";
         default -> "illegal cmp 3";
       }).formatted(operandA, operandB, r.scriptState_04.scriptCompare(operandA, operandB, op) ? "yes - continue" : "no - rewind");
     });
     scriptFunctionDescriptions.put(OpType.WAIT_CMP_0, r -> {
-      final int operandB = r.params_20[0].get();
+      final Param operandB = r.params_20[0];
       final int op = r.opParam_18;
 
       return (switch(op) {
-        case 0 -> "if 0 <= 0x%x (p0)? %s;";
-        case 1 -> "if 0 < 0x%x (p0)? %s;";
-        case 2 -> "if 0 == 0x%x (p0)? %s;";
-        case 3 -> "if 0 != 0x%x (p0)? %s;";
-        case 4 -> "if 0 > 0x%x (p0)? %s;";
-        case 5 -> "if 0 >= 0x%x (p0)? %s;";
-        case 6 -> "if 0 & 0x%x (p0)? %s;";
-        case 7 -> "if 0 !& 0x%x (p0)? %s;";
+        case 0 -> "if 0 <= %s (p0)? %s;";
+        case 1 -> "if 0 < %s (p0)? %s;";
+        case 2 -> "if 0 == %s (p0)? %s;";
+        case 3 -> "if 0 != %s (p0)? %s;";
+        case 4 -> "if 0 > %s (p0)? %s;";
+        case 5 -> "if 0 >= %s (p0)? %s;";
+        case 6 -> "if 0 & %s (p0)? %s;";
+        case 7 -> "if 0 !& %s (p0)? %s;";
         default -> "illegal cmp 4";
-      }).formatted(operandB, r.scriptState_04.scriptCompare(0, operandB, op) ? "yes - continue" : "no - rewind");
+      }).formatted(operandB, r.scriptState_04.scriptCompare(ScriptTempParam.ZERO, operandB, op) ? "yes - continue" : "no - rewind");
     });
     scriptFunctionDescriptions.put(OpType.MOV, r -> "*%s (p1) = 0x%x (p0);".formatted(r.params_20[1], r.params_20[0].get()));
     scriptFunctionDescriptions.put(OpType.SWAP_BROKEN, r -> "tmp = 0x%x (p0); *%s (p1) = tmp; *%s (p0) = tmp; // Broken swap".formatted(r.params_20[0].get(), r.params_20[1], r.params_20[0]));
@@ -275,7 +278,7 @@ public final class Scus94491BpeSegment {
     scriptFunctionDescriptions.put(OpType.ANDOR, r -> "*%s (p2) &|= 0x%x (p0), 0x%x (p1);".formatted(r.params_20[2], r.params_20[0].get(), r.params_20[1].get()));
     scriptFunctionDescriptions.put(OpType.NOT, r -> "~*%s (p0);".formatted(r.params_20[0]));
     scriptFunctionDescriptions.put(OpType.SHL, r -> "*%s (p1) <<= 0x%x (p0);".formatted(r.params_20[1], r.params_20[0].get()));
-    scriptFunctionDescriptions.put(OpType.SHL, r -> "*%s (p1) >>= 0x%x (p0);".formatted(r.params_20[1], r.params_20[0].get()));
+    scriptFunctionDescriptions.put(OpType.SHR, r -> "*%s (p1) >>= 0x%x (p0);".formatted(r.params_20[1], r.params_20[0].get()));
     scriptFunctionDescriptions.put(OpType.ADD, r -> "*%s (p1) += 0x%x (p0);".formatted(r.params_20[1], r.params_20[0].get()));
     scriptFunctionDescriptions.put(OpType.SUB, r -> "*%s (p1) -= 0x%x (p0);".formatted(r.params_20[1], r.params_20[0].get()));
     scriptFunctionDescriptions.put(OpType.SUB_REV, r -> "*%s (p1) = 0x%x (p0) - 0x%x (p1);".formatted(r.params_20[1], r.params_20[0].get(), r.params_20[1].get()));
@@ -297,39 +300,39 @@ public final class Scus94491BpeSegment {
     scriptFunctionDescriptions.put(OpType.CALL, r -> "subfunc(%d (pp));".formatted(r.opParam_18));
     scriptFunctionDescriptions.put(OpType.JMP, r -> "jmp %s (p0);".formatted(r.params_20[0]));
     scriptFunctionDescriptions.put(OpType.JMP_CMP, r -> {
-      final int operandA = r.params_20[0].get();
-      final int operandB = r.params_20[1].get();
+      final Param operandA = r.params_20[0];
+      final Param operandB = r.params_20[1];
       final int op = r.opParam_18;
       final Param dest = r.params_20[2];
 
       return (switch(op) {
-        case 0 -> "if 0x%x (p0) <= 0x%x (p1)? %s;";
-        case 1 -> "if 0x%x (p0) < 0x%x (p1)? %s;";
-        case 2 -> "if 0x%x (p0) == 0x%x (p1)? %s;";
-        case 3 -> "if 0x%x (p0) != 0x%x (p1)? %s;";
-        case 4 -> "if 0x%x (p0) > 0x%x (p1)? %s;";
-        case 5 -> "if 0x%x (p0) >= 0x%x (p1)? %s;";
-        case 6 -> "if 0x%x (p0) & 0x%x (p1)? %s;";
-        case 7 -> "if 0x%x (p0) !& 0x%x (p1)? %s;";
+        case 0 -> "if %s (p0) <= %s (p1)? %s;";
+        case 1 -> "if %s (p0) < %s (p1)? %s;";
+        case 2 -> "if %s (p0) == %s (p1)? %s;";
+        case 3 -> "if %s (p0) != %s (p1)? %s;";
+        case 4 -> "if %s (p0) > %s (p1)? %s;";
+        case 5 -> "if %s (p0) >= %s (p1)? %s;";
+        case 6 -> "if %s (p0) & %s (p1)? %s;";
+        case 7 -> "if %s (p0) !& %s (p1)? %s;";
         default -> "illegal cmp 65";
       }).formatted(operandA, operandB, r.scriptState_04.scriptCompare(operandA, operandB, op) ? "yes - jmp %s (p2)".formatted(dest) : "no - continue");
     });
     scriptFunctionDescriptions.put(OpType.JMP_CMP_0, r -> {
-      final int operandB = r.params_20[0].get();
+      final Param operandB = r.params_20[0];
       final int op = r.opParam_18;
       final Param dest = r.params_20[1];
 
       return (switch(op) {
-        case 0 -> "if 0 <= 0x%x (p0)? %s;";
-        case 1 -> "if 0 < 0x%x (p0)? %s;";
-        case 2 -> "if 0 == 0x%x (p0)? %s;";
-        case 3 -> "if 0 != 0x%x (p0)? %s;";
-        case 4 -> "if 0 > 0x%x (p0)? %s;";
-        case 5 -> "if 0 >= 0x%x (p0)? %s;";
-        case 6 -> "if 0 & 0x%x (p0)? %s;";
-        case 7 -> "if 0 !& 0x%x (p0)? %s;";
+        case 0 -> "if 0 <= %s (p0)? %s;";
+        case 1 -> "if 0 < %s (p0)? %s;";
+        case 2 -> "if 0 == %s (p0)? %s;";
+        case 3 -> "if 0 != %s (p0)? %s;";
+        case 4 -> "if 0 > %s (p0)? %s;";
+        case 5 -> "if 0 >= %s (p0)? %s;";
+        case 6 -> "if 0 & %s (p0)? %s;";
+        case 7 -> "if 0 !& %s (p0)? %s;";
         default -> "illegal cmp 66";
-      }).formatted(operandB, r.scriptState_04.scriptCompare(0, operandB, op) ? "yes - jmp %s (p1)".formatted(dest) : "no - continue");
+      }).formatted(operandB, r.scriptState_04.scriptCompare(ScriptTempParam.ZERO, operandB, op) ? "yes - jmp %s (p1)".formatted(dest) : "no - continue");
     });
     scriptFunctionDescriptions.put(OpType.WHILE, r -> "if(--%s (p0) != 0) jmp %s (p1)".formatted(r.params_20[0], r.params_20[1]));
     scriptFunctionDescriptions.put(OpType.GOSUB, r -> "gosub %s (p0);".formatted(r.params_20[0]));
@@ -351,6 +354,21 @@ public final class Scus94491BpeSegment {
 
   @Method(0x80011e1cL)
   public static void gameLoop() {
+    RENDERER.events().onPressedThisFrame((window, inputAction) -> {
+      if(inputAction == InputAction.DEBUGGER) {
+        if(!Debugger.isRunning()) {
+          try {
+            Platform.setImplicitExit(false);
+            new Thread(() -> Application.launch(Debugger.class)).start();
+          } catch(final Exception e) {
+            LOGGER.info("Failed to start debugger", e);
+          }
+        } else {
+          Platform.runLater(Debugger::show);
+        }
+      }
+    });
+
     RENDERER.events().onKeyPress((window, key, scancode, mods) -> {
       // Add killswitch in case sounds get stuck on
       if(key == GLFW_KEY_DELETE) {
@@ -360,33 +378,21 @@ public final class Scus94491BpeSegment {
         }
       }
 
-      if(key == GLFW_KEY_F12) {
-        if(!Debugger.isRunning()) {
-          try {
-            Platform.setImplicitExit(false);
-            new Thread(() -> Application.launch(Debugger.class)).start();
-          } catch(final Exception e) {
-            LOGGER.info("Failed to start script debugger", e);
-          }
-        } else {
-          Platform.runLater(Debugger::show);
-        }
-      }
-
       if((mods & GLFW_MOD_CONTROL) != 0 && key == GLFW_KEY_W && currentEngineState_8004dd04 instanceof final Battle battle) {
         battle.endBattle();
       }
+
+      if((mods & GLFW_MOD_CONTROL) != 0 && key == GLFW_KEY_Q) {
+        if(Config.getGameSpeedMultiplier() == 1) {
+          Config.setGameSpeedMultiplier(Config.getLoadedGameSpeedMultiplier());
+        } else {
+          Config.setGameSpeedMultiplier(1);
+        }
+      }
     });
 
-    final MatrixStack matrixStack = new MatrixStack();
-    final ScissorStack scissorStack = new ScissorStack(RENDERER.window());
-
-    legacyUi = true;
-
     RENDERER.setRenderCallback(() -> {
-      if(legacyUi) {
-        GPU.startFrame();
-      }
+      GPU.startFrame();
 
       if(engineState_8004dd20.isInGame()) {
         gameState_800babc8.timestamp_a0 += vsyncMode_8007a3b8;
@@ -405,7 +411,7 @@ public final class Scus94491BpeSegment {
 
       EVENTS.postEvent(RENDER_EVENT);
 
-      SCREENS.render(RENDERER, matrixStack, scissorStack);
+      loadAndRenderMenus();
 
       final boolean scriptsTicked = SCRIPTS.tick();
 
@@ -431,14 +437,11 @@ public final class Scus94491BpeSegment {
       tickCount_800bb0fc++;
       endFrame();
 
-      if(legacyUi) {
-        GPU.endFrame();
-      }
+      GPU.endFrame();
     });
 
     RENDERER.events().onShutdown(() -> {
       stopSound();
-      SPU.stop();
       AUDIO_THREAD.stop();
       Platform.exit();
     });
@@ -450,7 +453,9 @@ public final class Scus94491BpeSegment {
 
   public static void startSound() {
     soundRunning = true;
-    new Thread(Scus94491BpeSegment::soundLoop).start();
+    final Thread sfx = new Thread(Scus94491BpeSegment::soundLoop);
+    sfx.setName("SFX");
+    sfx.start();
   }
 
   private static void stopSound() {
@@ -463,6 +468,7 @@ public final class Scus94491BpeSegment {
     while(soundRunning) {
       try {
         SEQUENCER.tick();
+        SPU.tick();
       } catch(final Throwable t) {
         LOGGER.error("Sound thread crashed!", t);
       }
@@ -472,7 +478,7 @@ public final class Scus94491BpeSegment {
 
       // Failsafe if we run too far behind (also applies to pausing in IDE)
       if(interval >= NANOS_PER_TICK * 3) {
-        LOGGER.warn("Sequencer running behind, skipping ticks to catch up");
+        LOGGER.debug("Sequencer running behind, skipping ticks to catch up");
         interval = NANOS_PER_TICK;
         time = System.nanoTime() - interval;
       }
@@ -519,8 +525,8 @@ public final class Scus94491BpeSegment {
     //LAB_80012ad8
     currentEngineState_8004dd04 = overlay.constructor_00.get();
     engineStateFunctions_8004e29c = currentEngineState_8004dd04.getScriptFunctions();
-    RENDERER.allowWidescreen = currentEngineState_8004dd04.allowsWidescreen();
-    RENDERER.allowHighQualityProjection = currentEngineState_8004dd04.allowsHighQualityProjection();
+    RENDERER.setAllowWidescreen(currentEngineState_8004dd04.allowsWidescreen());
+    RENDERER.setAllowHighQualityProjection(currentEngineState_8004dd04.allowsHighQualityProjection());
     RENDERER.updateProjections();
   }
 
@@ -622,6 +628,7 @@ public final class Scus94491BpeSegment {
       return 0;
     }
 
+    //TODO what is this doing? More readable: a1 / a2 - a0 * (a2 - 1) / 2
     return (a1 * 2 + a0 * a2 * (1 - a2)) / a2 / 2;
   }
 
@@ -680,7 +687,7 @@ public final class Scus94491BpeSegment {
         //LAB_80013818
         colour = v1 * 255 / fullScreenEffect_800bb140.totalFrames_08;
         //LAB_80013808
-      } else if(a1 == 2) { // a1 == 2
+      } else if(a1 == 2) {
         //LAB_8001383c
         colour = v1 * 255 / fullScreenEffect_800bb140.totalFrames_08 ^ 0xff;
 
@@ -731,13 +738,13 @@ public final class Scus94491BpeSegment {
     // This causes the bright flash of light from the lightning, etc.
     if(fullScreenEffect_800bb140.red0_20 != 0 || fullScreenEffect_800bb140.green0_1c != 0 || fullScreenEffect_800bb140.blue0_14 != 0) {
       // Make sure effect fills the whole screen
-      final float fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4);
+      final float fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4) * RENDERER.getWidthSquisher();
       final float extraWidth = fullWidth - displayWidth_1f8003e0;
       fullScreenEffect_800bb140.transforms.scaling(fullWidth, displayHeight_1f8003e4, 1.0f);
       fullScreenEffect_800bb140.transforms.transfer.set(-extraWidth / 2, 0.0f, 156.0f);
 
       //LAB_800139c4
-      RENDERER.queueOrthoModel(RENDERER.plainQuads.get(Translucency.B_PLUS_F), fullScreenEffect_800bb140.transforms)
+      RENDERER.queueOrthoModel(RENDERER.plainQuads.get(Translucency.B_PLUS_F), fullScreenEffect_800bb140.transforms, QueuedModelStandard.class)
         .colour(fullScreenEffect_800bb140.red0_20 / 255.0f, fullScreenEffect_800bb140.green0_1c / 255.0f, fullScreenEffect_800bb140.blue0_14 / 255.0f);
     }
 
@@ -746,13 +753,13 @@ public final class Scus94491BpeSegment {
     // This causes the screen darkening from the lightning, etc.
     if(fullScreenEffect_800bb140.red1_18 != 0 || fullScreenEffect_800bb140.green1_10 != 0 || fullScreenEffect_800bb140.blue1_0c != 0) {
       // Make sure effect fills the whole screen
-      final float fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4);
+      final float fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4) * RENDERER.getWidthSquisher();
       final float extraWidth = fullWidth - displayWidth_1f8003e0;
       fullScreenEffect_800bb140.transforms.scaling(fullWidth, displayHeight_1f8003e4, 1.0f);
       fullScreenEffect_800bb140.transforms.transfer.set(-extraWidth / 2, 0.0f, 156.0f);
 
       //LAB_80013b10
-      RENDERER.queueOrthoModel(RENDERER.plainQuads.get(Translucency.B_MINUS_F), fullScreenEffect_800bb140.transforms)
+      RENDERER.queueOrthoModel(RENDERER.plainQuads.get(Translucency.B_MINUS_F), fullScreenEffect_800bb140.transforms, QueuedModelStandard.class)
         .colour(fullScreenEffect_800bb140.red1_18 / 255.0f, fullScreenEffect_800bb140.green1_10 / 255.0f, fullScreenEffect_800bb140.blue1_0c / 255.0f);
     }
 
@@ -762,12 +769,12 @@ public final class Scus94491BpeSegment {
   @Method(0x80013c3cL)
   public static void drawFullScreenRect(final int colour, final Translucency transMode) {
     // Make sure effect fills the whole screen
-    final float fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4);
-    final float extraWidth = fullWidth - displayWidth_1f8003e0;
+    final float fullWidth = Math.max(RENDERER.getProjectionWidth(), RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4) * RENDERER.getWidthSquisher();
+    final float extraWidth = fullWidth - RENDERER.getProjectionWidth();
     fullScreenEffect_800bb140.transforms.scaling(fullWidth, displayHeight_1f8003e4, 1.0f);
     fullScreenEffect_800bb140.transforms.transfer.set(-extraWidth / 2, 0.0f, 120.0f);
 
-    RENDERER.queueOrthoModel(RENDERER.plainQuads.get(transMode), fullScreenEffect_800bb140.transforms)
+    RENDERER.queueOrthoModel(RENDERER.plainQuads.get(transMode), fullScreenEffect_800bb140.transforms, QueuedModelStandard.class)
       .monochrome(colour / 255.0f);
   }
 
@@ -1130,10 +1137,6 @@ public final class Scus94491BpeSegment {
 
   @Method(0x80018508L)
   public static void renderPostCombatScreen() {
-    if(whichMenu_800bdc38 != WhichMenu.NONE_0) {
-      loadAndRenderMenus();
-    }
-
     // There used to be code to preload SMAP while the post-combat screen is still up. I removed it because it only takes a few milliseconds to load in SC.
 
     //LAB_8001852c
@@ -1348,6 +1351,10 @@ public final class Scus94491BpeSegment {
 
   @Method(0x80019710L)
   public static void prepareOverlay() {
+    if(engineState_8004dd20 == EngineStateEnum.SUBMAP_05 || engineState_8004dd20 == EngineStateEnum.WORLD_MAP_08) {
+      lastSavableEngineState = engineState_8004dd20;
+    }
+
     if(engineState_8004dd20 != EngineStateEnum.SUBMAP_05 && previousEngineState_8004dd28 == EngineStateEnum.SUBMAP_05) {
       sssqResetStuff();
     }
@@ -1363,6 +1370,7 @@ public final class Scus94491BpeSegment {
     switch(engineState_8004dd20) {
       case TITLE_02 -> {
         setMainVolume(0x7f, 0x7f);
+        AUDIO_THREAD.setMainVolume(0x7f, 0x7f);
         sssqResetStuff();
         FUN_8001aa90();
 
@@ -1741,6 +1749,7 @@ public final class Scus94491BpeSegment {
   @Method(0x8001b14cL)
   public static FlowControl scriptSetMainVolume(final RunningScript<?> script) {
     setMainVolume((short)script.params_20[0].get(), (short)script.params_20[1].get());
+    AUDIO_THREAD.setMainVolume((short)script.params_20[0].get(), (short)script.params_20[1].get());
     return FlowControl.CONTINUE;
   }
 
@@ -1848,11 +1857,14 @@ public final class Scus94491BpeSegment {
       tickBattleDissolveDarkening();
     }
 
+    final BattleTransitionMode mode = CONFIG.getConfig(CoreMod.BATTLE_TRANSITION_MODE_CONFIG.get());
+    final int speedDivisor = mode == BattleTransitionMode.NORMAL ? 1 : 2;
+
     //LAB_8001b480
     if((battleFlags_800bc960 & 0x2) != 0) { // Combat controller script is loaded
       if(battleStartDelayTicks_8004f6ec == 0) {
         battleStartDelayTicks_8004f6ec = 1;
-        setBattleDissolveDarkeningMetrics(true, 300 / vsyncMode_8007a3b8);
+        setBattleDissolveDarkeningMetrics(true, 300 / vsyncMode_8007a3b8 / speedDivisor);
         startFadeEffect(1, 1);
       }
     }
@@ -1860,7 +1872,7 @@ public final class Scus94491BpeSegment {
     //LAB_8001b4c0
     if(battleStartDelayTicks_8004f6ec != 0) {
       //LAB_8001b4d4
-      if(battleStartDelayTicks_8004f6ec >= 150 / vsyncMode_8007a3b8) {
+      if(battleStartDelayTicks_8004f6ec >= 150 / vsyncMode_8007a3b8 / speedDivisor || mode == BattleTransitionMode.INSTANT) {
         _8004f6e4 = -1;
         battleFlags_800bc960 |= 0x1;
       }
@@ -1894,77 +1906,101 @@ public final class Scus94491BpeSegment {
 
     battleDissolveTicks += vsyncMode_8007a3b8;
 
-    final int sp10 = 0;
-    final int sp14 = 0;
+    if((battleDissolveTicks & 0x1) == 0 || CONFIG.getConfig(CoreMod.BATTLE_TRANSITION_MODE_CONFIG.get()) == BattleTransitionMode.FAST) {
+      final float squish;
+      final float width;
+      final float offset;
 
-    if((battleDissolveTicks & 0x1) == 0) {
-      final int a0 = displayHeight_1f8003e4 / 8;
-      final int v0 = 100 / a0;
+      // Make sure effect fills the whole screen
+      if(RENDERER.getAllowWidescreen() && !CONFIG.getConfig(CoreMod.ALLOW_WIDESCREEN_CONFIG.get())) {
+        squish = 1.0f;
+        width = dissolveDisplayWidth;
+        offset = 0.0f;
+      } else {
+        squish = dissolveDisplayWidth / 320.0f;
+        width = RENDERER.getLastFrame().width / (RENDERER.getLastFrame().height / RENDERER.getProjectionHeight());
+        offset = width - 320.0f;
+      }
 
-      if(v0 == _800bd714) {
-        _800bd714 = 0;
-        _800bd710++;
-        final int v1 = a0 - 1;
-        if(v1 < _800bd710) {
-          _800bd710 = v1;
+      final int numberOfBlocksY = displayHeight_1f8003e4 / 8;
+      final int blockHeight = 100 / numberOfBlocksY;
+
+      if(blockHeight == dissolveIterationsPerformed_800bd714) {
+        dissolveIterationsPerformed_800bd714 = 0;
+        dissolveRowCount_800bd710++;
+
+        if(dissolveRowCount_800bd710 > numberOfBlocksY) {
+          dissolveRowCount_800bd710 = numberOfBlocksY;
         }
       }
 
       //LAB_8001b608
-      int sp30 = 512;
+      int offsetY = 2;
 
       //LAB_8001b620
-      for(int sp18 = 0; sp18 <= _800bd710; sp18++) {
-        final int sp24 = sp30 >> 8;
-        int sp2c = sp10;
-        final int v = displayHeight_1f8003e4 - (_800bd710 + 1) * 8 + sp18 * 8;
+      for(int row = 0; row < dissolveRowCount_800bd710; row++) {
+        int offsetX = 0;
+        final int v = displayHeight_1f8003e4 - dissolveRowCount_800bd710 * 8 + row * 8;
 
         //LAB_8001b664
-        for(int sp1c = 0; sp1c < displayWidth_1f8003e0 / 32 * 4; sp1c++) {
-          final int u = sp1c * 8;
+        for(int col = 0; col < width * squish / 32 * 4; col++) {
+          final int u = col * 8;
 
           //LAB_8001b6a4
-          for(int s7 = 0; s7 <= 0; s7++) {
-            int s3 = rand() % 4;
-            if((rand() & 1) != 0) {
-              s3 = -s3;
-            }
-
-            //LAB_8001b6dc
-            final int s2 = rand() % 6;
-            final int left = sp2c + s3;
-            final int top = sp14 + v + s2 + sp24;
-
-            //LAB_8001b734
-            //LAB_8001b868
-            dissolveTransforms.transfer.set(left, top, 24.0f);
-            RENDERER.queueOrthoModel(dissolveSquare, dissolveTransforms)
-              .uvOffset((float)u / dissolveDisplayWidth, (240.0f - v) / 240.0f)
-              .texture(RENDERER.getLastFrame())
-              .monochrome((dissolveDarkening_800bd700.brightnessAccumulator_08 >> 8) / 128.0f);
+          int jitterX = rand() % 4;
+          if((rand() & 1) != 0) {
+            jitterX = -jitterX;
           }
 
-          sp2c += 8;
+          //LAB_8001b6dc
+          final int jitterY = rand() % 6;
+          final int left = offsetX + jitterX;
+          final int top = v + offsetY + jitterY;
+
+          //LAB_8001b734
+          //LAB_8001b868
+          dissolveTransforms.transfer.set(left - offset / 2.0f, top, 24.0f);
+          RENDERER.queueOrthoModel(dissolveSquare, dissolveTransforms, QueuedModelStandard.class)
+            .uvOffset((float)u / dissolveDisplayWidth, (displayHeight_1f8003e4 - v) / (float)displayHeight_1f8003e4)
+            .texture(RENDERER.getLastFrame())
+            .monochrome((dissolveDarkening_800bd700.brightnessAccumulator_08 >> 8) / 128.0f);
+
+          offsetX += 8;
         }
 
         //LAB_8001b8b8
-        sp30 += 512;
+        offsetY += 2;
       }
 
-      _800bd714++;
+      dissolveIterationsPerformed_800bd714++;
     }
 
-    renderBattleStartingScreenDarkening(sp10, sp14);
+    renderBattleStartingScreenDarkening();
   }
 
   private static final MV darkeningTransforms = new MV();
 
   /** The game doesn't continue rendering when battles are loading, this basically continues rendering the last frame that was rendered, but slightly darker each time */
   @Method(0x8001bbccL)
-  public static void renderBattleStartingScreenDarkening(final int x, final int y) {
-    darkeningTransforms.transfer.set(0.0f, 0.0f, 25.0f);
-    darkeningTransforms.scaling(dissolveDisplayWidth, 240.0f, 1.0f);
-    RENDERER.queueOrthoModel(RENDERER.renderBufferQuad, darkeningTransforms)
+  public static void renderBattleStartingScreenDarkening() {
+    final float squish;
+    final float width;
+    final float offset;
+
+    // Make sure effect fills the whole screen
+    if(RENDERER.getAllowWidescreen() && !CONFIG.getConfig(CoreMod.ALLOW_WIDESCREEN_CONFIG.get())) {
+      squish = 1.0f;
+      width = dissolveDisplayWidth;
+      offset = 0.0f;
+    } else {
+      squish = dissolveDisplayWidth / 320.0f;
+      width = RENDERER.getLastFrame().width / (RENDERER.getLastFrame().height / RENDERER.getProjectionHeight());
+      offset = width - 320.0f;
+    }
+
+    darkeningTransforms.transfer.set(-offset / 2.0f, 0.0f, 25.0f);
+    darkeningTransforms.scaling(width * squish, displayHeight_1f8003e4, 1.0f);
+    RENDERER.queueOrthoModel(RENDERER.renderBufferQuad, darkeningTransforms, QueuedModelStandard.class)
       .texture(RENDERER.getLastFrame())
       .monochrome(MathHelper.clamp((int)(dissolveDarkening_800bd700.brightnessAccumulator_08 * 1.1f) >> 8, 0x80 - 2 * vsyncMode_8007a3b8, 0x80) / 128.0f);
   }
@@ -1978,14 +2014,14 @@ public final class Scus94491BpeSegment {
     dissolveDarkening_800bd700.active_00 = false;
     dissolveDarkening_800bd700.framesRemaining_04 = 0;
     dissolveDarkening_800bd700.brightnessAccumulator_08 = 0x8000;
-    _800bd714 = 0;
-    _800bd710 = 0;
+    dissolveIterationsPerformed_800bd714 = 0;
+    dissolveRowCount_800bd710 = 0;
     battleDissolveTicks = 0;
     clearRed_8007a3a8 = 0;
     clearGreen_800bb104 = 0;
     clearBlue_800babc0 = 0;
     _8004f6e4 = 1;
-    dissolveDisplayWidth = RENDERER.getProjectionSize().x;
+    dissolveDisplayWidth = RENDERER.getProjectionWidth();
 
     if(dissolveSquare != null) {
       dissolveSquare.delete();
@@ -2313,7 +2349,12 @@ public final class Scus94491BpeSegment {
   public static void musicPackageLoadedCallback(final List<FileData> files, final int fileIndex, final boolean startSequence) {
     LOGGER.info("Music package %d loaded", fileIndex);
 
-    AUDIO_THREAD.loadBackgroundMusic(new BackgroundMusic(files, fileIndex));
+    playMusicPackage(new BackgroundMusic(files, fileIndex, AUDIO_THREAD.getSequencer().getSampleRate()), startSequence);
+    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & ~0x80);
+  }
+
+  public static void playMusicPackage(final BackgroundMusic music,  final boolean startSequence) {
+    AUDIO_THREAD.loadBackgroundMusic(music);
     AUDIO_THREAD.setSequenceVolume(40);
 
     if(startSequence) {
@@ -2321,8 +2362,6 @@ public final class Scus94491BpeSegment {
     }
 
     musicLoaded_800bd782 = true;
-    loadedDrgnFiles_800bcf78.updateAndGet(val -> val & ~0x80);
-
     _800bd0f0 = 2;
   }
 
@@ -2339,7 +2378,7 @@ public final class Scus94491BpeSegment {
     }
     final StageData2c stageData = stageData_80109a98[encounterId];
     if(encounterId_800bb0f8 >= 1000){
-      stageData.musicIndex_04 = 242;
+      stageData.musicIndex_04 = 241;
     }
     if(stageData.musicIndex_04 != 0xff) {
       stopMusicSequence();
@@ -2359,9 +2398,11 @@ public final class Scus94491BpeSegment {
         default -> parseMelbuVictory(stageData.musicIndex_04 & 0x1f);
       };
 
+      final var battleMusicEvent = EVENTS.postEvent(new BattleMusicEvent(victoryType, musicIndex, stageData));
+
       loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x4000);
 
-      loadEncounterMusic(musicIndex, victoryType);
+      loadEncounterMusic(battleMusicEvent.musicIndex, battleMusicEvent.victoryType);
     }
 
     //LAB_8001df9c
@@ -2403,45 +2444,6 @@ public final class Scus94491BpeSegment {
       case 9, 10 -> "Divine";
       default -> throw new IllegalArgumentException("Invalid character ID " + id);
     };
-  }
-
-  /** FUN_8001e010 with param 0 */
-  @Method(0x8001e010L)
-  public static void startMenuMusic() {
-    //LAB_8001e054
-    copyPlayingSounds(queuedSounds_800bd110, playingSoundsBackup_800bca78);
-    stopAndResetSoundsAndSequences();
-    unloadSoundFile(8);
-    unloadSoundFile(8);
-
-    loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
-    loadDrgnDir(0, 5815, files -> musicPackageLoadedCallback(files, 5815, true));
-  }
-
-  /** FUN_8001e010 with param -1 */
-  @Method(0x8001e010L)
-  public static void stopMenuMusic() {
-    //LAB_8001e044
-    //LAB_8001e0f8
-    if(loadingNewGameState_800bdc34) {
-      if(engineState_8004dd20 == EngineStateEnum.WORLD_MAP_08 && gameState_800babc8.isOnWorldMap_4e4) {
-        sssqResetStuff();
-        unloadSoundFile(8);
-        loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
-        loadDrgnDir(0, 5850, files -> musicPackageLoadedCallback(files, 5850, true));
-      }
-    } else {
-      //LAB_8001e160
-      stopMusicSequence();
-      unloadSoundFile(8);
-
-      currentEngineState_8004dd04.restoreMusicAfterMenu();
-    }
-
-    //LAB_8001e26c
-    stopAndResetSoundsAndSequences();
-    copyPlayingSounds(playingSoundsBackup_800bca78, queuedSounds_800bd110);
-    playingSoundsBackup_800bca78.clear();
   }
 
   /**
@@ -2864,8 +2866,8 @@ public final class Scus94491BpeSegment {
 
   @Method(0x8001fb44L)
   public static void FUN_8001fb44(final List<FileData> files, final int fileIndex, final int victoryType) {
-    final BackgroundMusic bgm = new BackgroundMusic(files, fileIndex);
-    bgm.setVolume(40);
+    final BackgroundMusic bgm = new BackgroundMusic(files, fileIndex, AUDIO_THREAD.getSequencer().getSampleRate());
+    bgm.setVolume(40 / 128.0f);
 
     loadDrgnDir(0, victoryType, victoryFiles -> loadVictoryMusic(victoryFiles, bgm));
 
@@ -2884,7 +2886,7 @@ public final class Scus94491BpeSegment {
 
   private static void loadVictoryMusic(final List<FileData> files, final BackgroundMusic battleMusic) {
     victoryMusic = battleMusic.createVictoryMusic(files);
-    victoryMusic.setVolume(40);
+    victoryMusic.setVolume(40 / 128.0f);
   }
 
   @ScriptDescription("Load some kind of audio package")

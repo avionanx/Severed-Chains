@@ -383,7 +383,7 @@ public class GuiManager {
 
     final NkMouse mouse = this.ctx.input().mouse();
     if(mouse.grab()) {
-      this.window.hideCursor();
+      this.window.disableCursor();
     } else if(mouse.grabbed()) {
       final float prevX = mouse.prev().x();
       final float prevY = mouse.prev().y();
@@ -453,7 +453,7 @@ public class GuiManager {
       final ByteBuffer elements = Objects.requireNonNull(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, MAX_ELEMENT_BUFFER, null));
       try(final MemoryStack stack = stackPush()) {
         // fill convert configuration
-        final NkConvertConfig config = NkConvertConfig.callocStack(stack)
+        final NkConvertConfig config = NkConvertConfig.calloc(stack)
           .vertex_layout(VERTEX_LAYOUT)
           .vertex_size(20)
           .vertex_alignment(4)

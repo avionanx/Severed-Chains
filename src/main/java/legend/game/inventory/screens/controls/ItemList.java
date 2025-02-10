@@ -1,5 +1,6 @@
 package legend.game.inventory.screens.controls;
 
+import legend.game.i18n.I18n;
 import legend.game.input.InputAction;
 import legend.game.inventory.screens.Control;
 import legend.game.inventory.screens.InputPropagation;
@@ -27,7 +28,7 @@ public class ItemList<T> extends Control {
 
   public ItemList() {
     this(
-      MenuEntryStruct04::getName,
+      entry -> I18n.translate(entry.getNameTranslationKey()),
       MenuEntryStruct04::getIcon,
       menuItem -> (menuItem.flags_02 & 0x1000) != 0 ? menuItem.flags_02 & 0xf : -1,
       menuItem -> (menuItem.flags_02 & 0x1000) != 0
@@ -85,6 +86,14 @@ public class ItemList<T> extends Control {
 
   public boolean isEmpty() {
     return this.items.isEmpty();
+  }
+
+  public void select(final int index) {
+    this.items.select(index);
+  }
+
+  public int getSelectedIndex() {
+    return this.items.getSelectedIndex();
   }
 
   public MenuEntryStruct04<T> getSelectedItem() {

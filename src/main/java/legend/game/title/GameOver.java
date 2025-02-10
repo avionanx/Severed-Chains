@@ -1,5 +1,6 @@
 package legend.game.title;
 
+import legend.core.QueuedModelStandard;
 import legend.core.gpu.Rect4i;
 import legend.core.gte.MV;
 import legend.core.memory.Method;
@@ -15,19 +16,16 @@ import legend.game.unpacker.FileData;
 import legend.game.unpacker.Unpacker;
 
 import static legend.core.GameEngine.GPU;
-import static legend.core.GameEngine.MODS;
 import static legend.core.GameEngine.RENDERER;
-import static legend.core.GameEngine.bootMods;
 import static legend.game.Scus94491BpeSegment.loadDrgnFile;
 import static legend.game.Scus94491BpeSegment.resizeDisplay;
 import static legend.game.Scus94491BpeSegment.startFadeEffect;
-import static legend.game.Scus94491BpeSegment_8002.FUN_8002a9c0;
 import static legend.game.Scus94491BpeSegment_8002.deallocateRenderables;
+import static legend.game.Scus94491BpeSegment_8002.resetSubmapToNewGame;
 import static legend.game.Scus94491BpeSegment_8004.engineStateOnceLoaded_8004dd24;
 import static legend.game.Scus94491BpeSegment_8007.vsyncMode_8007a3b8;
 import static legend.game.Scus94491BpeSegment_800b.fullScreenEffect_800bb140;
 import static legend.game.Scus94491BpeSegment_800b.gameOverMcq_800bdc3c;
-import static legend.game.Scus94491BpeSegment_800b.uiFile_800bdc3c;
 
 public class GameOver extends EngineState {
   private int loadingStage;
@@ -59,7 +57,7 @@ public class GameOver extends EngineState {
     }
 
     this.transforms.transfer.set(GPU.getOffsetX() - 320.0f, GPU.getOffsetY() - 120.0f, 144.0f);
-    RENDERER.queueOrthoModel(this.background, this.transforms);
+    RENDERER.queueOrthoModel(this.background, this.transforms, QueuedModelStandard.class);
   }
 
   @Override
@@ -68,9 +66,7 @@ public class GameOver extends EngineState {
     switch(this.loadingStage) {
       case 0 -> {
         if(Unpacker.getLoadingFileCount() == 0) {
-          bootMods(MODS.getAllModIds());
-
-          FUN_8002a9c0();
+          resetSubmapToNewGame();
           resizeDisplay(640, 240);
           this.loadingStage = 1;
         }
@@ -115,11 +111,6 @@ public class GameOver extends EngineState {
           this.background = null;
         }
 
-        if(uiFile_800bdc3c != null) {
-          uiFile_800bdc3c.delete();
-        }
-
-        uiFile_800bdc3c = null;
         gameOverMcq_800bdc3c = null;
         engineStateOnceLoaded_8004dd24 = EngineStateEnum.TITLE_02;
         vsyncMode_8007a3b8 = 2;

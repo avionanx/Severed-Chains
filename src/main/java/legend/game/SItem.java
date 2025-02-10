@@ -1,16 +1,20 @@
 package legend.game;
 
 import legend.core.MathHelper;
+import legend.core.audio.sequencer.assets.BackgroundMusic;
 import legend.core.gpu.Bpp;
 import legend.core.memory.Method;
 import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
+import legend.game.i18n.I18n;
+import legend.game.input.Input;
+import legend.game.input.InputAction;
 import legend.game.inventory.Addition04;
 import legend.game.inventory.EquipItemResult;
 import legend.game.inventory.Equipment;
 import legend.game.inventory.Item;
-import legend.game.inventory.WhichMenu;
-import legend.game.inventory.screens.MainMenuScreen;
+import legend.game.inventory.screens.FontOptions;
+import legend.game.inventory.screens.HorizontalAlign;
 import legend.game.inventory.screens.MenuStack;
 import legend.game.inventory.screens.TextColour;
 import legend.game.modding.coremod.CoreMod;
@@ -18,6 +22,9 @@ import legend.game.modding.events.characters.AdditionHitMultiplierEvent;
 import legend.game.modding.events.characters.AdditionUnlockEvent;
 import legend.game.modding.events.characters.CharacterStatsEvent;
 import legend.game.modding.events.characters.XpToLevelEvent;
+import legend.game.modding.events.inventory.EquipmentStatsEvent;
+import legend.game.modding.events.inventory.GatherAttackItemsEvent;
+import legend.game.modding.events.inventory.GatherRecoveryItemsEvent;
 import legend.game.scripting.FlowControl;
 import legend.game.scripting.RunningScript;
 import legend.game.scripting.ScriptDescription;
@@ -25,8 +32,6 @@ import legend.game.scripting.ScriptParam;
 import legend.game.types.ActiveStatsa0;
 import legend.game.types.CharacterData2c;
 import legend.game.types.EquipmentSlot;
-import legend.game.types.EquipmentStats1c;
-import legend.game.types.InventoryMenuState;
 import legend.game.types.LevelStuff08;
 import legend.game.types.MagicStuff08;
 import legend.game.types.MenuAdditionInfo;
@@ -50,20 +55,27 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import static legend.core.GameEngine.AUDIO_THREAD;
 import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.REGISTRIES;
+import static legend.game.Scus94491BpeSegment.loadDrgnDir;
+import static legend.game.Scus94491BpeSegment.loadDrgnFileSync;
+import static legend.game.Scus94491BpeSegment.musicPackageLoadedCallback;
+import static legend.game.Scus94491BpeSegment.playMusicPackage;
 import static legend.game.Scus94491BpeSegment.simpleRand;
-import static legend.game.Scus94491BpeSegment.startFadeEffect;
-import static legend.game.Scus94491BpeSegment_8002.FUN_80022a94;
+import static legend.game.Scus94491BpeSegment.stopAndResetSoundsAndSequences;
+import static legend.game.Scus94491BpeSegment.unloadSoundFile;
 import static legend.game.Scus94491BpeSegment_8002.allocateRenderable;
 import static legend.game.Scus94491BpeSegment_8002.clearCharacterStats;
 import static legend.game.Scus94491BpeSegment_8002.clearEquipmentStats;
-import static legend.game.Scus94491BpeSegment_8002.deallocateRenderables;
-import static legend.game.Scus94491BpeSegment_8002.getJoypadInputByPriority;
+import static legend.game.Scus94491BpeSegment_8002.copyPlayingSounds;
 import static legend.game.Scus94491BpeSegment_8002.giveEquipment;
 import static legend.game.Scus94491BpeSegment_8002.giveItem;
+import static legend.game.Scus94491BpeSegment_8002.loadMenuTexture;
 import static legend.game.Scus94491BpeSegment_8002.playMenuSound;
+import static legend.game.Scus94491BpeSegment_8002.renderText;
+import static legend.game.Scus94491BpeSegment_8002.sssqResetStuff;
 import static legend.game.Scus94491BpeSegment_8002.takeEquipmentId;
 import static legend.game.Scus94491BpeSegment_8002.takeItemId;
 import static legend.game.Scus94491BpeSegment_8002.textHeight;
@@ -73,13 +85,14 @@ import static legend.game.Scus94491BpeSegment_8004.additionCounts_8004f5c0;
 import static legend.game.Scus94491BpeSegment_8004.additionOffsets_8004f5ac;
 import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
 import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd20;
+import static legend.game.Scus94491BpeSegment_8004.stopMusicSequence;
 import static legend.game.Scus94491BpeSegment_8005.additionData_80052884;
-import static legend.game.Scus94491BpeSegment_8005.standingInSavePoint_8005a368;
 import static legend.game.Scus94491BpeSegment_800b.characterIndices_800bdbb8;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
-import static legend.game.Scus94491BpeSegment_800b.inventoryJoypadInput_800bdc44;
-import static legend.game.Scus94491BpeSegment_800b.inventoryMenuState_800bdc28;
+import static legend.game.Scus94491BpeSegment_800b.loadedDrgnFiles_800bcf78;
 import static legend.game.Scus94491BpeSegment_800b.loadingNewGameState_800bdc34;
+import static legend.game.Scus94491BpeSegment_800b.playingSoundsBackup_800bca78;
+import static legend.game.Scus94491BpeSegment_800b.queuedSounds_800bd110;
 import static legend.game.Scus94491BpeSegment_800b.renderablePtr_800bdba4;
 import static legend.game.Scus94491BpeSegment_800b.renderablePtr_800bdba8;
 import static legend.game.Scus94491BpeSegment_800b.secondaryCharIds_800bdbf8;
@@ -87,23 +100,32 @@ import static legend.game.Scus94491BpeSegment_800b.stats_800be5f8;
 import static legend.game.Scus94491BpeSegment_800b.textZ_800bdf00;
 import static legend.game.Scus94491BpeSegment_800b.tickCount_800bb0fc;
 import static legend.game.Scus94491BpeSegment_800b.uiFile_800bdc3c;
-import static legend.game.Scus94491BpeSegment_800b.whichMenu_800bdc38;
+import static legend.game.combat.Battle.seed_800fa754;
 
 public final class SItem {
   private SItem() { }
 
   public static final MenuStack menuStack = new MenuStack();
+  private static BackgroundMusic menuMusic;
+
+  public static final FontOptions UI_TEXT = new FontOptions().colour(TextColour.BROWN).shadowColour(TextColour.MIDDLE_BROWN);
+  public static final FontOptions UI_TEXT_DISABLED = new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN);
+  public static final FontOptions UI_TEXT_SELECTED = new FontOptions().colour(TextColour.RED).shadowColour(TextColour.MIDDLE_BROWN);
+  public static final FontOptions UI_TEXT_CENTERED = new FontOptions().colour(TextColour.BROWN).shadowColour(TextColour.MIDDLE_BROWN).horizontalAlign(HorizontalAlign.CENTRE);
+  public static final FontOptions UI_TEXT_DISABLED_CENTERED = new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE);
+  public static final FontOptions UI_TEXT_SELECTED_CENTERED = new FontOptions().colour(TextColour.RED).shadowColour(TextColour.MIDDLE_BROWN).horizontalAlign(HorizontalAlign.CENTRE);
+  public static final FontOptions UI_WHITE = new FontOptions().colour(TextColour.WHITE);
 
   public static final int[] charDragoonSpiritIndices_800fba58 = {0, 2, 5, 6, 4, 2, 1, 3, 5};
   public static final MenuStatus08[] menuStatus_800fba7c = {
-    new MenuStatus08("Petrify", TextColour.MIDDLE_BROWN),
-    new MenuStatus08("Charmed", TextColour.MIDDLE_BROWN),
-    new MenuStatus08("Confused", TextColour.MIDDLE_BROWN),
-    new MenuStatus08("Fear", TextColour.PURPLE),
-    new MenuStatus08("Stunned", TextColour.MIDDLE_BROWN),
-    new MenuStatus08("", TextColour.MIDDLE_BROWN),
-    new MenuStatus08("Dspirit", TextColour.CYAN),
-    new MenuStatus08("Poison", TextColour.LIME),
+    new MenuStatus08("Petrify", new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("Charmed", new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("Confused", new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("Fear", new FontOptions().colour(TextColour.PURPLE).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("Stunned", new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("", new FontOptions().colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("Dspirit", new FontOptions().colour(TextColour.CYAN).shadowColour(TextColour.MIDDLE_BROWN).horizontalAlign(HorizontalAlign.CENTRE)),
+    new MenuStatus08("Poison", new FontOptions().colour(TextColour.LIME).shadowColour(TextColour.GREEN).horizontalAlign(HorizontalAlign.CENTRE)),
   };
 
   /** Note: arrays run into the next array's first element */
@@ -144,7 +166,6 @@ public final class SItem {
     {new MagicStuff08(0, -1, 255, 255, 255, 255, 255), new MagicStuff08(20, 66, 255, 200, 150, 200, 200), new MagicStuff08(40, 65, 255, 205, 155, 210, 210), new MagicStuff08(60, 67, 255, 210, 160, 220, 220), new MagicStuff08(80, -1, 255, 215, 165, 230, 230), new MagicStuff08(100, 13, 255, 220, 170, 250, 250), },
   };
 
-  public static final EquipmentStats1c[] equipmentStats_80111ff0 = new EquipmentStats1c[192];
   public static final int[] kongolXpTable_801134f0 = new int[61];
   public static final int[] dartXpTable_801135e4 = new int[61];
   public static final int[] haschelXpTable_801136d8 = new int[61];
@@ -298,6 +319,7 @@ public final class SItem {
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1,
+
     2, 5, 5, 5, 1, 5, 5, 5,
     50, 5, 5, 5, 15, 10, 5, 10,
     10, 10, 10, 10, 10, 1, 10, 10,
@@ -324,116 +346,6 @@ public final class SItem {
     new MenuGlyph06(152, 16, 134),
     new MenuGlyph06(85, 194, 16),
     new MenuGlyph06(91, 194, 164),
-  };
-
-  public static final String[] itemDescriptions_80117a10 = {
-    " ", " ", "Fire-based attack.", " ", "Confuses Enemy \nwith given\nprobability.",
-    "Gives 50% more SP.", " ", "Powerful but\nHP decays  \neach turn.", " ", " ",
-    " ", "Stuns enemy, with\na given \nprobability.", "Instantly kills \nenemy with given\nprobability.", " ", "Darkness-based \nattack.",
-    " ", "Stuns enemy, with a\ngiven probability.", "Instantly kills \nenemy with given\nprobability.", " ", "Frightens enemy \nwith a given\nprobability.",
-    " ", " ", " ", "Frightens enemy\nwith a given \nprobability.", " ",
-    " ", "Wind-based attack.", " ", "Light-based attack.", " ",
-    "Confuses enemy \nwith a given \nprobability.", "Poisons enemy\nwith a given \nprobability.", "Can attack all.", "Gives 50% more SP.", " ",
-    " ", " ", "Stuns enemy, with \na given \nprobability.", " ", "Gives twice as \nmuch SP but not \npowerful.",
-    " ", "Stuns enemy, with\na given \nprobability.", " ", "Thunder-based \nattack.", "Becomes powerful \ninversely to HP.",
-    "Instantly kills \nenemy with given\nprobability.", " ", " ", " ", " ",
-    "When physically \nattacked SP is \naccumulated.", "Nullifies damage\ndue to fire-based\nattacks.", "Nullifies damage\ndue to wind-based\nattacks.", " ", " ",
-    "When physically \nattacked SP is \naccumulated.", "Nullifies damage\ndue to earth-\nbased attacks.", " ", " ", "When physically \nattacked SP is \naccumulated.",
-    "Gives 50% more SP", "Nullifies damage\ndue to thunder-\nbased attacks.", " ", " ", " ",
-    "When attacked \nphysically, SP is \naccumulated.", "When attacked \nmagically, SP is \naccumulated.", "Nullifies damage\ndue to light-\nbased attacks.", "Nullifies damage\ndue to darkness-\nbased attacks.", "Nullifies damage\ndue to water-\nbased attack.",
-    "Avoids \npoison/stun/arm\nblocking.", "Avoids \npoison/stun/arm\nblocking.", "Avoids \npoison/stun/arm\nblocking.", "Revives from \ndeath with a \ngiven probability.", "Greatly reduces \ndamage from \nphysical attacks.",
-    " ", " ", "Increases hit \nrate of physical\nattacks by 10%.", " ", "When magically \nattacked, SP is \naccumulated.",
-    "When magically \nattacked, SP is \naccumulated.", "When magically \nattacked, SP is \naccumulated.", " ", " ", "Increases hit\nrate of magical\nattacks by 10%.",
-    "When magically \nattacked, SP is \naccumulated.", "Avoids instant \ndeath.", " ", "Avoids bewitching,\nconfusion, fear \nand dispiriting.", "Reduces damage\ndue to magical\nattacks.",
-    "Raises maximum\nHP 50%.", "Raises maximum\nMP 50%.", " ", " ", " ",
-    "Increases escape\nrate from physical\nattacks by 5 pts.", " ", " ", "Increases escape\nrate from magical\nattacks by 5 pts.", "Increases escape\nrate of magi/physi\nattacks by 5 pts.",
-    "Gives 20 pts. \nmore agility.", "Gives 20 pts.\nmore agility.", " ", "Avoids the\nabnormal status\npoison.", "Avoids the\nabnormal status\ndispiriting.",
-    "Avoids the\nabnormal status\narm blocking.", "Avoids the\nabnormal status\nconfusion.", "Avoids abnormal \nstatus from\nbeing stunned.", "Avoids the\nabnormal status\nfear.", "Avoids the \nabnormal status\nbewitchment.",
-    "Avoids the\nabnormal status\npetrification.", "Raises physical \nattack ability\nslightly.", "Raises physical\ndefense power\nslightly.", "Raises magical\nattacking power.", "Raises magical\ndefense power.",
-    "Raises physical\n& magical \nattacking power.", "Raises physical\n& magical\ndefense power.", "Raises physical \nattack & defense \npower.", "Increases escape\nrate from physical\nattack by 20 pts.", "Increases escape\nrate from magical\nattack by 20 pts.",
-    "Increases A-AV\nand M-AV by\nby 20 pts.", "Raises maximum\nHP 50%.", "Doubles \nmaximum MP.", "Raises SP 50%.", "Recovers SP \neach turn.",
-    "Recovers HP  \neach turn.", "Recovers MP \neach turn.", "Increases hit \nrate for attacking\nall by 20%.", "Avoids instant\ndeath.", " ",
-    "Revives from \ndeath with a \ngiven probability.", "Increases agility\nby 20 pts.", " ", "Increases agility\nby 20 pts.", "Reduces damage\nfrom fire-based \nattack by half.",
-    "Reduces damage\nfrom wind-based\nattack by half.", "Reduces damage\nfrom light-based\nattack by half.", "Reduces damage\nfrom darkness-based\nattacks by half.", "Reduces damage\nfrom water-based\nattack by half.", "Reduces damage\nfrom thunder-based\nattack by half.",
-    "Reduces damage\nfrom earth-based\nattack by half.", " ", "When damaged by\nmagic SP is \naccumulated.", "When damaged by\nmagic MP is \naccumulated.", "Avoids all\nabnormal status.",
-    " ", "When physically\ndamaged SP is\naccumulated.", " ", "When physically\ndamaged MP is\naccumulated.", "Reduces damage\nfrom all attacks \nby half.",
-    "Reduces physical\ndamage by half.", "Reduces damage\nfrom magic\nby half.", " ", "May slightly\nincrease physical \nattack power.", "May slightly\nincrease physical\ndefense power.",
-    " ", "Automatic Addition:\nHalf Damage and SP.", "Makes Addition\ncompletely\nsuccessful.", " ", " ",
-    " ", " ", " ", " ", " ",
-    " ", " ", " ", " ", " ",
-    " ", " ", " ", " ", " ",
-    " ", " ", " ", " ", " ",
-    " ", " ", " ", " ", " ",
-    " ", " ", " ", " ", " ",
-    " ", " ", " ", "Detonates and\nattacks all.", "Thunder-based\nindividual attack\n(multi).",
-    "Fire-based\nindividual attack\n(multi).", " ", "Earth-based\nindividual attack\n(multi).", "Water-based\nindividual attack\n(multi).", "Wind-based\nindividual attack\n(multi).",
-    "Generates one of \nthe attack items.", "Light-based\nindividual attack\n(multi).", "Darkness-based\nindividual attack\n(multi).", "Recovers half of\nmaximum value\nof HP.", "Dissolves\npetrification.",
-    "Dissolves fear,\nbewitchment, \nconfusion dispirit.", "Nullifies poison/\nstunning/arm \nblocking.", "Thunder-based\nattack for all\n(multi).", "Earth-based\nattack for all\n(multi).", "Fire-based\nattack for all\n(multi).",
-    "Light-based\nattack for all\n(multi).", "Recovers 100 pts.\nof SP during \ncombat.", "Confuses minor\nenemies.", " ", "Water-based\nattack for all\n(multi).",
-    "Stuns minor\nenemies.", "Darkness-based\nattack for all\n(multi).", "Poisons minor\nenemies.", "Frightens minor\nenemies.", " ",
-    "Wind-based\nattack for all\n(multi).", "Destroys \nminor enemies.", "Revitalizes and \nrecovers half of\nHP.", "Reduces risk of\nencounter.", "Minor enemy only\nattacks one ally\n3 turns (repeat).",
-    "Generates a\nrecovery item.", " ", "Nullifies magical\nattack for 3 turns\n(repeat).", "Nullifies physical \nattack for 3 turns \n(repeat).", "Completely\nrecovers MP.",
-    "100% sure escape \nfrom minor enemy\n(repeat).", "Completely \nrecovers HP.", "Blocks enemy's\nmove for 3 turns\n(repeat).", "Completely \nrecovers HP\nfor all.", "Completely \nrecovers MP\nfor all.",
-    "Strength increase\nfor 3 turns\n(repeat).", "Becomes weak\nfor 3 turns\n(repeat).", "Doubles agility\nfor 3 turns\n(repeat).", "Halves agility\nfor 3 turns\n(repeat).", " ",
-    "Gives subtle\ngood aroma.", "Unbased\nattack for all\n(multi).", "Fire-based\npowerful attack \nfor all.", "Water-based\npowerful attack\nfor all.", "Wind-based\npowerful attack\nfor all.",
-    "Earth-based\npowerful attack\nfor all.", "Light-based\npowerful attack\nfor all.", "Darkness-based\npowerful attack\nfor all.", "Thunder-based\npowerful attack\nfor all.", "Recover half of\nHP for all.",
-    "Unbased attack\nfor all (multi) \n(repeat).", " ", " ", " ", " ",
-    " ",
-  };
-
-  public static final String[] itemNames_8011972c = {
-    "Broad Sword", "Bastard Sword", "Heat Blade", "Falchion", "Mind Crush",
-    "Fairy Sword", "Claymore", "Soul Eater", "Axe", "Tomahawk",
-    "Battle Axe", "Great Axe", "Indora's Axe", "Rapier", "Shadow Cutter",
-    "Dancing Dagger", "Flamberge", "Gladius", "Dragon Buster", "Demon Stiletto",
-    "Spear", "Lance", "Glaive", "Spear Of Terror", "Partisan",
-    "Halberd", "Twister Glaive", "Short Bow", "Sparkle Arrow", "Long Bow",
-    "Bemusing Arrow", "Virulent Arrow", "Detonate Arrow", "Arrow Of Force", "Mace",
-    "Morning Star", "War Hammer", "Heavy Mace", "Basher", "Pretty Hammer",
-    "Iron Knuckle", "Beast Fang", "Diamond Claw", "Thunder Fist", "Destroyer Mace",
-    "Brass Knuckle", "Leather Armor", "Scale Armor", "Chain Mail", "Plate Mail",
-    "Saint Armor", "Red DG Armor", "Jade DG Armor", "Lion Fur", "Breast Plate",
-    "Giganto Armor", "Gold DG Armor", "Disciple Vest", "Warrior Dress", "Master's Vest",
-    "Energy Girdle", "Violet DG Armor", "Clothes", "Leather Jacket", "Silver Vest",
-    "Sparkle Dress", "Robe", "Silver DG Armor", "Dark DG Armor", "Blue DG Armor",
-    "Armor of Yore", "Satori Vest", "Rainbow Dress", "Angel Robe", "Armor Of Legend",
-    "", "Bandana", "Sallet", "Armet", "Knight Helm",
-    "Giganto Helm", "Soul Headband", "Felt Hat", "Cape", "Tiara",
-    "Jeweled Crown", "Rose's Hair Band", "", "Phoenix Plume", "Legend Casque",
-    "Dragon Helm", "Magical Hat", "", "Leather Boots", "Iron Kneepiece",
-    "Combat Shoes", "Leather Shoes", "Soft Boots", "Stardust Boots", "Magical Greaves",
-    "Dancer's Shoes", "Bandit's Shoes", "", "Poison Guard", "Active Ring",
-    "Protector", "Panic Guard", "Stun Guard", "Bravery Amulet", "Magic Ego Bell",
-    "Destone Amulet", "Power Wrist", "Knight Shield", "Magical Ring", "Spiritual Ring",
-    "Attack Badge", "Guard Badge", "Giganto Ring", "Elude Cloak", "Spirit Cloak",
-    "Sage's Cloak", "Physical Ring", "Amulet", "Wargod's Sash", "Spirit Ring",
-    "Therapy Ring", "Mage Ring", "Wargod's Amulet", "Talisman", "",
-    "Holy Ankh", "Dancer's Ring", "", "Bandit's Ring", "Red-Eye Stone",
-    "Jade Stone", "Silver Stone", "Darkness Stone", "Blue Sea Stone", "Violet Stone",
-    "Golden Stone", "", "Ruby Ring", "Sapphire Pin", "Rainbow Earring",
-    "", "Emerald Earring", "", "Platinum Collar", "Phantom Shield",
-    "Dragon Shield", "Angel Scarf", "Bracelet", "Fake Power Wrist", "Fake Shield",
-    "", "Wargod Calling", "Ultimate Wargod", "", "",
-    "", "", "", "", "",
-    "", "", "", "", "",
-    "", "", "", "", "",
-    "", "", "", "", "",
-    "", "", "", "", "",
-    "", "", "", "", "",
-    "", "", "", "Detonate Rock", "Spark Net",
-    "Burn Out", "", "Pellet", "Spear Frost", "Spinning Gale",
-    "Attack Ball", "Trans Light", "Dark Mist", "Healing Potion", "Depetrifier",
-    "Mind Purifier", "Body Purifier", "Thunderbolt", "Meteor Fall", "Gushing Magma",
-    "Dancing Ray", "Spirit Potion", "Panic Bell", "", "Fatal Blizzard",
-    "Stunning Hammer", "Black Rain", "Poison Needle", "Midnight Terror", "",
-    "Rave Twister", "Total Vanishing", "Angel's Prayer", "Charm Potion", "Pandemonium",
-    "Recovery Ball", "", "Magic Shield", "Material Shield", "Sun Rhapsody",
-    "Smoke Ball", "Healing Fog", "Magic Sig Stone", "Healing Rain", "Moon Serenade",
-    "Power Up", "Power Down", "Speed Up", "Speed Down", "",
-    "Sachet", "Psyche Bomb", "Burning Wave", "Frozen Jet", "Down Burst",
-    "Gravity Grabber", "Spectral Flash", "Night Raid", "Flash Hall", "Healing Breeze",
-    "Psyche Bomb X", "", "", "", "",
-    "",
   };
 
   public static final String[] additions_8011a064 = {
@@ -617,6 +529,24 @@ public final class SItem {
     return FlowControl.CONTINUE;
   }
 
+  @ScriptDescription("Picks a random attack item")
+  @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.REG, name = "id")
+  public static FlowControl scriptGenerateAttackItem(final RunningScript<?> script) {
+    final Item[] items = EVENTS.postEvent(new GatherAttackItemsEvent()).getItems();
+    final Item item = items[seed_800fa754.nextInt(items.length)];
+    script.params_20[0].set(item.getRegistryId());
+    return FlowControl.CONTINUE;
+  }
+
+  @ScriptDescription("Picks a random recovery item")
+  @ScriptParam(direction = ScriptParam.Direction.OUT, type = ScriptParam.Type.REG, name = "id")
+  public static FlowControl scriptGenerateRecoveryItem(final RunningScript<?> script) {
+    final Item[] items = EVENTS.postEvent(new GatherRecoveryItemsEvent()).getItems();
+    final Item item = items[seed_800fa754.nextInt(items.length)];
+    script.params_20[0].set(item.getRegistryId());
+    return FlowControl.CONTINUE;
+  }
+
   @Method(0x800fc698L)
   public static int getXpToNextLevel(final int charIndex) {
     if(charIndex == -1 || charIndex > 8) {
@@ -642,15 +572,21 @@ public final class SItem {
     return 9 + a0 * 17;
   }
 
+  public static void loadMenuAssets() {
+    loadDrgnFileSync(0, 6665, data -> menuAssetsLoaded(data, 0));
+    loadDrgnFileSync(0, 6666, data -> menuAssetsLoaded(data, 1));
+    loadDrgnDir(0, 5815, SItem::menuMusicLoaded);
+  }
+
   @Method(0x800fc944L)
-  public static void menuAssetsLoaded(final FileData data, final int whichFile) {
+  private static void menuAssetsLoaded(final FileData data, final int whichFile) {
     if(whichFile == 0) {
       //LAB_800fc98c
-      FUN_80022a94(data.slice(0x83e0)); // Character textures
-      FUN_80022a94(data); // Menu textures
-      FUN_80022a94(data.slice(0x6200)); // Item textures
-      FUN_80022a94(data.slice(0x1_0460));
-      FUN_80022a94(data.slice(0x1_0580));
+      loadMenuTexture(data.slice(0x83e0)); // Character textures
+      loadMenuTexture(data); // Menu textures
+      loadMenuTexture(data.slice(0x6200)); // Item textures
+      loadMenuTexture(data.slice(0x1_0460));
+      loadMenuTexture(data.slice(0x1_0580));
     } else if(whichFile == 1) {
       //LAB_800fc9e4
       uiFile_800bdc3c = UiFile.fromFile(data);
@@ -663,74 +599,47 @@ public final class SItem {
     //LAB_800fc9fc
   }
 
-  @Method(0x800fcad4L)
-  public static void renderMenus() {
-    inventoryJoypadInput_800bdc44 = getJoypadInputByPriority();
+  private static void menuMusicLoaded(final List<FileData> files) {
+    menuMusic = new BackgroundMusic(files, 5815, AUDIO_THREAD.getSequencer().getSampleRate());
+  }
 
-    switch(inventoryMenuState_800bdc28) {
-      case INIT_0 -> { // Initialize, loads some files (unknown contents)
-        loadingNewGameState_800bdc34 = false;
-        loadCharacterStats();
+  /** FUN_8001e010 with param 0 */
+  @Method(0x8001e010L)
+  public static void startMenuMusic() {
+    //LAB_8001e054
+    copyPlayingSounds(queuedSounds_800bd110, playingSoundsBackup_800bca78);
+    stopAndResetSoundsAndSequences();
+    unloadSoundFile(8);
+    unloadSoundFile(8);
 
-        if(engineState_8004dd20 == EngineStateEnum.WORLD_MAP_08) {
-          gameState_800babc8.isOnWorldMap_4e4 = true;
-          canSave_8011dc88 = true;
-        } else {
-          gameState_800babc8.isOnWorldMap_4e4 = false;
-          canSave_8011dc88 = CONFIG.getConfig(CoreMod.SAVE_ANYWHERE_CONFIG.get()) || standingInSavePoint_8005a368;
-        }
+    menuMusic.reset();
+    playMusicPackage(menuMusic, true);
+  }
 
-        inventoryMenuState_800bdc28 = InventoryMenuState.AWAIT_INIT_1;
+  /** FUN_8001e010 with param -1 */
+  @Method(0x8001e010L)
+  public static void stopMenuMusic() {
+    //LAB_8001e044
+    //LAB_8001e0f8
+    if(loadingNewGameState_800bdc34) {
+      if(engineState_8004dd20 == EngineStateEnum.WORLD_MAP_08 && gameState_800babc8.isOnWorldMap_4e4) {
+        sssqResetStuff();
+        unloadSoundFile(8);
+        loadedDrgnFiles_800bcf78.updateAndGet(val -> val | 0x80);
+        loadDrgnDir(0, 5850, files -> musicPackageLoadedCallback(files, 5850, true));
       }
+    } else {
+      //LAB_8001e160
+      stopMusicSequence();
+      unloadSoundFile(8);
 
-      case AWAIT_INIT_1 -> {
-        if(uiFile_800bdc3c != null) {
-          inventoryMenuState_800bdc28 = InventoryMenuState._2;
-        }
-      }
-
-      case _2 -> {
-        menuStack.pushScreen(new MainMenuScreen(() -> {
-          menuStack.popScreen();
-          inventoryMenuState_800bdc28 = InventoryMenuState.UNLOAD_125;
-        }));
-
-        inventoryMenuState_800bdc28 = InventoryMenuState.MAIN_MENU_4;
-      }
-
-      case MAIN_MENU_4 -> menuStack.render();
-
-      case UNLOAD_125 -> {
-        deallocateRenderables(0xff);
-
-        if(uiFile_800bdc3c != null) {
-          uiFile_800bdc3c.delete();
-        }
-
-        uiFile_800bdc3c = null;
-
-        switch(whichMenu_800bdc38) {
-          case RENDER_SAVE_GAME_MENU_19 ->
-            whichMenu_800bdc38 = WhichMenu.UNLOAD_SAVE_GAME_MENU_20;
-
-          case RENDER_CHAR_SWAP_MENU_24 -> {
-            startFadeEffect(2, 10);
-            whichMenu_800bdc38 = WhichMenu.UNLOAD_CHAR_SWAP_MENU_25;
-          }
-
-          case QUIT -> startFadeEffect(2, 10);
-
-          default -> {
-            startFadeEffect(2, 10);
-            whichMenu_800bdc38 = WhichMenu.UNLOAD_INVENTORY_MENU_5;
-          }
-        }
-
-        currentEngineState_8004dd04.menuClosed();
-
-        textZ_800bdf00 = 13;
-      }
+      currentEngineState_8004dd04.restoreMusicAfterMenu();
     }
+
+    //LAB_8001e26c
+    stopAndResetSoundsAndSequences();
+    copyPlayingSounds(playingSoundsBackup_800bca78, queuedSounds_800bd110);
+    playingSoundsBackup_800bca78.clear();
   }
 
   @Method(0x801033ccL)
@@ -917,36 +826,8 @@ public final class SItem {
     }
   }
 
-  @Method(0x80103cc4L)
-  public static void renderText(final String text, final int x, final int y, final TextColour colour) {
-    final TextColour shadowColour;
-    if(colour == TextColour.WHITE) {
-      shadowColour = TextColour.BLACK;
-    } else if(colour == TextColour.LIME) {
-      //LAB_80103d18
-      shadowColour = TextColour.GREEN;
-    } else if(colour == TextColour.MIDDLE_BROWN) {
-      //LAB_80103d20
-      shadowColour = TextColour.LIGHT_BROWN;
-    } else {
-      shadowColour = TextColour.MIDDLE_BROWN;
-    }
-
-    //LAB_80103d24
-    //LAB_80103d28
-    Scus94491BpeSegment_8002.renderText(text, x    , y    , colour, 0);
-    Scus94491BpeSegment_8002.renderText(text, x    , y + 1, shadowColour, 0);
-    Scus94491BpeSegment_8002.renderText(text, x + 1, y    , shadowColour, 0);
-    Scus94491BpeSegment_8002.renderText(text, x + 1, y + 1, shadowColour, 0);
-  }
-
   @Method(0x80103e90L)
-  public static void renderCentredText(final String text, final int x, final int y, final TextColour colour) {
-    renderText(text, x - textWidth(text) / 2, y, colour);
-  }
-
-  @Method(0x80103e90L)
-  public static void renderCentredText(final String text, final int x, int y, final TextColour colour, final int maxWidth) {
+  public static void renderMenuCentredText(final String text, final int x, int y, final int maxWidth) {
     final String[] split;
     if(textWidth(text) <= maxWidth) {
       split = new String[] {text};
@@ -958,7 +839,11 @@ public final class SItem {
         final char current = text.charAt(i);
         final int charWidth = Scus94491BpeSegment_8002.charWidth(current);
 
-        if(currentWidth + charWidth > maxWidth) {
+        if(current == '\n') {
+          temp.add(text.substring(startIndex, i));
+          currentWidth = 0;
+          startIndex = i + 1;
+        } else if(currentWidth + charWidth > maxWidth) {
           boolean advanceOverSpace = false;
           for(int backtrack = 0; backtrack < 10; backtrack++) {
             if(text.charAt(i - backtrack) == ' ') {
@@ -986,7 +871,7 @@ public final class SItem {
 
     for(int i = 0; i < split.length; i++) {
       final String str = split[i];
-      renderText(str, x - textWidth(str) / 2, y, colour);
+      renderText(str, x - textWidth(str) / 2, y, UI_TEXT);
       y += textHeight(str);
     }
   }
@@ -1207,9 +1092,25 @@ public final class SItem {
   }
 
   public static void renderFraction(final int x, final int y, final int numerator, final int denominator) {
-    final int width = renderRightAlignedNumber(x, y, denominator);
+    final int width = renderRightAlignedNumber(x, y, denominator, 0);
     allocateUiElement(0xb, 0xb, x - width - 5, y).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
-    renderRightAlignedNumber(x - width - 5, y, numerator);
+    renderRightAlignedNumber(x - width - 5, y, numerator, 0);
+  }
+
+  public static void renderHp(final int x, final int y, final int numerator, final int denominator) {
+    final int clut;
+    if(numerator <= denominator / 4) {
+      clut = 0x7c2b;
+      //LAB_80105090
+    } else if(numerator <= denominator / 2) {
+      clut = 0x7cab;
+    } else {
+      clut = 0;
+    }
+
+    final int width = renderRightAlignedNumber(x, y, denominator, 0);
+    allocateUiElement(0xb, 0xb, x - width - 5, y).flags_00 |= Renderable58.FLAG_DELETE_AFTER_RENDER;
+    renderRightAlignedNumber(x - width - 5, y, numerator, clut);
   }
 
   @Method(0x80105350L)
@@ -1217,11 +1118,15 @@ public final class SItem {
     renderNumber(x, y, value, 0, 4);
   }
 
-  /** Does something different with CLUT */
   @Method(0x8010568cL)
-  public static void renderFourDigitNumber(final int x, final int y, int value, final int max) {
+  public static void renderFourDigitHp(final int x, final int y, final int value, final int max) {
+    renderFourDigitHp(x, y, value, max, 0);
+  }
+
+  @Method(0x8010568cL)
+  public static void renderFourDigitHp(final int x, final int y, int value, final int max, final int renderableFlags) {
     int clut = 0;
-    long flags = 0;
+    int flags = 0;
 
     if(value >= 9999) {
       value = 9999;
@@ -1233,12 +1138,12 @@ public final class SItem {
     }
 
     //LAB_801056e0
-    if(value < max / 2) {
+    if(value <= max / 2) {
       clut = 0x7cab;
     }
 
     //LAB_801056f0
-    if(value < max / 10) {
+    if(value <= max / 4) {
       clut = 0x7c2b;
     }
 
@@ -1249,13 +1154,13 @@ public final class SItem {
       renderable.glyph_04 = s0;
       //LAB_80105784
       //LAB_80105788
-      renderable.flags_00 |= Renderable58.FLAG_NO_ANIMATION;
+      renderable.flags_00 |= renderableFlags | Renderable58.FLAG_NO_ANIMATION;
       renderable.tpage_2c = 0x19;
       renderable.x_40 = x;
       renderable.y_44 = y;
       renderable.clut_30 = clut;
       renderable.z_3c = 0x21;
-      flags |= 0x1L;
+      flags |= 0x1;
     }
 
     //LAB_801057c0
@@ -1267,13 +1172,13 @@ public final class SItem {
       renderable.glyph_04 = s0;
       //LAB_80105860
       //LAB_80105864
-      renderable.flags_00 |= Renderable58.FLAG_NO_ANIMATION;
+      renderable.flags_00 |= renderableFlags | Renderable58.FLAG_NO_ANIMATION;
       renderable.tpage_2c = 0x19;
       renderable.x_40 = x + 6;
       renderable.y_44 = y;
       renderable.clut_30 = clut;
       renderable.z_3c = 0x21;
-      flags |= 0x1L;
+      flags |= 0x1;
     }
 
     //LAB_801058a0
@@ -1285,7 +1190,7 @@ public final class SItem {
       renderable.glyph_04 = s0;
       //LAB_80105938
       //LAB_8010593c
-      renderable.flags_00 |= Renderable58.FLAG_NO_ANIMATION;
+      renderable.flags_00 |= renderableFlags | Renderable58.FLAG_NO_ANIMATION;
       renderable.tpage_2c = 0x19;
       renderable.x_40 = x + 12;
       renderable.y_44 = y;
@@ -1300,7 +1205,7 @@ public final class SItem {
     renderable.glyph_04 = s0;
     //LAB_801059e8
     //LAB_801059ec
-    renderable.flags_00 |= Renderable58.FLAG_NO_ANIMATION;
+    renderable.flags_00 |= renderableFlags | Renderable58.FLAG_NO_ANIMATION;
     renderable.tpage_2c = 0x19;
     renderable.x_40 = x + 18;
     renderable.y_44 = y;
@@ -1423,7 +1328,7 @@ public final class SItem {
     renderNumber(x, y, value, 0x2, 5);
   }
 
-  public static int renderRightAlignedNumber(final int x, final int y, final int value) {
+  public static int renderRightAlignedNumber(final int x, final int y, final int value, final int clut) {
     final int digitCount = MathHelper.digitCount(value);
 
     int totalWidth = 0;
@@ -1434,7 +1339,7 @@ public final class SItem {
       struct.flags_00 |= Renderable58.FLAG_NO_ANIMATION | Renderable58.FLAG_DELETE_AFTER_RENDER;
       struct.glyph_04 = digit;
       struct.tpage_2c = 0x19;
-      struct.clut_30 = 0;
+      struct.clut_30 = clut;
       struct.z_3c = 0x21;
       struct.x_40 = x - (i + 1) * 6;
       totalWidth += 6;
@@ -1529,7 +1434,7 @@ public final class SItem {
     //LAB_80107e90
     final int status = gameState_800babc8.charData_32c[charIndex].status_10;
 
-    if((tickCount_800bb0fc & 0x10) == 0) {
+    if(tickCount_800bb0fc / currentEngineState_8004dd04.tickMultiplier() % 32 < 16) {
       return false;
     }
 
@@ -1576,7 +1481,7 @@ public final class SItem {
     }
 
     final MenuStatus08 menuStatus = menuStatus_800fba7c[statusIndex - 1];
-    renderCentredText(menuStatus.text_00, x + 24, y, menuStatus.colour_04);
+    renderText(menuStatus.text_00, x + 24, y, menuStatus.colour_04);
 
     //LAB_80107f8c
     return true;
@@ -1604,7 +1509,7 @@ public final class SItem {
         renderTwoDigitNumber(x + 154, y + 6, stats.level_0e);
         renderTwoDigitNumber(x + 112, y + 17, stats.dlevel_0f);
         renderThreeDigitNumber(x + 148, y + 17, stats.sp_08);
-        renderFourDigitNumber(x + 100, y + 28, stats.hp_04, stats.maxHp_66);
+        renderFourDigitHp(x + 100, y + 28, stats.hp_04, stats.maxHp_66);
         renderCharacter(x + 124, y + 28, 11);
         renderFourDigitNumber(x + 142, y + 28, stats.maxHp_66);
         renderThreeDigitNumber(x + 106, y + 39, stats.mp_06);
@@ -1622,8 +1527,8 @@ public final class SItem {
       }
 
       //LAB_80108218
-      if(!renderCharacterStatusEffect(x + 48, y + 3, charId)) {
-        renderText(characterNames_801142dc[charId], x + 48, y + 3, TextColour.BROWN);
+      if(!renderCharacterStatusEffect(x + 46, y + 3, charId)) {
+        renderText(characterNames_801142dc[charId], x + 49, y + 3, UI_TEXT);
       }
     }
 
@@ -1737,7 +1642,7 @@ public final class SItem {
     //LAB_80108f98
     for(final EquipmentSlot slot : EquipmentSlot.values()) {
       if(charData.equipment_14.get(slot) != null) {
-        renderText(charData.equipment_14.get(slot).name, 220, 19 + slot.ordinal() * 14, TextColour.BROWN);
+        renderText(I18n.translate(charData.equipment_14.get(slot)), 220, 19 + slot.ordinal() * 14, UI_TEXT);
       }
     }
 
@@ -1756,7 +1661,7 @@ public final class SItem {
 //        nextNewLine = string.length();
 //      }
 
-      renderText(string, x + 2, y + 4, TextColour.BROWN);
+      renderText(string, x + 2, y + 4, UI_TEXT);
 //      pos = nextNewLine;
 //    }
   }
@@ -1771,7 +1676,7 @@ public final class SItem {
       final MenuEntryStruct04<?> menuItem = menuItems.get(s3);
 
       //LAB_801094ac
-      renderText(menuItem.getName(), x + 21, y + FUN_800fc814(i) + 2, (menuItem.flags_02 & 0x6000) == 0 ? TextColour.BROWN : TextColour.MIDDLE_BROWN);
+      renderText(I18n.translate(menuItem.getNameTranslationKey()), x + 21, y + FUN_800fc814(i) + 2, (menuItem.flags_02 & 0x6000) == 0 ? UI_TEXT : UI_TEXT_DISABLED);
       renderItemIcon(menuItem.getIcon(), x + 4, y + FUN_800fc814(i), 0x8);
 
       final int s0 = menuItem.flags_02;
@@ -1864,7 +1769,7 @@ public final class SItem {
 
         if(messageBox.text_00 != null) {
           for(final String line : messageBox.text_00) {
-            renderCentredText(line, x, y, TextColour.BROWN);
+            renderText(line, x, y, UI_TEXT_CENTERED);
             y += 14;
           }
         }
@@ -1874,7 +1779,7 @@ public final class SItem {
 
         if(messageBox.type_15 == 0) {
           //LAB_8010eed8
-          if(!messageBox.ignoreInput && (inventoryJoypadInput_800bdc44 & 0x60) != 0) {
+          if(!messageBox.ignoreInput && Input.pressedThisFrame(InputAction.BUTTON_SOUTH) || Input.pressedThisFrame(InputAction.BUTTON_EAST)) {
             playMenuSound(2);
             messageBox.state_0c = 4;
             messageBox.result = MessageBoxResult.YES;
@@ -1896,8 +1801,8 @@ public final class SItem {
           //LAB_8010ef64
           textZ_800bdf00 = 30;
 
-          renderCentredText(messageBox.yes, messageBox.x_1c + 60, y + 7, messageBox.menuIndex_18 == 0 ? TextColour.RED : TextColour.BROWN);
-          renderCentredText(messageBox.no, messageBox.x_1c + 60, y + 21, messageBox.menuIndex_18 == 0 ? TextColour.BROWN : TextColour.RED);
+          renderText(messageBox.yes, messageBox.x_1c + 60, y + 7, messageBox.menuIndex_18 == 0 ? UI_TEXT_SELECTED_CENTERED : UI_TEXT_CENTERED);
+          renderText(messageBox.no, messageBox.x_1c + 60, y + 21, messageBox.menuIndex_18 == 0 ? UI_TEXT_CENTERED : UI_TEXT_SELECTED_CENTERED);
 
           textZ_800bdf00 = 33;
         }
@@ -2099,64 +2004,48 @@ public final class SItem {
       final Equipment equipment = stats_800be5f8[charId].equipment_30.get(equipmentSlot);
 
       if(equipment != null) {
-        //TODO
-//        final EquipmentStatsEvent event = EVENTS.postEvent(new EquipmentStatsEvent(charId, equipment, equipmentStats_80111ff0[equipment]));
+        final EquipmentStatsEvent event = EVENTS.postEvent(new EquipmentStatsEvent(charId, equipment));
 
-        characterStats.specialEffectFlag_76 |= equipment.flags_00;
-//        characterStats.equipmentType_77 |= equipment.type_01;
-        characterStats.equipment_02_78 |= equipment._02;
-        characterStats.equipmentEquipableFlags_79 |= equipment.equipableFlags_03;
-        characterStats.equipmentAttackElements_7a.addAll(equipment.attackElement_04);
-        characterStats.equipment_05_7b |= equipment._05;
-        characterStats.equipmentElementalResistance_7c.addAll(equipment.elementalResistance_06);
-        characterStats.equipmentElementalImmunity_7d.addAll(equipment.elementalImmunity_07);
-        characterStats.equipmentStatusResist_7e |= equipment.statusResist_08;
-        characterStats.equipment_09_7f |= equipment._09;
-        characterStats.equipmentAttack1_80 += equipment.attack1_0a;
-        characterStats.equipmentIcon_84 += equipment.icon_0e;
-        characterStats.equipmentSpeed_86 += equipment.speed_0f;
-        characterStats.equipmentAttack_88 += equipment.attack2_10 + equipment.attack1_0a;
-        characterStats.equipmentMagicAttack_8a += equipment.magicAttack_11;
-        characterStats.equipmentDefence_8c += equipment.defence_12;
-        characterStats.equipmentMagicDefence_8e += equipment.magicDefence_13;
-        characterStats.equipmentAttackHit_90 += equipment.attackHit_14;
-        characterStats.equipmentMagicHit_92 += equipment.magicHit_15;
-        characterStats.equipmentAttackAvoid_94 += equipment.attackAvoid_16;
-        characterStats.equipmentMagicAvoid_96 += equipment.magicAvoid_17;
-        characterStats.equipmentOnHitStatusChance_98 += equipment.onHitStatusChance_18;
-        characterStats.equipment_19_99 += equipment._19;
-        characterStats.equipment_1a_9a += equipment._1a;
-        characterStats.equipmentOnHitStatus_9b |= equipment.onHitStatus_1b;
-
-        characterStats.equipmentMpPerMagicalHit_54 += equipment.mpPerMagicalHit;
-        characterStats.equipmentSpPerMagicalHit_52 += equipment.spPerMagicalHit;
-        characterStats.equipmentMpPerPhysicalHit_50 += equipment.mpPerPhysicalHit;
-        characterStats.equipmentSpPerPhysicalHit_4e += equipment.spPerPhysicalHit;
-        characterStats.equipmentHpMulti_62 += equipment.hpMultiplier;
-        characterStats.equipmentMpMulti_64 += equipment.mpMultiplier;
-        characterStats.equipmentSpMultiplier_4c += equipment.spMultiplier;
-
-        if(equipment.magicalResistance) {
-          characterStats.equipmentMagicalResistance_60 = true;
-        }
-
-        if(equipment.physicalResistance) {
-          characterStats.equipmentPhysicalResistance_4a = true;
-        }
-
-        if(equipment.magicalImmunity) {
-          characterStats.equipmentMagicalImmunity_48 = true;
-        }
-
-        if(equipment.physicalImmunity) {
-          characterStats.equipmentPhysicalImmunity_46 = true;
-        }
-
-        characterStats.equipmentRevive_5e += equipment.revive;
-        characterStats.equipmentHpRegen_58 += equipment.hpRegen;
-        characterStats.equipmentMpRegen_5a += equipment.mpRegen;
-        characterStats.equipmentSpRegen_5c += equipment.spRegen;
-        characterStats.equipmentSpecial2Flag80_56 += equipment.special2Flag80;
+        characterStats.specialEffectFlag_76 |= event.flags_00;
+        characterStats.equipment_02_78 |= event._02;
+        characterStats.equipmentEquipableFlags_79 |= event.equipableFlags_03;
+        characterStats.equipmentAttackElements_7a.addAll(event.attackElement_04);
+        characterStats.equipment_05_7b |= event._05;
+        characterStats.equipmentElementalResistance_7c.addAll(event.elementalResistance_06);
+        characterStats.equipmentElementalImmunity_7d.addAll(event.elementalImmunity_07);
+        characterStats.equipmentStatusResist_7e |= event.statusResist_08;
+        characterStats.equipment_09_7f |= event._09;
+        characterStats.equipmentAttack1_80 += event.attack1_0a;
+        characterStats.equipmentIcon_84 += event.icon_0e;
+        characterStats.equipmentSpeed_86 += event.speed_0f;
+        characterStats.equipmentAttack_88 += event.attack2_10 + event.attack1_0a;
+        characterStats.equipmentMagicAttack_8a += event.magicAttack_11;
+        characterStats.equipmentDefence_8c += event.defence_12;
+        characterStats.equipmentMagicDefence_8e += event.magicDefence_13;
+        characterStats.equipmentAttackHit_90 += event.attackHit_14;
+        characterStats.equipmentMagicHit_92 += event.magicHit_15;
+        characterStats.equipmentAttackAvoid_94 += event.attackAvoid_16;
+        characterStats.equipmentMagicAvoid_96 += event.magicAvoid_17;
+        characterStats.equipmentOnHitStatusChance_98 += event.onHitStatusChance_18;
+        characterStats.equipment_19_99 += event._19;
+        characterStats.equipment_1a_9a += event._1a;
+        characterStats.equipmentOnHitStatus_9b |= event.onHitStatus_1b;
+        characterStats.equipmentMpPerMagicalHit_54 += event.mpPerMagicalHit;
+        characterStats.equipmentSpPerMagicalHit_52 += event.spPerMagicalHit;
+        characterStats.equipmentMpPerPhysicalHit_50 += event.mpPerPhysicalHit;
+        characterStats.equipmentSpPerPhysicalHit_4e += event.spPerPhysicalHit;
+        characterStats.equipmentHpMulti_62 += event.hpMultiplier;
+        characterStats.equipmentMpMulti_64 += event.mpMultiplier;
+        characterStats.equipmentSpMultiplier_4c += event.spMultiplier;
+        characterStats.equipmentMagicalResistance_60 |= event.magicalResistance;
+        characterStats.equipmentPhysicalResistance_4a |= event.physicalResistance;
+        characterStats.equipmentMagicalImmunity_48 |= event.magicalImmunity;
+        characterStats.equipmentPhysicalImmunity_46 |= event.physicalImmunity;
+        characterStats.equipmentRevive_5e += event.revive;
+        characterStats.equipmentHpRegen_58 += event.hpRegen;
+        characterStats.equipmentMpRegen_5a += event.mpRegen;
+        characterStats.equipmentSpRegen_5c += event.spRegen;
+        characterStats.equipmentEscapeBonus_56 += event.escapeBonus;
       }
     }
   }

@@ -30,14 +30,10 @@ public final class XaPlayer extends AudioSource {
   private long sampleCount;
   private long samplesRead;
 
-  public XaPlayer(final int frequency) {
+  public XaPlayer() {
     super(8);
 
-    if(48_000 % frequency != 0) {
-      throw new IllegalArgumentException("Sample Rate (44_800) is not divisible by frequency");
-    }
-
-    this.samplesPerTick = 48_000 / frequency;
+    this.samplesPerTick = 48000 / 100;
 
     this.channelCount = 1;
     this.format = AL_FORMAT_MONO16;
@@ -75,9 +71,13 @@ public final class XaPlayer extends AudioSource {
       throw new RuntimeException("XA file is less than 4 buffers in length (40ms)");
     }
 
-    for(int i = 0; i < 4; i++) {
-      this.readFile();
-      this.bufferOutput(this.format, this.pcm, 48_000);
+    this.setPlaying(true);
+
+    if(this.canBuffer()) {
+      for(int i = 0; i < 4; i++) {
+        this.readFile();
+        this.bufferOutput(this.format, this.pcm, 48_000);
+      }
     }
 
     if(this.isPlaying()) {

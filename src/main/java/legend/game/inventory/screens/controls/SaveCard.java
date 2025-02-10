@@ -1,18 +1,21 @@
 package legend.game.inventory.screens.controls;
 
 import legend.game.inventory.screens.Control;
-import legend.game.inventory.screens.TextColour;
+import legend.game.inventory.screens.HorizontalAlign;
 import legend.game.saves.SavedGame;
 import legend.game.types.CharacterData2c;
 import legend.game.types.GameState52c;
+import legend.game.types.Renderable58;
 
 import javax.annotation.Nullable;
 
+import static legend.game.SItem.UI_TEXT_CENTERED;
 import static legend.game.SItem.chapterNames_80114248;
-import static legend.game.SItem.renderCentredText;
+import static legend.game.SItem.renderFourDigitHp;
 import static legend.game.SItem.submapNames_8011c108;
 import static legend.game.SItem.worldMapNames_8011c1ec;
 import static legend.game.Scus94491BpeSegment_8002.getTimestampPart;
+import static legend.game.Scus94491BpeSegment_8002.renderText;
 
 public class SaveCard extends Control {
   final CharacterPortrait[] portraits = new CharacterPortrait[3];
@@ -37,7 +40,7 @@ public class SaveCard extends Control {
     this.invalidSave = this.addControl(new Label("Invalid save"));
     this.invalidSave.setPos(258, 47);
     this.invalidSave.setWidth(0);
-    this.invalidSave.setHorizontalAlign(Label.HorizontalAlign.CENTRE);
+    this.invalidSave.getFontOptions().horizontalAlign(HorizontalAlign.CENTRE);
   }
 
   public void setSaveData(@Nullable final SavedGame saveData) {
@@ -78,7 +81,11 @@ public class SaveCard extends Control {
         }
 
         //LAB_80108ba0
-        renderCentredText(locationNames[this.saveData.locationIndex], x + 258, y + 47, TextColour.BROWN); // Location text
+        if(this.saveData.locationIndex < locationNames.length) {
+          renderText(locationNames[this.saveData.locationIndex], x + 258, y + 47, UI_TEXT_CENTERED);
+        } else {
+          renderText("Unknown location", x + 258, y + 47, UI_TEXT_CENTERED);
+        }
 
         final GameState52c state = this.saveData.state;
 
@@ -93,7 +100,7 @@ public class SaveCard extends Control {
         final CharacterData2c char0 = state.charData_32c[firstCharId];
         this.renderNumber(224, y + 6, char0.level_12, 2); // Level
         this.renderNumber(269, y + 6, char0.dlevel_13, 2); // Dragoon level
-        this.renderNumber(302, y + 6, char0.hp_08, 4); // Current HP
+        renderFourDigitHp(302, y + 6, char0.hp_08, this.saveData.maxHp, Renderable58.FLAG_DELETE_AFTER_RENDER); // Current HP
         this.renderNumber(332, y + 6, this.saveData.maxHp, 4); // Max HP
         this.renderNumber(245, y + 17, state.gold_94, 8); // Gold
         this.renderNumber(306, y + 17, getTimestampPart(state.timestamp_a0, 0), 3); // Time played hour

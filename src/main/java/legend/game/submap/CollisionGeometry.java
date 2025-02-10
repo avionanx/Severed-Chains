@@ -48,7 +48,9 @@ public class CollisionGeometry {
   private final int[] collisionPrimitiveIndices_800cbe48 = new int[8];
 
   public float dartRotationAfterCollision_800d1a84;
-  public boolean dartRotationWasUpdated_800d1a8c;
+  /** Converted to an int so we can count how many frames it should be active for 60 FPS */
+  public int dartRotationWasUpdated_800d1a8c;
+  public boolean dartRunning;
 
   private boolean collisionLoaded_800f7f14;
 
@@ -123,9 +125,18 @@ public class CollisionGeometry {
     if(!this.playerCollisionLatch_800cbe34) {
       this.playerCollisionLatch_800cbe34 = true;
 
+      this.dartRunning = movement.x * movement.x + movement.z * movement.z > 64.0f;
+
       //LAB_800e8908
       this.collidedPrimitiveIndex_800cbd94 = this.handleMovementAndCollision(position.x, position.y, position.z, movement);
       this.cachedPlayerMovement_800cbd98.set(movement);
+
+      if(this.collidedPrimitiveIndex_800cbd94 != -1) {
+        if(this.dartRotationWasUpdated_800d1a8c == 0) {
+          this.dartRotationWasUpdated_800d1a8c = this.smap.tickMultiplier();
+          this.dartRotationAfterCollision_800d1a84 = MathHelper.floorMod(MathHelper.atan2(movement.x, movement.z) + MathHelper.PI, MathHelper.TWO_PI);
+        }
+      }
     } else {
       //LAB_800e8954
       movement.set(this.cachedPlayerMovement_800cbd98);
@@ -228,11 +239,14 @@ public class CollisionGeometry {
 
   public void tick() {
     this.playerCollisionLatch_800cbe34 = false;
-    this.dartRotationWasUpdated_800d1a8c = false;
+
+    if(this.dartRotationWasUpdated_800d1a8c > 0) {
+      this.dartRotationWasUpdated_800d1a8c--;
+    }
   }
 
   @Method(0x800e9018L)
-  public int getCollisionPrimitiveAtPoint(final float x, final float y, final float z, final boolean checkSteepness) {
+  public int getCollisionPrimitiveAtPoint(final float x, final float y, final float z, final boolean checkSteepness, final boolean checkY) {
     int collisionPrimitiveIndexCount = 0;
 
     //LAB_800e9040
@@ -250,8 +264,14 @@ public class CollisionGeometry {
         // the XZ plane is infinitely small. We have to instead assume that the primitive extends up and
         // down to infinity, and ignore the Y check altogether, falling back to only the XZ check.
         // This was a fix for #1077
+
+        // NOTE #2:
+        // checkY was added as a fix for #1176 - we only need to check Y for the player. Magma Fish
+        // encounters were broken because they jump too high over the collision geometry and their
+        // collision primitives weren't getting set as expected.
+
         final float primitiveY;
-        if(this.normals_08[collisionPrimitiveIndex].y != 0.0f) {
+        if(checkY && this.normals_08[collisionPrimitiveIndex].y != 0.0f) {
           primitiveY = -(this.normals_08[collisionPrimitiveIndex].x * x + this.normals_08[collisionPrimitiveIndex].z * z + collisionInfo._08) / this.normals_08[collisionPrimitiveIndex].y;
         } else {
           primitiveY = y;
@@ -361,7 +381,7 @@ public class CollisionGeometry {
    */
   @Method(0x800e9430L)
   private int handleMovementAndCollision(final float x, final float y, final float z, final Vector3f movement) {
-    if(this.smap.smapLoadingStage_800cb430 != SubmapState.RENDER_SUBMAP_12) {
+    if(this.smap.smapLoadingStage_800cb430 != SubmapState.RENDER_SUBMAP_12 && this.smap.smapLoadingStage_800cb430 != SubmapState.WAIT_FOR_FADE_IN) {
       return -1;
     }
 
@@ -380,7 +400,7 @@ public class CollisionGeometry {
 
     //LAB_800e94ec
     //LAB_800e960cdd
-    final int currentPrimitiveIndex = this.getCollisionPrimitiveAtPoint(x, y, z, true);
+    final int currentPrimitiveIndex = this.getCollisionPrimitiveAtPoint(x, y, z, true, true);
 
     //LAB_800e9710
     if(currentPrimitiveIndex == -1) {
@@ -399,11 +419,6 @@ public class CollisionGeometry {
 
       //LAB_800ea390
       //LAB_800ea3b4
-      if(!this.dartRotationWasUpdated_800d1a8c) {
-        this.dartRotationWasUpdated_800d1a8c = true;
-        this.dartRotationAfterCollision_800d1a84 = MathHelper.floorMod(MathHelper.atan2(movement.x, movement.z) + MathHelper.PI, MathHelper.TWO_PI);
-      }
-
       //LAB_800ea3e0
       return closestPrimitiveIndex;
     }
@@ -412,7 +427,7 @@ public class CollisionGeometry {
     final float endZ = z + movement.z;
 
     //LAB_800e990c
-    final int destinationPrimitiveIndex = this.getCollisionPrimitiveAtPoint(endX, y, endZ, true);
+    final int destinationPrimitiveIndex = this.getCollisionPrimitiveAtPoint(endX, y, endZ, true, true);
 
     //LAB_800e9afc
     if(destinationPrimitiveIndex >= 0) {
@@ -438,11 +453,6 @@ public class CollisionGeometry {
 
           //LAB_800ea390
           //LAB_800ea3b4
-          if(!this.dartRotationWasUpdated_800d1a8c) {
-            this.dartRotationWasUpdated_800d1a8c = true;
-            this.dartRotationAfterCollision_800d1a84 = MathHelper.floorMod(MathHelper.atan2(movement.x, movement.z) + MathHelper.PI, MathHelper.TWO_PI);
-          }
-
           //LAB_800ea3e0
           return destinationPrimitiveIndex;
         }
@@ -532,7 +542,7 @@ public class CollisionGeometry {
         offsetX = x + cos * distanceMultiplier;
         offsetZ = z + sin * distanceMultiplier;
 
-        s2 = this.getCollisionPrimitiveAtPoint(offsetX, y, offsetZ, true);
+        s2 = this.getCollisionPrimitiveAtPoint(offsetX, y, offsetZ, true, true);
 
         //LAB_800ea22c
       }
@@ -552,11 +562,6 @@ public class CollisionGeometry {
       movement.x = offsetX - x;
       movement.z = offsetZ - z;
       movement.y = -(normal.x * offsetX + normal.z * offsetZ + this.primitiveInfo_14[s2]._08) / normal.y;
-
-      if(!this.dartRotationWasUpdated_800d1a8c) {
-        this.dartRotationWasUpdated_800d1a8c = true;
-        this.dartRotationAfterCollision_800d1a84 = MathHelper.floorMod(MathHelper.atan2(movement.x, movement.z) + MathHelper.PI, MathHelper.TWO_PI);
-      }
 
       return s2;
     }
@@ -579,11 +584,6 @@ public class CollisionGeometry {
 
     //LAB_800ea390
     //LAB_800ea3b4
-    if(!this.dartRotationWasUpdated_800d1a8c) {
-      this.dartRotationWasUpdated_800d1a8c = true;
-      this.dartRotationAfterCollision_800d1a84 = MathHelper.floorMod(MathHelper.atan2(movement.x, movement.z) + MathHelper.PI, MathHelper.TWO_PI);
-    }
-
     //LAB_800ea3e0
     return destinationPrimitiveIndex;
   }

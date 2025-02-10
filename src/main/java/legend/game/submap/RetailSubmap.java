@@ -2,7 +2,9 @@ package legend.game.submap;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import legend.core.RenderEngine;
+import legend.core.QueuedModel;
+import legend.core.QueuedModelStandard;
+import legend.core.QueuedModelTmd;
 import legend.core.gpu.Bpp;
 import legend.core.gpu.Rect4i;
 import legend.core.gpu.VramTextureLoader;
@@ -16,7 +18,9 @@ import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
+import legend.game.modding.events.submap.SubmapEncounterRateEvent;
 import legend.game.modding.events.submap.SubmapEnvironmentTextureEvent;
+import legend.game.modding.events.submap.SubmapGenerateEncounterEvent;
 import legend.game.modding.events.submap.SubmapObjectTextureEvent;
 import legend.game.scripting.ScriptFile;
 import legend.game.tim.Tim;
@@ -50,7 +54,6 @@ import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.GTE;
 import static legend.core.GameEngine.RENDERER;
-import static legend.game.Scus94491BpeSegment.stopCurrentMusicSequence;
 import static legend.game.Scus94491BpeSegment.loadDrgnDir;
 import static legend.game.Scus94491BpeSegment.loadDrgnFile;
 import static legend.game.Scus94491BpeSegment.loadMusicPackage;
@@ -58,6 +61,7 @@ import static legend.game.Scus94491BpeSegment.loadSubmapSounds;
 import static legend.game.Scus94491BpeSegment.orderingTableBits_1f8003c0;
 import static legend.game.Scus94491BpeSegment.startCurrentMusicSequence;
 import static legend.game.Scus94491BpeSegment.stopAndResetSoundsAndSequences;
+import static legend.game.Scus94491BpeSegment.stopCurrentMusicSequence;
 import static legend.game.Scus94491BpeSegment.tmdGp0Tpage_1f8003ec;
 import static legend.game.Scus94491BpeSegment.unloadSoundFile;
 import static legend.game.Scus94491BpeSegment.zOffset_1f8003e8;
@@ -332,7 +336,7 @@ public class RetailSubmap extends Submap {
   }
 
   @Override
-  void applyCollisionDebugColour(final int collisionPrimitiveIndex, final RenderEngine.QueuedModel model) {
+  void applyCollisionDebugColour(final int collisionPrimitiveIndex, final QueuedModel model) {
     for(int n = 0; n < this.submapWorldMapExits_800f7f74.length; n++) {
       final SubmapWorldMapExits worldMapExits = this.submapWorldMapExits_800f7f74[n];
 
@@ -397,13 +401,22 @@ public class RetailSubmap extends Submap {
 
   @Override
   public int getEncounterRate() {
-    return encounterData_800f64c4[this.cut].rate_02;
+    final var encounterRate = encounterData_800f64c4[this.cut].rate_02;
+    final var encounterRateEvent = EVENTS.postEvent(new SubmapEncounterRateEvent(encounterRate, this.cut));
+
+    return encounterRateEvent.encounterRate;
   }
 
   @Override
   public void generateEncounter() {
-    encounterId_800bb0f8 = sceneEncounterIds_800f74c4[encounterData_800f64c4[this.cut].scene_00][this.randomEncounterIndex()];
-    battleStage_800bb0f4 = encounterData_800f64c4[this.cut].stage_03;
+    final var sceneId = encounterData_800f64c4[this.cut].scene_00;
+    final var scene = sceneEncounterIds_800f74c4[sceneId];
+    final var encounterId = scene[this.randomEncounterIndex()];
+    final var battleStageId = encounterData_800f64c4[this.cut].stage_03;
+
+    final var generateEncounterEvent = EVENTS.postEvent(new SubmapGenerateEncounterEvent(encounterId, battleStageId, this.cut, sceneId, scene));
+    encounterId_800bb0f8 = generateEncounterEvent.encounterId;
+    battleStage_800bb0f4 = generateEncounterEvent.battleStageId;
   }
 
   @Override
@@ -505,7 +518,7 @@ public class RetailSubmap extends Submap {
       .set(submapCutMatrix).setTranslation(submapCutMatrix.transfer)
       .mulLocal(inverseW2s);
 
-    this.submapModel_800d4bf8.uvAdjustments_9d = new UvAdjustmentMetrics14(17, 1008, 256);
+    this.submapModel_800d4bf8.uvAdjustments_9d = new UvAdjustmentMetrics14(17, 1008, 256, true);
     initModel(this.submapModel_800d4bf8, this.submapCutModel, this.submapCutAnim);
   }
 
@@ -518,11 +531,6 @@ public class RetailSubmap extends Submap {
     } else {
       TmdObjLoader.fromModel("SobjModel (index " + sobj.sobjIndex_12e + ')', sobj.model_00);
     }
-  }
-
-  @Override
-  public void restoreAssets() {
-    this.loadTextures();
   }
 
   private void loadTextureOverrides() {
@@ -540,7 +548,7 @@ public class RetailSubmap extends Submap {
     for(int pxlIndex = 0; pxlIndex < this.pxls.size(); pxlIndex++) {
       // sobj 16 uses the submap overlay texture
       if(pxlIndex == 16) {
-        this.uvAdjustments.add(new UvAdjustmentMetrics14(pxlIndex + 1, 1008, 256));
+        this.uvAdjustments.add(new UvAdjustmentMetrics14(pxlIndex + 1, 1008, 256, true));
         continue;
       }
 
@@ -572,7 +580,7 @@ public class RetailSubmap extends Submap {
             if(this.sobjTextureOverrides.containsKey(pxlIndex)) {
               this.uvAdjustments.add(UvAdjustmentMetrics14.PNG);
             } else {
-              this.uvAdjustments.add(new UvAdjustmentMetrics14(pxlIndex + 1, x, y));
+              this.uvAdjustments.add(new UvAdjustmentMetrics14(pxlIndex + 1, x, y, pxlIndex != 17 && pxlIndex != 18));
             }
 
             continue outer;
@@ -1057,6 +1065,12 @@ public class RetailSubmap extends Submap {
   }
 
   @Override
+  public void preDraw() {
+    RENDERER.scissorStack.push();
+    RENDERER.scissorStack.setRescale(this.backgroundRect.x + Math.round(GPU.getOffsetX() + this.submapOffsetX_800cb560 + this.screenOffset.x), this.backgroundRect.y, this.backgroundRect.w, this.backgroundRect.h);
+  }
+
+  @Override
   @Method(0x800e7954L)
   public void drawEnv(final MV[] sobjMatrices) {
     this.animateAndRenderSubmapModel(this.submapCutMatrix_800d4bb0);
@@ -1079,7 +1093,7 @@ public class RetailSubmap extends Submap {
     this.backgroundTransforms.transfer.set(GPU.getOffsetX() + this.submapOffsetX_800cb560 + this.screenOffset.x, GPU.getOffsetY() + this.submapOffsetY_800cb564 + this.screenOffset.y, 0.0f);
 
     RENDERER
-      .queueOrthoModel(this.backgroundObj, this.backgroundTransforms)
+      .queueOrthoModel(this.backgroundObj, this.backgroundTransforms, QueuedModelStandard.class)
       .texture(this.backgroundTexture);
 
     //LAB_800e7a60
@@ -1213,7 +1227,7 @@ public class RetailSubmap extends Submap {
         this.backgroundTransforms.identity();
         this.backgroundTransforms.transfer.set(GPU.getOffsetX() + this.submapOffsetX_800cb560 + this.screenOffset.x + x, GPU.getOffsetY() + this.submapOffsetY_800cb564 + this.screenOffset.y + y, z * 4.0f);
         RENDERER
-          .queueOrthoModel(metrics.obj, this.backgroundTransforms)
+          .queueOrthoModel(metrics.obj, this.backgroundTransforms, QueuedModelStandard.class)
           .texture(this.foregroundTextures[i]);
 
         // final int oldZ = textZ_800bdf00;
@@ -1313,8 +1327,9 @@ public class RetailSubmap extends Submap {
 
       GsGetLw(dobj2.coord2_04, lw);
 
-      RENDERER.queueModel(dobj2.obj, matrix, lw)
+      RENDERER.queueModel(dobj2.obj, matrix, lw, QueuedModelTmd.class)
         .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
+        .depthOffset(model.zOffset_a0)
         .lightDirection(lightDirectionMatrix_800c34e8)
         .lightColour(lightColourMatrix_800c3508)
         .backgroundColour(GTE.backgroundColour)
@@ -1401,7 +1416,7 @@ public class RetailSubmap extends Submap {
     }
 
     //LAB_8001c7ec
-    if(AUDIO_THREAD.isMusicPlaying()) {
+    if(!AUDIO_THREAD.isMusicPlaying()) {
       return -2;
     }
 

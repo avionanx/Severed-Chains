@@ -3,6 +3,7 @@ package legend.game.inventory.screens.controls;
 import legend.core.MathHelper;
 import legend.game.input.InputAction;
 import legend.game.inventory.screens.Control;
+import legend.game.inventory.screens.FontOptions;
 import legend.game.inventory.screens.InputPropagation;
 import legend.game.inventory.screens.TextColour;
 
@@ -16,8 +17,8 @@ import java.util.function.ToIntFunction;
 
 import static legend.game.SItem.FUN_80104b60;
 import static legend.game.SItem.renderItemIcon;
-import static legend.game.SItem.renderText;
 import static legend.game.Scus94491BpeSegment_8002.playMenuSound;
+import static legend.game.Scus94491BpeSegment_8002.renderText;
 import static legend.game.Scus94491BpeSegment_800b.textZ_800bdf00;
 
 public class ListBox<T> extends Control {
@@ -146,14 +147,14 @@ public class ListBox<T> extends Control {
     this.highlight.hide();
   }
 
-  private void select(final int index) {
+  public void select(final int index) {
     if(index < 0) {
       throw new IllegalArgumentException("Index must be > 0");
     }
 
-    this.slot = index;
+    this.slot = Math.min(index, Math.max(0, this.entries.size() - this.scroll - 1));
 
-    this.highlight.setPos(34, index * this.entryHeight + 1);
+    this.highlight.setPos(34, this.slot * this.entryHeight + 1);
 
     if(this.highlightHandler != null) {
       final T entry = this.getSelectedEntry();
@@ -164,6 +165,10 @@ public class ListBox<T> extends Control {
     }
   }
 
+  public int getSelectedIndex() {
+    return this.slot;
+  }
+
   private void updateEntries() {
     for(int i = 0; i < this.entries.size(); i++) {
       final Entry entry = this.entries.get(i);
@@ -171,9 +176,11 @@ public class ListBox<T> extends Control {
       if(i >= this.scroll && i < this.scroll + this.maxVisibleEntries) {
         if(this.isDisabled != null) {
           if(this.isDisabled.test(entry.data)) {
-            entry.updateText(TextColour.LIGHT_BROWN);
+            entry.updateText();
+            entry.fontOptions.colour(TextColour.MIDDLE_BROWN).shadowColour(TextColour.LIGHT_BROWN);
           } else {
-            entry.updateText(TextColour.BROWN);
+            entry.updateText();
+            entry.fontOptions.colour(TextColour.BROWN).shadowColour(TextColour.MIDDLE_BROWN);
           }
         }
 
@@ -316,6 +323,54 @@ public class ListBox<T> extends Control {
           return InputPropagation.HANDLED;
         }
       }
+
+      case BUTTON_SHOULDER_LEFT_1 -> {
+        if(this.slot > 0) {
+          playMenuSound(1);
+          this.select(0);
+          return InputPropagation.HANDLED;
+        }
+      }
+
+      case BUTTON_SHOULDER_LEFT_2 -> {
+        if(this.entries.size() > this.maxVisibleEntries - 1 && this.slot != this.maxVisibleEntries - 1) {
+          playMenuSound(1);
+          this.select(this.maxVisibleEntries - 1);
+          return InputPropagation.HANDLED;
+        }
+      }
+
+      case BUTTON_SHOULDER_RIGHT_1 -> {
+        if(this.scroll - this.maxVisibleEntries - 1 >= 0) {
+          playMenuSound(1);
+          this.scroll -= this.maxVisibleEntries - 1;
+          this.updateEntries();
+          this.select(this.slot);
+        } else {
+          if(this.scroll != 0) {
+            this.scroll = 0;
+            this.updateEntries();
+            this.select(this.slot);
+          }
+        }
+        return InputPropagation.HANDLED;
+      }
+
+      case BUTTON_SHOULDER_RIGHT_2 -> {
+        if(this.scroll + this.maxVisibleEntries - 1 < this.entries.size() - this.maxVisibleEntries) {
+          playMenuSound(1);
+          this.scroll += this.maxVisibleEntries - 1;
+          this.updateEntries();
+          this.select(this.slot);
+        } else {
+          if(this.entries.size() > this.maxVisibleEntries && this.scroll != this.entries.size() - this.maxVisibleEntries) {
+            this.scroll = this.entries.size() - this.maxVisibleEntries;
+            this.updateEntries();
+            this.select(this.slot);
+          }
+        }
+        return InputPropagation.HANDLED;
+      }
     }
 
     return InputPropagation.PROPAGATE;
@@ -363,23 +418,22 @@ public class ListBox<T> extends Control {
   public class Entry extends Control {
     public final T data;
     private String string;
-    private TextColour colour;
+    private final FontOptions fontOptions = new FontOptions().colour(TextColour.BROWN).shadowColour(TextColour.MIDDLE_BROWN);
 
     public Entry(final T data) {
       this.data = data;
-      this.updateText(TextColour.BROWN);
+      this.updateText();
     }
 
-    private void updateText(final TextColour colour) {
+    private void updateText() {
       this.string = ListBox.this.entryToString.apply(this.data);
-      this.colour = colour;
     }
 
     @Override
     protected void render(final int x, final int y) {
       final int oldZ = textZ_800bdf00;
       textZ_800bdf00 = this.getZ() - 1;
-      renderText(this.string, x + 28, y + 3, this.colour);
+      renderText(this.string, x + 28, y + 3, this.fontOptions);
       textZ_800bdf00 = oldZ;
 
       if(ListBox.this.entryToIcon != null) {

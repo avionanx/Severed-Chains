@@ -8,6 +8,7 @@ import legend.game.inventory.screens.controls.Button;
 import legend.game.inventory.screens.controls.CharacterCard;
 import legend.game.inventory.screens.controls.DragoonSpirits;
 import legend.game.inventory.screens.controls.Glyph;
+import legend.game.modding.coremod.CoreMod;
 import legend.game.saves.ConfigStorage;
 import legend.game.saves.ConfigStorageLocation;
 import legend.game.types.MessageBoxResult;
@@ -20,12 +21,13 @@ import java.util.List;
 import java.util.function.Function;
 
 import static legend.core.GameEngine.CONFIG;
+import static legend.game.SItem.UI_TEXT_CENTERED;
 import static legend.game.SItem.cacheCharacterSlots;
 import static legend.game.SItem.canSave_8011dc88;
 import static legend.game.SItem.chapterNames_80114248;
 import static legend.game.SItem.fadeOutArrow;
+import static legend.game.SItem.loadCharacterStats;
 import static legend.game.SItem.menuStack;
-import static legend.game.SItem.renderCentredText;
 import static legend.game.SItem.renderCharacter;
 import static legend.game.SItem.submapNames_8011c108;
 import static legend.game.SItem.worldMapNames_8011c1ec;
@@ -33,10 +35,13 @@ import static legend.game.Scus94491BpeSegment.startFadeEffect;
 import static legend.game.Scus94491BpeSegment_8002.deallocateRenderables;
 import static legend.game.Scus94491BpeSegment_8002.getTimestampPart;
 import static legend.game.Scus94491BpeSegment_8002.playMenuSound;
+import static legend.game.Scus94491BpeSegment_8002.renderText;
 import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd20;
+import static legend.game.Scus94491BpeSegment_8005.standingInSavePoint_8005a368;
 import static legend.game.Scus94491BpeSegment_800b.continentIndex_800bf0b0;
 import static legend.game.Scus94491BpeSegment_800b.fullScreenEffect_800bb140;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
+import static legend.game.Scus94491BpeSegment_800b.loadingNewGameState_800bdc34;
 import static legend.game.Scus94491BpeSegment_800b.renderablePtr_800bdba4;
 import static legend.game.Scus94491BpeSegment_800b.renderablePtr_800bdba8;
 import static legend.game.Scus94491BpeSegment_800b.saveListDownArrow_800bdb98;
@@ -54,6 +59,17 @@ public class MainMenuScreen extends MenuScreen {
 
   public MainMenuScreen(final Runnable unload) {
     this.unload = unload;
+
+    loadingNewGameState_800bdc34 = false;
+    loadCharacterStats();
+
+    if(engineState_8004dd20 == EngineStateEnum.WORLD_MAP_08) {
+      gameState_800babc8.isOnWorldMap_4e4 = true;
+      canSave_8011dc88 = true;
+    } else {
+      gameState_800babc8.isOnWorldMap_4e4 = false;
+      canSave_8011dc88 = CONFIG.getConfig(CoreMod.SAVE_ANYWHERE_CONFIG.get()) || standingInSavePoint_8005a368;
+    }
 
     this.addControl(new Background());
     this.addControl(Glyph.glyph(71)).setPos( 16,  16); // Chapter box
@@ -226,7 +242,7 @@ public class MainMenuScreen extends MenuScreen {
     this.renderNumber(128, 184, getTimestampPart(gameState_800babc8.timestamp_a0, 0), 3);
     this.renderNumber(152, 184, getTimestampPart(gameState_800babc8.timestamp_a0, 1), 2, 0x1);
     this.renderNumber(170, 184, getTimestampPart(gameState_800babc8.timestamp_a0, 2), 2, 0x1);
-    renderCentredText(chapterNames_80114248[gameState_800babc8.chapterIndex_98], 94, 24, TextColour.BROWN);
+    renderText(chapterNames_80114248[gameState_800babc8.chapterIndex_98], 94, 24, UI_TEXT_CENTERED);
 
     final String name;
     if(engineState_8004dd20 == EngineStateEnum.SUBMAP_05) {
@@ -235,7 +251,7 @@ public class MainMenuScreen extends MenuScreen {
       name = worldMapNames_8011c1ec[continentIndex_800bf0b0];
     }
 
-    renderCentredText(name, 90, 38, TextColour.BROWN);
+    renderText(name, 90, 38, UI_TEXT_CENTERED);
   }
 
   private void menuEscape() {
@@ -287,7 +303,7 @@ public class MainMenuScreen extends MenuScreen {
   private void showOptionsScreen() {
     menuStack.pushScreen(new OptionsCategoryScreen(CONFIG, EnumSet.allOf(ConfigStorageLocation.class), () -> {
       ConfigStorage.saveConfig(CONFIG, ConfigStorageLocation.GLOBAL, Path.of("config.dcnf"));
-      ConfigStorage.saveConfig(CONFIG, ConfigStorageLocation.CAMPAIGN, Path.of("saves", gameState_800babc8.campaignName, "campaign_config.dcnf"));
+      ConfigStorage.saveConfig(CONFIG, ConfigStorageLocation.CAMPAIGN, gameState_800babc8.campaign.path.resolve("campaign_config.dcnf"));
       menuStack.popScreen();
       this.loadingStage = 0;
     }));

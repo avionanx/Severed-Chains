@@ -24,7 +24,6 @@ import legend.game.title.GameOver;
 import legend.game.title.NewGame;
 import legend.game.title.Ttle;
 import legend.game.types.BattleReportOverlayList10;
-import legend.game.types.ItemStats0c;
 import legend.game.types.OverlayStruct;
 import legend.game.unpacker.FileData;
 import legend.game.wmap.WMap;
@@ -112,6 +111,8 @@ public final class Scus94491BpeSegment_8004 {
   public static EngineStateEnum engineStateOnceLoaded_8004dd24 = EngineStateEnum.PRELOAD_00;
   /** The previous state before the file finished loading */
   public static EngineStateEnum previousEngineState_8004dd28;
+  /** The last savable state we were in, used for generating crash recovery saves */
+  public static EngineStateEnum lastSavableEngineState;
 
   public static int width_8004dd34 = 320;
   public static int height_8004dd34 = 240;
@@ -212,6 +213,8 @@ public final class Scus94491BpeSegment_8004 {
     scriptSubFunctions_8004e29c[865] = Scus94491BpeSegment_8002::scriptTakeItem;
     scriptSubFunctions_8004e29c[866] = Scus94491BpeSegment_8002::scriptGiveGold;
 
+    scriptSubFunctions_8004e29c[890] = Scus94491BpeSegment_8002::scriptReadRegistryEntryVar;
+
     scriptSubFunctions_8004e29c[900] = SItem::scriptGetMaxItemCount;
     scriptSubFunctions_8004e29c[901] = SItem::scriptGetMaxEquipmentCount;
     scriptSubFunctions_8004e29c[902] = SItem::scriptIsItemSlotUsed;
@@ -224,10 +227,11 @@ public final class Scus94491BpeSegment_8004 {
     scriptSubFunctions_8004e29c[909] = SItem::scriptGiveEquipment;
     scriptSubFunctions_8004e29c[910] = SItem::scriptTakeItem;
     scriptSubFunctions_8004e29c[911] = SItem::scriptTakeEquipment;
+    scriptSubFunctions_8004e29c[912] = SItem::scriptGenerateAttackItem;
+    scriptSubFunctions_8004e29c[913] = SItem::scriptGenerateRecoveryItem;
   }
   // 8004f29c end of jump table
 
-  public static final ItemStats0c[] itemStats_8004f2ac = new ItemStats0c[64];
   public static final int[] additionOffsets_8004f5ac = {0, 8, -1, 14, 29, 8, 23, 19, -1, 0};
   public static final int[] additionCounts_8004f5c0 = {7, 5, 0, 4, 6, 5, 5, 3, 0, 0};
 
@@ -515,8 +519,6 @@ public final class Scus94491BpeSegment_8004 {
 
   @Method(0x8004c894L)
   public static void setMainVolume(final int left, final int right) {
-    AUDIO_THREAD.setMainVolume(left, right);
-
     final int l;
     if((left & 0x80) != 0) {
       l = (left << 7) + 0x7fff;
@@ -621,6 +623,7 @@ public final class Scus94491BpeSegment_8004 {
     }
 
     setMainVolume(0, 0);
+    AUDIO_THREAD.setMainVolume(0, 0);
     soundEnv.fadingIn_2a = true;
     soundEnv.fadeTime_2c = fadeTime;
     soundEnv.fadeInVol_2e = maxVol;
@@ -640,7 +643,13 @@ public final class Scus94491BpeSegment_8004 {
       soundEnv_800c6630.fadeOutVolL_30 = SPU.getMainVolumeLeft() >>> 8;
       soundEnv_800c6630.fadeOutVolR_32 = SPU.getMainVolumeRight() >>> 8;
 
-      AUDIO_THREAD.fadeOut(fadeTime);
+      // Retail bug: due to the way fade volume is lerped, fade out over 1
+      // tick doesn't fade out at all. This was breaking music after Lenus 2.
+      // See GH#1623
+      if(fadeTime > 1) {
+        AUDIO_THREAD.fadeOut(fadeTime);
+      }
+
       return 0;
     }
 

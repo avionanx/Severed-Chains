@@ -34,7 +34,7 @@ public class InputBoxScreen extends MenuScreen {
 
     final Label label = panel.addControl(new Label(message));
     label.setAutoSize(true);
-    label.setHorizontalAlign(Label.HorizontalAlign.CENTRE);
+    label.getFontOptions().horizontalAlign(HorizontalAlign.CENTRE);
     label.setPos((panel.getWidth() - label.getWidth()) / 2, 12);
     label.setZ(31);
 
@@ -60,7 +60,7 @@ public class InputBoxScreen extends MenuScreen {
     this.accept.setZ(31);
     this.accept.onPressed(() -> {
       menuStack.popScreen();
-      this.onResult.accept(MessageBoxResult.YES, this.text.getText());
+      this.onResult.accept(MessageBoxResult.YES, this.text.getText().strip());
     });
 
     this.cancel = panel.addControl(new Button("Cancel"));
@@ -74,9 +74,13 @@ public class InputBoxScreen extends MenuScreen {
     this.highlight.setSize(this.text.getWidth() + 8, this.text.getHeight() + 8);
     this.highlight.setClut(0xfc29);
     this.highlight.setZ(31);
+    this.highlight.setVisibility(false);
 
     this.text.onHoverIn(this.highlight::show);
     this.text.onHoverOut(this.highlight::hide);
+
+    this.selectedIndex = 1;
+    this.getSelectedControl().hoverIn();
   }
 
   private Control getSelectedControl() {
@@ -124,8 +128,6 @@ public class InputBoxScreen extends MenuScreen {
   }
 
   private void menuSelect() {
-    playMenuSound(2);
-
     if(this.selectedIndex == 0) {
       this.deferAction(this.text::focus);
     } else {

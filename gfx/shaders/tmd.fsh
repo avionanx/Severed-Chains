@@ -7,6 +7,8 @@ flat in int vertBpp;
 smooth in vec4 vertColour;
 flat in int vertFlags;
 
+flat in int translucency;
+
 flat in float widthMultiplier;
 flat in int widthMask;
 flat in int indexShift;
@@ -24,10 +26,8 @@ layout(std140) uniform projectionInfo {
 
 uniform vec3 recolour;
 uniform vec2 uvOffset;
-uniform float translucency;
 uniform float discardTranslucency;
 uniform int tmdTranslucency;
-uniform int ctmdFlags;
 uniform sampler2D tex24;
 uniform usampler2D tex15;
 
@@ -41,15 +41,13 @@ void main() {
     gl_FragDepth = gl_FragCoord.z;
   }
 
-  bool ctmd = (ctmdFlags & 0x20) != 0;
-  bool uniformLit = (ctmdFlags & 0x10) != 0;
-  bool translucent = (vertFlags & 0x8) != 0 || (ctmdFlags & 0x2) != 0 || translucency != 0;
+  bool translucent = (vertFlags & 0x8) != 0;
   bool textured = (vertFlags & 0x2) != 0;
   outColour = vertColour;
 
-  int translucencyMode = int(translucency);
-  if(translucent && (!textured || uniformLit)) {
-    translucencyMode = tmdTranslucency + 1;
+  int translucencyMode = translucency;
+  if(translucent && !textured) {
+    translucencyMode = tmdTranslucency;
   }
 
   // Textured
@@ -63,6 +61,9 @@ void main() {
 
       // Pull actual pixel colour from CLUT
       texColour = texelFetch(tex24, ivec2(vertClut.x + p, vertClut.y), 0);
+    } else if(vertBpp == 2) {
+      ivec2 uv = ivec2(vertTpage.x + (vertUv.x + uvOffset.x), vertTpage.y + vertUv.y + uvOffset.y);
+      texColour = texelFetch(tex24, ivec2(uv.x, uv.y), 0);
     } else {
       texColour = texture(tex24, vertUv + uvOffset);
     }
@@ -73,14 +74,14 @@ void main() {
     }
 
     // If translucent primitive and texture pixel translucency bit is set, pixel is translucent so we defer rendering
-    if(discardTranslucency == 1 && translucencyMode != 0 && texColour.a != 0 || discardTranslucency == 2 && (translucencyMode == 0 || texColour.a == 0)) {
+    if(discardTranslucency == 1 && translucent && texColour.a != 0 || discardTranslucency == 2 && (!translucent || texColour.a == 0)) {
       discard;
     }
 
     outColour *= texColour;
   } else {
     // Untextured translucent primitives don't have a translucency bit so we always discard during the appropriate discard modes
-    if(discardTranslucency == 1 && translucencyMode != 0 || discardTranslucency == 2 && translucencyMode == 0) {
+    if(discardTranslucency == 1 && translucent || discardTranslucency == 2 && !translucent) {
       discard;
     }
   }
