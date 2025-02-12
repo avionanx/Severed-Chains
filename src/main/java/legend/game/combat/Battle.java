@@ -5985,8 +5985,8 @@ public class Battle extends EngineState {
     this.allocateDeffEffectManager(script.scriptState_04, script.params_20[0].get(), script.params_20[1].get(), script.params_20[2].get(), script.params_20[3].get(), effect);
     if(encounterId_800bb0f8 == 1000) {
       this.loadDeff(
-        Unpacker.resolve("../assets/combat/deff/%d/textures".formatted(script.params_20[0].get())),
-        Unpacker.resolve("../assets/combat/deff/%d/models".formatted(script.params_20[0].get()))
+        Loader.resolve("../assets/combat/deff/%d/textures".formatted(script.params_20[0].get())),
+        Loader.resolve("../assets/combat/deff/%d/models".formatted(script.params_20[0].get()))
       );
     }
     else if(monsterIndex < 256) {
