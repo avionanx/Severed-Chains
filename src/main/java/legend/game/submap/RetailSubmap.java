@@ -102,7 +102,7 @@ public class RetailSubmap extends Submap {
   public final int cut;
   private final NewRootStruct newRoot;
   private final Vector2f screenOffset;
-  private final CollisionGeometry collisionGeometry;
+  private final RetailCollisionGeometry retailCollisionGeometry;
 
   private final List<Tim> pxls = new ArrayList<>();
 
@@ -157,13 +157,13 @@ public class RetailSubmap extends Submap {
   private Texture[] foregroundTextures;
   private final Int2ObjectMap<Consumer<Texture.Builder>> sobjTextureOverrides = new Int2ObjectOpenHashMap<>();
 
-  public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final CollisionGeometry collisionGeometry) {
+  public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final RetailCollisionGeometry retailCollisionGeometry) {
     this.cut = cut;
     this.newRoot = newRoot;
 
     this.hasRenderer_800c6968 = submapTypes_800f5cd4[cut] == 65;
     this.screenOffset = screenOffset;
-    this.collisionGeometry = collisionGeometry;
+    this.retailCollisionGeometry = retailCollisionGeometry;
 
     this.loadCollisionAndTransitions();
   }
@@ -669,14 +669,14 @@ public class RetailSubmap extends Submap {
 
     //LAB_800e5430
     this.loadEnvironment(new EnvironmentFile(files.get(0)));
-    this.collisionGeometry.loadCollision(new TmdWithId("Background " + mapName, files.get(2)), files.get(1));
+    this.retailCollisionGeometry.loadCollision(new TmdWithId("Background " + mapName, files.get(2)), files.get(1));
 
     submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
   }
 
   @Method(0x800e664cL)
   private void loadCollisionAndTransitions() {
-    this.collisionGeometry.clearCollisionAndTransitionInfo();
+    this.retailCollisionGeometry.clearCollisionAndTransitionInfo();
 
     final SubmapCutInfo entry = this.newRoot.submapCutInfo_0000[this.cut];
     final short offset = entry.collisionAndTransitionOffset_04;
@@ -687,7 +687,7 @@ public class RetailSubmap extends Submap {
 
     //LAB_800e66dc
     for(int i = 0; i < entry.collisionAndTransitionCount_06; i++) {
-      this.collisionGeometry.setCollisionAndTransitionInfo(this.newRoot.collisionAndTransitions_2000[offset / 4 + i]);
+      this.retailCollisionGeometry.setCollisionAndTransitionInfo(this.newRoot.collisionAndTransitions_2000[offset / 4 + i]);
     }
 
     //LAB_800e671c

@@ -1,6 +1,5 @@
 package legend.game.submap;
 
-import legend.core.IoHelper;
 import legend.core.MathHelper;
 import legend.core.QueuedModelStandard;
 import legend.core.QueuedModelTmd;
@@ -9,7 +8,6 @@ import legend.core.gpu.GpuCommandCopyVramToVram;
 import legend.core.gte.GsCOORDINATE2;
 import legend.core.gte.MV;
 import legend.core.gte.ModelPart10;
-import legend.core.gte.TmdObjTable1c;
 import legend.core.memory.Method;
 import legend.core.opengl.Obj;
 import legend.core.opengl.PolyBuilder;
@@ -169,7 +167,6 @@ import static legend.lodmod.LodMod.INPUT_ACTION_SMAP_INTERACT;
 import static legend.lodmod.LodMod.INPUT_ACTION_SMAP_SNOWFIELD_WARP;
 import static legend.lodmod.LodMod.INPUT_ACTION_SMAP_TOGGLE_INDICATORS;
 import static org.lwjgl.opengl.GL11C.GL_LESS;
-import static org.lwjgl.opengl.GL11C.GL_LINES;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLE_STRIP;
 
 public class SMap extends EngineState {
@@ -242,7 +239,7 @@ public class SMap extends EngineState {
   private CountdownLatch geomOffsetLatch_800cbd3c;
   private final MV screenToWorldMatrix_800cbd40 = new MV();
 
-  private final CollisionGeometry collisionGeometry_800cbe08 = new CollisionGeometry(this);
+  private final CollisionGeometry collisionGeometry_800Cbe08 = new RetailCollisionGeometry(this);
 
   private SnowEffect snow_800d4bd8;
 
@@ -928,7 +925,7 @@ public class SMap extends EngineState {
         // Handle map transitions
         // Transitions by collisions must be handled only if scripts were ticked due to some edge cases (GH#1195)
         if(scriptsTicked) {
-          final int collisionAndTransitionInfo = this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(collidedPrimitiveIndex_80052c38);
+          final int collisionAndTransitionInfo = this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(collidedPrimitiveIndex_80052c38);
           if((collisionAndTransitionInfo & 0x10) != 0) {
             this.mapTransition(collisionAndTransitionInfo >>> 22, collisionAndTransitionInfo >>> 16 & 0x3f);
           }
@@ -1189,7 +1186,7 @@ public class SMap extends EngineState {
       GTE.setTransforms(worldToScreenMatrix_800c3548);
       this.transformToWorldspace(worldspaceDeltaMovement, deltaMovement);
 
-      final int collidedPrimitiveIndex = this.collisionGeometry_800cbe08.checkCollision(player.sobjIndex_12e != 0, playerModel.coord2_14.coord.transfer, worldspaceDeltaMovement, true);
+      final int collidedPrimitiveIndex = this.collisionGeometry_800Cbe08.checkCollision(player.sobjIndex_12e != 0, playerModel.coord2_14.coord.transfer, worldspaceDeltaMovement, true);
       if(collidedPrimitiveIndex >= 0) {
         if(this.isWalkable(collidedPrimitiveIndex)) {
           player.finishInterpolatedMovement();
@@ -1222,7 +1219,7 @@ public class SMap extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "indicatorType")
   @Method(0x800de334L)
   private FlowControl scriptAddTriangleIndicator(final RunningScript<?> script) {
-    this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(script.params_20[0].get(), this.playerModel_800c6748.coord2_14.coord.transfer);
+    this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(script.params_20[0].get(), this.playerModel_800c6748.coord2_14.coord.transfer);
 
     final MV ls = new MV();
     GsGetLs(this.playerModel_800c6748.coord2_14, ls);
@@ -1259,7 +1256,7 @@ public class SMap extends EngineState {
 
     //LAB_800de4f8
     while(ints.array(s0).get() != -1) {
-      this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(ints.array(s0++).get(), this.playerModel_800c6748.coord2_14.coord.transfer);
+      this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(ints.array(s0++).get(), this.playerModel_800c6748.coord2_14.coord.transfer);
 
       GsGetLs(this.playerModel_800c6748.coord2_14, ls);
       GTE.setTransforms(ls);
@@ -1410,7 +1407,7 @@ public class SMap extends EngineState {
       GTE.setTransforms(worldToScreenMatrix_800c3548);
       this.transformToWorldspace(movement, deltaMovement);
 
-      this.collisionGeometry_800cbe08.checkCollision(sobj.sobjIndex_12e != 0, model.coord2_14.coord.transfer, movement, true);
+      this.collisionGeometry_800Cbe08.checkCollision(sobj.sobjIndex_12e != 0, model.coord2_14.coord.transfer, movement, true);
 
       //LAB_800def08
       angle = MathHelper.positiveAtan2(movement.z, movement.x);
@@ -2165,7 +2162,7 @@ public class SMap extends EngineState {
   private FlowControl scriptCheckSobjCollision(final RunningScript<?> script) {
     final SubmapObject210 sobj = (SubmapObject210)scriptStatePtrArr_800bc1c0[script.params_20[0].get()].innerStruct_00;
     final Model124 model = sobj.model_00;
-    final int collisionPrimitiveIndex = this.collisionGeometry_800cbe08.getCollisionPrimitiveAtPoint(model.coord2_14.coord.transfer.x, model.coord2_14.coord.transfer.y, model.coord2_14.coord.transfer.z, false, false);
+    final int collisionPrimitiveIndex = this.collisionGeometry_800Cbe08.getCollisionPrimitiveAtPoint(model.coord2_14.coord.transfer.x, model.coord2_14.coord.transfer.y, model.coord2_14.coord.transfer.z, false, false);
     script.params_20[1].set(collisionPrimitiveIndex);
     sobj.collidedPrimitiveIndex_16c = collisionPrimitiveIndex;
     return FlowControl.CONTINUE;
@@ -2732,12 +2729,12 @@ public class SMap extends EngineState {
 
         // Reset rotation smoothing to current facing after forced rotation
         if(sobj.sobjIndex_12e == 0) {
-          this.collisionGeometry_800cbe08.playerRotationAfterCollision_800d1a84 = model.coord2_14.transforms.rotate.y;
+          this.collisionGeometry_800Cbe08.playerRotationAfterCollision_800d1a84 = model.coord2_14.transforms.rotate.y;
           this.firstMovement = true;
         }
       }
 
-      if(sobj.sobjIndex_12e == 0 && this.collisionGeometry_800cbe08.playerRotationWasUpdated_800d1a8c > 0) {
+      if(sobj.sobjIndex_12e == 0 && this.collisionGeometry_800Cbe08.playerRotationWasUpdated_800d1a8c > 0) {
         model.coord2_14.transforms.rotate.y = this.smoothPlayerRotation();
       }
 
@@ -3114,7 +3111,7 @@ public class SMap extends EngineState {
       }
 
       //LAB_800e2140
-      final int collidedPrimitiveIndex = this.collisionGeometry_800cbe08.checkCollision(sobj.sobjIndex_12e != 0, model.coord2_14.coord.transfer, movement, false);
+      final int collidedPrimitiveIndex = this.collisionGeometry_800Cbe08.checkCollision(sobj.sobjIndex_12e != 0, model.coord2_14.coord.transfer, movement, false);
       if(collidedPrimitiveIndex >= 0 && this.isWalkable(collidedPrimitiveIndex)) {
         model.coord2_14.coord.transfer.x += movement.x / (2.0f / vsyncMode_8007a3b8);
         model.coord2_14.coord.transfer.y = movement.y;
@@ -3143,7 +3140,7 @@ public class SMap extends EngineState {
 
   @Method(0x800e2220L)
   private void unloadSmap() {
-    this.collisionGeometry_800cbe08.unloadCollision();
+    this.collisionGeometry_800Cbe08.unloadCollision();
     this.clearLatches();
 
     this.submapControllerState_800c6740.deallocateWithChildren();
@@ -3408,7 +3405,7 @@ public class SMap extends EngineState {
     // The first condition is to fix what we believe is caused by menus loading too fast in SC. Submaps still take several frames to initialize,
     // and if you spam triangle and escape immediately after the post-combat screen it's possible to get into this method when index_80052c38 is
     // still set to -1. See #304 for more details.
-    if(this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(collidedPrimitiveIndex_80052c38) != 0) {
+    if(this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(collidedPrimitiveIndex_80052c38) != 0) {
       return false;
     }
 
@@ -3436,7 +3433,7 @@ public class SMap extends EngineState {
       this.playerPositionRestoreMode_800f7e24 = 1;
     } else {
       //LAB_800e4d34
-      this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(collisionPrimitiveIndex, this.playerPositionWhenLoadingSubmap_800c6ac0.transfer);
+      this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(collisionPrimitiveIndex, this.playerPositionWhenLoadingSubmap_800c6ac0.transfer);
       // Most scripts call readposition and setposition on initialization, if middle of collision
       // primitive has a fraction, player will have non-zero movement step on submap load (GH#1142)
       this.playerPositionWhenLoadingSubmap_800c6ac0.transfer.round();
@@ -3450,7 +3447,7 @@ public class SMap extends EngineState {
   private void restoreOrSetPlayerPosition(final int collisionPrimitiveIndexForPosition, final Model124 model) {
     if(this.playerPositionRestoreMode_800f7e24 == 0) {
       //LAB_800e4e20
-      this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(collisionPrimitiveIndexForPosition, model.coord2_14.coord.transfer);
+      this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(collisionPrimitiveIndexForPosition, model.coord2_14.coord.transfer);
       // Most scripts call readposition and setposition on initialization, if middle of collision
       // primitive has a fraction, player will have non-zero movement step on submap load (GH#1142)
       model.coord2_14.coord.transfer.round();
@@ -3497,7 +3494,7 @@ public class SMap extends EngineState {
 
     //LAB_800e5184
     this.resetLatches();
-    this.collisionGeometry_800cbe08.tick();
+    this.collisionGeometry_800Cbe08.tick();
 
     if(submapFullyLoaded_800bd7b4) {
       this.renderSubmap();
@@ -3522,8 +3519,9 @@ public class SMap extends EngineState {
   }
 
   private void renderCollisionDebug() {
+    /*
     if(enableCollisionDebug) {
-      if(this.collisionGeometry_800cbe08.debugObj == null) {
+      if(this.collisionGeometry_800Cbe08.debugObj == null) {
         final List<Vector3f> vertices = new ArrayList<>();
 
         final PolyBuilder builder = new PolyBuilder("Collision Model", GL_TRIANGLE_STRIP);
@@ -3531,20 +3529,20 @@ public class SMap extends EngineState {
 
         final PolyBuilder lines = new PolyBuilder("Collision Normals Probably", GL_LINES);
 
-        for(int i = 0; i < this.collisionGeometry_800cbe08.primitiveCount_0c; i++) {
-          final CollisionPrimitiveInfo0c primitiveInfo = this.collisionGeometry_800cbe08.primitiveInfo_14[i];
-          final TmdObjTable1c.Primitive primitive = this.collisionGeometry_800cbe08.getPrimitiveForOffset(primitiveInfo.primitiveOffset_04  );
+        for(int i = 0; i < this.collisionGeometry_800Cbe08.primitiveCount_0c; i++) {
+          final CollisionPrimitiveInfo0c primitiveInfo = this.collisionGeometry_800Cbe08.primitiveInfo_14[i];
+          final TmdObjTable1c.Primitive primitive = this.collisionGeometry_800Cbe08.getPrimitiveForOffset(primitiveInfo.primitiveOffset_04  );
           final int packetOffset = primitiveInfo.primitiveOffset_04 - primitive.offset();
           final int packetIndex = packetOffset / (primitive.width() + 4);
           final int remainder = packetOffset % (primitive.width() + 4);
           final byte[] packet = primitive.data()[packetIndex];
 
           for(int vertexIndex = 0; vertexIndex < primitiveInfo.vertexCount_00; vertexIndex++) {
-            final Vector3f vertex = this.collisionGeometry_800cbe08.verts_04[IoHelper.readUShort(packet, remainder + 2 + vertexIndex * 2)];
+            final Vector3f vertex = this.collisionGeometry_800Cbe08.verts_04[IoHelper.readUShort(packet, remainder + 2 + vertexIndex * 2)];
             builder.addVertex(vertex);
             vertices.add(vertex);
 
-            final Vector2f normals = new Vector2f(this.collisionGeometry_800cbe08.vertexInfo_18[vertexIndex].x_00, this.collisionGeometry_800cbe08.vertexInfo_18[vertexIndex].z_02)
+            final Vector2f normals = new Vector2f(this.collisionGeometry_800Cbe08.vertexInfo_18[vertexIndex].x_00, this.collisionGeometry_800Cbe08.vertexInfo_18[vertexIndex].z_02)
               .normalize()
               .mul(10.0f);
 
@@ -3554,9 +3552,9 @@ public class SMap extends EngineState {
           }
         }
 
-        this.collisionGeometry_800cbe08.debugObj = builder.build();
-        this.collisionGeometry_800cbe08.debugLines = lines.build();
-        this.collisionGeometry_800cbe08.debugVertices = vertices.toArray(Vector3f[]::new);
+        this.collisionGeometry_800Cbe08.debugObj = builder.build();
+        this.collisionGeometry_800Cbe08.debugLines = lines.build();
+        this.collisionGeometry_800Cbe08.debugVertices = vertices.toArray(Vector3f[]::new);
       }
 
       // final Vector2f transformed = new Vector2f();
@@ -3564,13 +3562,13 @@ public class SMap extends EngineState {
 
       final MV lw = new MV();
       final MV ls = new MV();
-      GsGetLws(this.collisionGeometry_800cbe08.dobj2Ptr_20.coord2_04, lw, ls);
+      GsGetLws(this.collisionGeometry_800Cbe08.dobj2Ptr_20.coord2_04, lw, ls);
       GTE.setTransforms(ls);
 
-      for(int i = 0; i < this.collisionGeometry_800cbe08.primitiveCount_0c; i++) {
-        final CollisionPrimitiveInfo0c primitiveInfo = this.collisionGeometry_800cbe08.primitiveInfo_14[i];
+      for(int i = 0; i < this.collisionGeometry_800Cbe08.primitiveCount_0c; i++) {
+        final CollisionPrimitiveInfo0c primitiveInfo = this.collisionGeometry_800Cbe08.primitiveInfo_14[i];
 
-        final QueuedModelStandard model = RENDERER.queueModel(this.collisionGeometry_800cbe08.debugObj, lw, QueuedModelStandard.class)
+        final QueuedModelStandard model = RENDERER.queueModel(this.collisionGeometry_800Cbe08.debugObj, lw, QueuedModelStandard.class)
           .vertices(primitiveInfo.vertexInfoOffset_02, primitiveInfo.vertexCount_00)
           .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
           .depthOffset(-1.0f)
@@ -3580,15 +3578,15 @@ public class SMap extends EngineState {
           model.colour(0.5f, 0.0f, 0.0f);
         }
 
-        if((this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(i) & 0x1) != 0) {
+        if((this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(i) & 0x1) != 0) {
           model.colour(0.5f, 0.0f, 1.0f);
         }
 
-        if((this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(i) & 0x2) != 0) {
+        if((this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(i) & 0x2) != 0) {
           model.colour(1.0f, 0.5f, 0.0f);
         }
 
-        if((this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(i) & 0x4) != 0) {
+        if((this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(i) & 0x4) != 0) {
           model.colour(1.0f, 1.0f, 0.0f);
         }
 
@@ -3596,11 +3594,11 @@ public class SMap extends EngineState {
           model.colour(1.0f, 0.0f, 0.0f);
         }
 
-        if((this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(i) & 0x10) != 0) {
+        if((this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(i) & 0x10) != 0) {
           model.colour(0.0f, 1.0f, 0.0f);
         }
 
-        if((this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(i) & 0x20) != 0) {
+        if((this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(i) & 0x20) != 0) {
           model.colour(0.0f, 1.0f, 1.0f);
         }
 
@@ -3619,21 +3617,22 @@ public class SMap extends EngineState {
       }
 
       if(this.sobjs_800c6880[0].innerStruct_00.collidedPrimitiveIndex_16c != -1) {
-        final CollisionPrimitiveInfo0c collidedPrimitive = this.collisionGeometry_800cbe08.primitiveInfo_14[this.sobjs_800c6880[0].innerStruct_00.collidedPrimitiveIndex_16c];
+        final CollisionPrimitiveInfo0c collidedPrimitive = this.collisionGeometry_800Cbe08.primitiveInfo_14[this.sobjs_800c6880[0].innerStruct_00.collidedPrimitiveIndex_16c];
 
-        RENDERER.queueModel(this.collisionGeometry_800cbe08.debugLines, QueuedModelStandard.class)
+        RENDERER.queueModel(this.collisionGeometry_800Cbe08.debugLines, QueuedModelStandard.class)
           .colour(1.0f, 0.0f, 0.0f)
           .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
           .vertices(collidedPrimitive.vertexInfoOffset_02 * 2, collidedPrimitive.vertexCount_00 * 2)
           .depthOffset(-1.0f);
       }
-    } else if(this.collisionGeometry_800cbe08.debugObj != null) {
-      this.collisionGeometry_800cbe08.debugObj.delete();
-      this.collisionGeometry_800cbe08.debugObj = null;
-      this.collisionGeometry_800cbe08.debugLines.delete();
-      this.collisionGeometry_800cbe08.debugLines = null;
-      this.collisionGeometry_800cbe08.debugVertices = null;
+    } else if(this.collisionGeometry_800Cbe08.debugObj != null) {
+      this.collisionGeometry_800Cbe08.debugObj.delete();
+      this.collisionGeometry_800Cbe08.debugObj = null;
+      this.collisionGeometry_800Cbe08.debugLines.delete();
+      this.collisionGeometry_800Cbe08.debugLines = null;
+      this.collisionGeometry_800Cbe08.debugVertices = null;
     }
+     */
   }
 
   /** Restores camera when returning from battle */
@@ -3845,7 +3844,7 @@ public class SMap extends EngineState {
         submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
 
-        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800cbe08);
+        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, (RetailCollisionGeometry)this.collisionGeometry_800Cbe08);
 
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
         this.submap.loadEnv(() -> this.smapLoadingStage_800cb430 = SubmapState.START_LOADING_MEDIA_10);
@@ -4133,7 +4132,7 @@ public class SMap extends EngineState {
 
   @Method(0x800e6798L)
   private boolean isWalkable(final int collisionPrimitiveIndex) {
-    return (this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(collisionPrimitiveIndex) & 0x8) == 0;
+    return (this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(collisionPrimitiveIndex) & 0x8) == 0;
   }
 
   @ScriptDescription("Transitions to another submap cut/scene (certain values have special meanings - FMVs, menus)")
@@ -4215,7 +4214,7 @@ public class SMap extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "collisionPrimitiveIndex", description = "The index")
   @Method(0x800e69a4L)
   private FlowControl scriptGetCollisionAndTransitionInfo(final RunningScript<?> script) {
-    script.params_20[0].set(this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(script.params_20[1].get()));
+    script.params_20[0].set(this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(script.params_20[1].get()));
     return FlowControl.CONTINUE;
   }
 
@@ -4229,7 +4228,7 @@ public class SMap extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "collisionPrimitiveIndex", description = "The index")
   @Method(0x800e69f0L)
   private FlowControl scriptBlockCollisionPrimitive(final RunningScript<?> script) {
-    this.collisionGeometry_800cbe08.setCollisionAndTransitionInfo(this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(script.params_20[0].get()) | 0x8);
+    this.collisionGeometry_800Cbe08.setCollisionAndTransitionInfo(this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(script.params_20[0].get()) | 0x8);
     return FlowControl.CONTINUE;
   }
 
@@ -4237,7 +4236,7 @@ public class SMap extends EngineState {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "collisionPrimitiveIndex", description = "The index")
   @Method(0x800e6a28L)
   private FlowControl scriptUnblockCollisionPrimitive(final RunningScript<?> script) {
-    this.collisionGeometry_800cbe08.setCollisionAndTransitionInfo(this.collisionGeometry_800cbe08.getCollisionAndTransitionInfo(script.params_20[0].get()) & 0xffff_fff7);
+    this.collisionGeometry_800Cbe08.setCollisionAndTransitionInfo(this.collisionGeometry_800Cbe08.getCollisionAndTransitionInfo(script.params_20[0].get()) & 0xffff_fff7);
     return FlowControl.CONTINUE;
   }
 
@@ -4291,7 +4290,7 @@ public class SMap extends EngineState {
   private FlowControl scriptGetCollisionPrimitivePos(final RunningScript<?> script) {
     if(script.params_20[0].get() >= 0) {
       final Vector3f pos = new Vector3f();
-      this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(script.params_20[0].get(), pos);
+      this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(script.params_20[0].get(), pos);
 
       script.params_20[1].set(Math.round(pos.x));
       script.params_20[2].set(Math.round(pos.y));
@@ -4415,7 +4414,7 @@ public class SMap extends EngineState {
     this.geomOffsetLatch_800cbd3c = this.addLatch();
 
     final Vector3f pos = new Vector3f();
-    this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(cameraCollisionPrimitiveIndex, pos);
+    this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(cameraCollisionPrimitiveIndex, pos);
     this.setCameraPos(1, pos);
   }
 
@@ -4442,10 +4441,10 @@ public class SMap extends EngineState {
   private float smoothPlayerRotation() {
     if(this.firstMovement) {
       this.firstMovement = false;
-      this.oldRotation_800f7f6c = this.collisionGeometry_800cbe08.playerRotationAfterCollision_800d1a84;
+      this.oldRotation_800f7f6c = this.collisionGeometry_800Cbe08.playerRotationAfterCollision_800d1a84;
     }
 
-    float rotationDelta = (this.oldRotation_800f7f6c - this.collisionGeometry_800cbe08.playerRotationAfterCollision_800d1a84) % MathHelper.TWO_PI;
+    float rotationDelta = (this.oldRotation_800f7f6c - this.collisionGeometry_800Cbe08.playerRotationAfterCollision_800d1a84) % MathHelper.TWO_PI;
 
     final boolean positive;
     if(Math.abs(rotationDelta) > MathHelper.PI) {
@@ -4459,7 +4458,7 @@ public class SMap extends EngineState {
 
     //LAB_800ea63c
     float maxRotation = MathHelper.PI / (6.0f * this.tickMultiplier());
-    if(this.collisionGeometry_800cbe08.playerRunning) {
+    if(this.collisionGeometry_800Cbe08.playerRunning) {
       maxRotation *= 1.5f;
     }
 
@@ -4672,7 +4671,7 @@ public class SMap extends EngineState {
     final Param ints = script.params_20[0];
     int s0 = 0;
     for(int i = 0; ints.array(s0).get() != -1; i++) {
-      this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(ints.array(s0++).get(), sp0x10);
+      this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(ints.array(s0++).get(), sp0x10);
 
       sp0x18.coord.transfer.set(sp0x10);
       GsGetLs(sp0x18, sp0x70);
@@ -4705,7 +4704,7 @@ public class SMap extends EngineState {
     final GsCOORDINATE2 sp0x40 = new GsCOORDINATE2();
     GsInitCoordinate2(null, sp0x40);
     final Vector3f sp0x10 = new Vector3f();
-    this.collisionGeometry_800cbe08.getMiddleOfCollisionPrimitive(script.params_20[0].get(), sp0x10);
+    this.collisionGeometry_800Cbe08.getMiddleOfCollisionPrimitive(script.params_20[0].get(), sp0x10);
     sp0x40.coord.transfer.set(sp0x10);
     final MV sp0x20 = new MV();
     GsGetLs(sp0x40, sp0x20);
