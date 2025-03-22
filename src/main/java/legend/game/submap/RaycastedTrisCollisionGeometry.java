@@ -20,14 +20,14 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
     new Vector3f[] {
       new Vector3f(256.0f, 0.0f, -256.0f),
       new Vector3f(-256.0f, 0.0f, 256.0f),
-      new Vector3f(256.0f, 0.0f, 256.0f)
+      new Vector3f(256.0f, 100.0f, 256.0f)
     }
   };
 
   @Override
   public int checkCollision(boolean isNpc, Vector3f position, Vector3f movement, boolean updatePlayerRotationInterpolation) {
     if(isNpc) {
-      return this.meshIntersection(new Vector3f(position).add(movement).sub(0,128,0), new Vector3f(0.0f, 256.0f, 0.0f));
+      return this.meshIntersection(new Vector3f(position).add(movement).sub(0,128,0), new Vector3f(0.0f, 256.0f, 0.0f), movement);
     }
 
     if(!this.playerCollisionLatch_800cbe34) {
@@ -35,7 +35,7 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
 
       this.playerRunning = movement.x * movement.x + movement.z * movement.z > 64.0f;
 
-      this.collidedPrimitiveIndex_800cbd94 = this.meshIntersection(new Vector3f(position).add(movement).sub(0,128,0), new Vector3f(0.0f, 256.0f, 0.0f));
+      this.collidedPrimitiveIndex_800cbd94 = this.meshIntersection(new Vector3f(position).add(movement).sub(0,128,0), new Vector3f(0.0f, 256.0f, 0.0f), movement);
       this.cachedPlayerMovement_800cbd98.set(movement);
 
       if(this.collidedPrimitiveIndex_800cbd94 != -1 && this.playerRotationWasUpdated_800d1a8c == 0 && updatePlayerRotationInterpolation) {
@@ -61,7 +61,7 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
 
   @Override
   public int getCollisionPrimitiveAtPoint(float x, float y, float z, boolean checkSteepness, boolean checkY) {
-    return this.meshIntersection(new Vector3f(x, y, z).sub(0,128,0), new Vector3f(0.0f, 256.0f, 0.0f));
+    return this.meshIntersection(new Vector3f(x, y, z).sub(0,128,0), new Vector3f(0.0f, 256.0f, 0.0f), new Vector3f());
   }
 
   @Override
@@ -124,7 +124,7 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
       return null;
     }
   }
-  private int meshIntersection(final Vector3f origin, final Vector3f target){
+  private int meshIntersection(final Vector3f origin, final Vector3f target, final Vector3f movement){
     Vector3f closest = null;
     float min = Float.MAX_VALUE;
     int index = -1;
@@ -140,7 +140,9 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
         }
       }
     }
-
+    if(closest != null) {
+      movement.y = closest.y;
+    }
     return index;
   }
 }
