@@ -239,7 +239,7 @@ public class SMap extends EngineState {
   private CountdownLatch geomOffsetLatch_800cbd3c;
   private final MV screenToWorldMatrix_800cbd40 = new MV();
 
-  private final CollisionGeometry collisionGeometry_800Cbe08 = new RetailCollisionGeometry(this);
+  private final CollisionGeometry collisionGeometry_800Cbe08 = new RaycastedTrisCollisionGeometry();
 
   private SnowEffect snow_800d4bd8;
 
@@ -3844,7 +3844,7 @@ public class SMap extends EngineState {
         submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
 
-        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, (RetailCollisionGeometry)this.collisionGeometry_800Cbe08);
+        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800Cbe08);
 
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
         this.submap.loadEnv(() -> this.smapLoadingStage_800cb430 = SubmapState.START_LOADING_MEDIA_10);

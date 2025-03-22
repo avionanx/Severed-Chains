@@ -12,7 +12,6 @@ import legend.core.gpu.VramTextureLoader;
 import legend.core.gpu.VramTextureSingle;
 import legend.core.gte.MV;
 import legend.core.gte.ModelPart10;
-import legend.core.gte.TmdWithId;
 import legend.core.memory.Method;
 import legend.core.memory.types.IntRef;
 import legend.core.opengl.Obj;
@@ -102,7 +101,7 @@ public class RetailSubmap extends Submap {
   public final int cut;
   private final NewRootStruct newRoot;
   private final Vector2f screenOffset;
-  private final RetailCollisionGeometry retailCollisionGeometry;
+  private final CollisionGeometry retailCollisionGeometry;
 
   private final List<Tim> pxls = new ArrayList<>();
 
@@ -157,7 +156,7 @@ public class RetailSubmap extends Submap {
   private Texture[] foregroundTextures;
   private final Int2ObjectMap<Consumer<Texture.Builder>> sobjTextureOverrides = new Int2ObjectOpenHashMap<>();
 
-  public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final RetailCollisionGeometry retailCollisionGeometry) {
+  public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final CollisionGeometry retailCollisionGeometry) {
     this.cut = cut;
     this.newRoot = newRoot;
 
@@ -669,14 +668,14 @@ public class RetailSubmap extends Submap {
 
     //LAB_800e5430
     this.loadEnvironment(new EnvironmentFile(files.get(0)));
-    this.retailCollisionGeometry.loadCollision(new TmdWithId("Background " + mapName, files.get(2)), files.get(1));
+    //this.retailCollisionGeometry.loadCollision(new TmdWithId("Background " + mapName, files.get(2)), files.get(1));
 
     submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
   }
 
   @Method(0x800e664cL)
   private void loadCollisionAndTransitions() {
-    this.retailCollisionGeometry.clearCollisionAndTransitionInfo();
+    //this.retailCollisionGeometry.clearCollisionAndTransitionInfo();
 
     final SubmapCutInfo entry = this.newRoot.submapCutInfo_0000[this.cut];
     final short offset = entry.collisionAndTransitionOffset_04;
