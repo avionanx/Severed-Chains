@@ -239,7 +239,7 @@ public class SMap extends EngineState {
   private CountdownLatch geomOffsetLatch_800cbd3c;
   private final MV screenToWorldMatrix_800cbd40 = new MV();
 
-  private final CollisionGeometry collisionGeometry_800Cbe08 = new RaycastedTrisCollisionGeometry();
+  private final RaycastedTrisCollisionGeometry collisionGeometry_800Cbe08 = new RaycastedTrisCollisionGeometry();
 
   private SnowEffect snow_800d4bd8;
 
@@ -1038,7 +1038,7 @@ public class SMap extends EngineState {
   private void renderSmapShadow(final Model124 model) {
     GsInitCoordinate2(model.coord2_14, shadowModel_800bda10.coord2_14);
 
-    shadowModel_800bda10.zOffset_a0 = model.zOffset_a0 + 16;
+    shadowModel_800bda10.zOffset_a0 = model.zOffset_a0;
     shadowModel_800bda10.coord2_14.transforms.scale.set(model.shadowSize_10c).div(64.0f);
 
     shadowModel_800bda10.coord2_14.coord.scaling(shadowModel_800bda10.coord2_14.transforms.scale);
@@ -3844,7 +3844,11 @@ public class SMap extends EngineState {
         submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
 
-        this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800Cbe08);
+        if(submapCut_80052c30 >= 1000) {
+          this.submap = new Submap3D("debug", this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800Cbe08, 20);
+        } else {
+          this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800Cbe08);
+        }
 
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
         this.submap.loadEnv(() -> this.smapLoadingStage_800cb430 = SubmapState.START_LOADING_MEDIA_10);

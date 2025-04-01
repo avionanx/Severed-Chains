@@ -3,6 +3,8 @@ package legend.game.submap;
 import legend.core.MathHelper;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+
 public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
 
   private final double EPSILON = 1e-6;
@@ -11,18 +13,7 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
   private final Vector3f cachedPlayerMovement_800cbd98 = new Vector3f();
   private int collidedPrimitiveIndex_800cbd94;
 
-  private final Vector3f[][] triangles = {
-    new Vector3f[] {
-      new Vector3f(-256.0f, 0.0f, -256.0f),
-      new Vector3f(256.0f, 0.0f, -256.0f),
-      new Vector3f(-256.0f, 0.0f, 256.0f)
-    },
-    new Vector3f[] {
-      new Vector3f(256.0f, 0.0f, -256.0f),
-      new Vector3f(-256.0f, 0.0f, 256.0f),
-      new Vector3f(256.0f, 100.0f, 256.0f)
-    }
-  };
+  public ArrayList<Vector3f> triangles = new ArrayList<>();
 
   @Override
   public int checkCollision(boolean isNpc, Vector3f position, Vector3f movement, boolean updatePlayerRotationInterpolation) {
@@ -129,8 +120,8 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
     float min = Float.MAX_VALUE;
     int index = -1;
 
-    for(int i = 0; i < this.triangles.length; i++) {
-      final Vector3f point = this.triangleIntersection(origin, target, this.triangles[i][0], this.triangles[i][1], this.triangles[i][2]);
+    for(int i = 0; i < this.triangles.size(); i += 3) {
+      final Vector3f point = this.triangleIntersection(origin, target, this.triangles.get(i), this.triangles.get(i + 1), this.triangles.get(i + 2));
       if(point != null){
         final float distance = point.distance(origin);
         if(distance < min) {
