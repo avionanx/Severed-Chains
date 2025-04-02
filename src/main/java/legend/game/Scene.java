@@ -22,6 +22,7 @@ import org.lwjgl.stb.STBImage;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 
@@ -38,8 +39,10 @@ public class Scene {
   private final ArrayList<Texture> textures = new ArrayList<>();
   private final ArrayList<Material3D> materials = new ArrayList<>();
 
+  private Sky sky;
+
   public Scene(final Path path, final RaycastedTrisCollisionGeometry collisionGeometryPtr) {
-    final AIScene scene = Assimp.aiImportFile(path.toString(), 0);
+    final AIScene scene = Assimp.aiImportFile(path.resolve("map.glb").toString(), 0);
 
     for(int i = 0; i < scene.mNumMaterials(); i++) {
       final Material3D material3D = new Material3D();
@@ -55,7 +58,7 @@ public class Scene {
       texturePath.free();
       this.materials.add(material3D);
     }
-
+    this.loadSkybox(path.resolve("sky.png"));
     this.getTextures(scene);
     this.loadCollision(collisionGeometryPtr, scene.mRootNode(), scene);
 
@@ -107,6 +110,11 @@ public class Scene {
     Assimp.aiReleaseImport(scene);
   }
 
+  private void loadSkybox(final Path path) {
+    if(!Files.exists(path)) return;
+    this.sky = new Sky(path);
+  }
+
   private void getTextures(final AIScene scene) {
     final int textureCount = scene.mNumTextures();
 
@@ -125,6 +133,7 @@ public class Scene {
   public void unload() {
     this.objects.forEach(Object3D::clearMesh);
     this.textures.forEach(Texture::delete);
+    this.sky.unload();
   }
 
   private void loadCollision(final RaycastedTrisCollisionGeometry collisionGeometryPtr, final AINode root, final AIScene scene) {
@@ -163,6 +172,7 @@ public class Scene {
         queued.texture(this.textures.get(this.materials.get(this.objects.get(i).getMaterialIndex()).getTextureIndex()));
       }
     }
+    this.sky.render();
   }
 
   private static AINode findNode(final AINode node, final String name) {

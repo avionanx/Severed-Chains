@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Math;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import static legend.game.Scus94491BpeSegment_800b.musicLoaded_800bd782;
 import static legend.game.Scus94491BpeSegment_800b.previousSubmapCut_800bda08;
 import static legend.game.Scus94491BpeSegment_800b.projectionPlaneDistance_800bd810;
 import static legend.game.Scus94491BpeSegment_800b.rview2_800bd7e8;
+import static legend.game.Scus94491BpeSegment_800b.scriptStatePtrArr_800bc1c0;
 import static legend.game.Scus94491BpeSegment_800b.soundFiles_800bcf80;
 import static legend.game.Scus94491BpeSegment_800b.submapId_800bd808;
 import static legend.game.Scus94491BpeSegment_800c.worldToScreenMatrix_800c3548;
@@ -81,7 +83,20 @@ public class Submap3D extends Submap {
     this.linkedAssets = new ArrayList<>();
     this.linkedAssets.add(new LinkedAsset(9,0, 1));
 
-    this.scene = new Scene(Path.of("assets/submap/%s/map.glb".formatted(this.name)), collisionGeometry);
+    this.scene = new Scene(Path.of("assets/submap/%s".formatted(this.name)), collisionGeometry);
+
+    this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 60);
+  }
+
+  @Method(0x800e7418L)
+  private void updateRview2(final Vector3f viewpoint, final Vector3f refpoint, final int rotation, final int projectionDistance) {
+    this.rview2_800cbd10.viewpoint_00.set(viewpoint);
+    this.rview2_800cbd10.refpoint_0c.set(refpoint);
+    this.rview2_800cbd10.viewpointTwist_18 = (short)rotation << 12;
+    this.rview2_800cbd10.super_1c = null;
+    projectionPlaneDistance_800bd810 = projectionDistance;
+
+    this.updateCamera();
   }
 
   @Override
@@ -172,7 +187,14 @@ public class Submap3D extends Submap {
 
   @Override
   public void draw() {
-
+    if(scriptStatePtrArr_800bc1c0[10] != null) {
+      final SubmapObject210 sobj = (SubmapObject210)scriptStatePtrArr_800bc1c0[10].innerStruct_00;
+      final Vector3f from = new Vector3f();
+      final Vector3f to = new Vector3f();
+      sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, -48.0f), from);
+      sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, 0.0f), to);
+      this.updateRview2(from, to, 0, 60);
+    }
   }
 
   @Override

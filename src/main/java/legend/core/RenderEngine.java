@@ -263,7 +263,7 @@ public class RenderEngine {
 
   private Runnable renderCallback = () -> { };
 
-  private static final float MOVE_SPEED = 0.96f;
+  private static final float MOVE_SPEED = 0.04f;
   private static final float MOUSE_SPEED = 0.00175f;
 
   private float yaw;

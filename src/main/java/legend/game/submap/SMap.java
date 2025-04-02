@@ -688,7 +688,7 @@ public class SMap extends EngineState {
 
   @Override
   public RenderMode getRenderMode() {
-    return RenderMode.LEGACY;
+    return RenderMode.PERSPECTIVE;
   }
 
   @ScriptDescription("Adds a textbox to a submap object")
