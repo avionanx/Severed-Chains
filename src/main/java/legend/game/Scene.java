@@ -140,10 +140,13 @@ public class Scene {
       final AIMesh mesh = AIMesh.create(scene.mMeshes().get(meshPtr.get(i)));
 
       final AIVector3D.Buffer vertices = mesh.mVertices();
-
-      while(vertices.hasRemaining()) {
-        final var slice = vertices.get();
-        triangles.add(new Vector3f(slice.x() , slice.y(), slice.z()));
+      final AIFace.Buffer faces = mesh.mFaces();
+      while(faces.hasRemaining()) {
+        final var faceIndices = faces.get().mIndices();
+        while(faceIndices.hasRemaining()) {
+          final var vertexData = vertices.get(faceIndices.get());
+          triangles.add(new Vector3f(vertexData.x(), vertexData.y(), vertexData.z()));
+        }
       }
     }
     collisionGeometryPtr.triangles = triangles;
