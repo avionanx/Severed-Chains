@@ -85,7 +85,7 @@ public class Submap3D extends Submap {
 
     this.scene = new Scene(Path.of("assets/submap/%s".formatted(this.name)), collisionGeometry);
 
-    this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 60);
+    this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 48);
   }
 
   @Method(0x800e7418L)
@@ -191,9 +191,9 @@ public class Submap3D extends Submap {
       final SubmapObject210 sobj = (SubmapObject210)scriptStatePtrArr_800bc1c0[10].innerStruct_00;
       final Vector3f from = new Vector3f();
       final Vector3f to = new Vector3f();
-      sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, -48.0f), from);
+      sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, -72.0f), from);
       sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, 0.0f), to);
-      this.updateRview2(from, to, 0, 60);
+      this.updateRview2(from, to, 0, 48);
     }
   }
 
