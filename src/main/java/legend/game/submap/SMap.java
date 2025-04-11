@@ -239,7 +239,7 @@ public class SMap extends EngineState {
   private CountdownLatch geomOffsetLatch_800cbd3c;
   private final MV screenToWorldMatrix_800cbd40 = new MV();
 
-  private final RaycastedTrisCollisionGeometry collisionGeometry_800Cbe08 = new RaycastedTrisCollisionGeometry();
+  private CollisionGeometry collisionGeometry_800Cbe08;
 
   private SnowEffect snow_800d4bd8;
 
@@ -688,7 +688,7 @@ public class SMap extends EngineState {
 
   @Override
   public RenderMode getRenderMode() {
-    return RenderMode.PERSPECTIVE;
+    return RenderMode.LEGACY;
   }
 
   @ScriptDescription("Adds a textbox to a submap object")
@@ -3140,7 +3140,7 @@ public class SMap extends EngineState {
 
   @Method(0x800e2220L)
   private void unloadSmap() {
-    this.collisionGeometry_800Cbe08.unloadCollision();
+    //this.collisionGeometry_800Cbe08.unloadCollision();
     this.clearLatches();
 
     this.submapControllerState_800c6740.deallocateWithChildren();
@@ -3808,6 +3808,11 @@ public class SMap extends EngineState {
     //LAB_800e5ac4
     switch(this.smapLoadingStage_800cb430) {
       case INIT_0 -> {
+        if(submapCut_80052c30 >= 1000) {
+          this.collisionGeometry_800Cbe08 = new RaycastedTrisCollisionGeometry();
+        } else {
+          this.collisionGeometry_800Cbe08 = new RetailCollisionGeometry(this);
+        }
         vsyncMode_8007a3b8 = 1;
         SCRIPTS.setFramesPerTick(2);
 
@@ -3845,9 +3850,9 @@ public class SMap extends EngineState {
         this.currentSubmapScene_800caaf8 = submapScene_80052c34;
 
         if(submapCut_80052c30 >= 1000) {
-          this.submap = new Submap3D("debug", this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800Cbe08, 20);
+          this.submap = new Submap3D("debug", this.newrootPtr_800cab04, this.screenOffset_800cb568, (RaycastedTrisCollisionGeometry)this.collisionGeometry_800Cbe08 , 20);
         } else {
-          this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, this.collisionGeometry_800Cbe08);
+          this.submap = new RetailSubmap(submapCut_80052c30, this.newrootPtr_800cab04, this.screenOffset_800cb568, (RetailCollisionGeometry)this.collisionGeometry_800Cbe08);
         }
 
         this.smapLoadingStage_800cb430 = SubmapState.WAIT_FOR_ENVIRONMENT;
@@ -3855,6 +3860,12 @@ public class SMap extends EngineState {
       }
 
       case CHANGE_SUBMAP_4 -> {
+        this.collisionGeometry_800Cbe08.unloadCollision();
+        if(submapCut_80052c30 >= 1000) {
+          this.collisionGeometry_800Cbe08 = new RaycastedTrisCollisionGeometry();
+        } else {
+          this.collisionGeometry_800Cbe08 = new RetailCollisionGeometry(this);
+        }
         this.loadAndRenderSubmapModelAndEffects(this.currentSubmapScene_800caaf8, this.mapTransitionData_800cab24);
         this.smapLoadingStage_800cb430 = SubmapState.TRANSITION_TO_SUBMAP_17;
       }

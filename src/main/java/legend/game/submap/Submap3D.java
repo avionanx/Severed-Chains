@@ -5,6 +5,7 @@ import legend.core.gte.MV;
 import legend.core.memory.Method;
 import legend.core.memory.types.IntRef;
 import legend.core.opengl.TmdObjLoader;
+import legend.game.EngineState;
 import legend.game.Scene;
 import legend.game.scripting.ScriptFile;
 import legend.game.tim.Tim;
@@ -30,6 +31,7 @@ import java.util.Set;
 
 import static legend.core.GameEngine.AUDIO_THREAD;
 import static legend.core.GameEngine.GPU;
+import static legend.core.GameEngine.RENDERER;
 import static legend.game.Scus94491BpeSegment.loadDrgnFileSync;
 import static legend.game.Scus94491BpeSegment.loadMusicPackage;
 import static legend.game.Scus94491BpeSegment.loadSubmapSounds;
@@ -39,6 +41,7 @@ import static legend.game.Scus94491BpeSegment.stopCurrentMusicSequence;
 import static legend.game.Scus94491BpeSegment.unloadSoundFile;
 import static legend.game.Scus94491BpeSegment_8003.GsSetSmapRefView2L;
 import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
+import static legend.game.Scus94491BpeSegment_8004.renderMode;
 import static legend.game.Scus94491BpeSegment_8005.submapMusic_80050068;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Scus94491BpeSegment_800b.musicLoaded_800bd782;
@@ -86,6 +89,12 @@ public class Submap3D extends Submap {
     this.scene = new Scene(Path.of("assets/submap/%s".formatted(this.name)), collisionGeometry);
 
     this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 48);
+
+    if(renderMode != EngineState.RenderMode.PERSPECTIVE) {
+      renderMode = EngineState.RenderMode.PERSPECTIVE;
+      RENDERER.setRenderMode(renderMode);
+      RENDERER.updateProjections();
+    }
   }
 
   @Method(0x800e7418L)

@@ -12,12 +12,14 @@ import legend.core.gpu.VramTextureLoader;
 import legend.core.gpu.VramTextureSingle;
 import legend.core.gte.MV;
 import legend.core.gte.ModelPart10;
+import legend.core.gte.TmdWithId;
 import legend.core.memory.Method;
 import legend.core.memory.types.IntRef;
 import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.Texture;
 import legend.core.opengl.TmdObjLoader;
+import legend.game.EngineState;
 import legend.game.modding.events.submap.SubmapEncounterRateEvent;
 import legend.game.modding.events.submap.SubmapEnvironmentTextureEvent;
 import legend.game.modding.events.submap.SubmapGenerateEncounterEvent;
@@ -73,6 +75,8 @@ import static legend.game.Scus94491BpeSegment_8002.rand;
 import static legend.game.Scus94491BpeSegment_8003.GsGetLw;
 import static legend.game.Scus94491BpeSegment_8003.GsSetSmapRefView2L;
 import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
+import static legend.game.Scus94491BpeSegment_8004.currentEngineState_8004dd04;
+import static legend.game.Scus94491BpeSegment_8004.renderMode;
 import static legend.game.Scus94491BpeSegment_8005.collidedPrimitiveIndex_80052c38;
 import static legend.game.Scus94491BpeSegment_8005.submapCutBeforeBattle_80052c3c;
 import static legend.game.Scus94491BpeSegment_8005.submapEnvState_80052c44;
@@ -101,7 +105,7 @@ public class RetailSubmap extends Submap {
   public final int cut;
   private final NewRootStruct newRoot;
   private final Vector2f screenOffset;
-  private final CollisionGeometry retailCollisionGeometry;
+  private final RetailCollisionGeometry retailCollisionGeometry;
 
   private final List<Tim> pxls = new ArrayList<>();
 
@@ -156,7 +160,7 @@ public class RetailSubmap extends Submap {
   private Texture[] foregroundTextures;
   private final Int2ObjectMap<Consumer<Texture.Builder>> sobjTextureOverrides = new Int2ObjectOpenHashMap<>();
 
-  public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final CollisionGeometry retailCollisionGeometry) {
+  public RetailSubmap(final int cut, final NewRootStruct newRoot, final Vector2f screenOffset, final RetailCollisionGeometry retailCollisionGeometry) {
     this.cut = cut;
     this.newRoot = newRoot;
 
@@ -165,6 +169,12 @@ public class RetailSubmap extends Submap {
     this.retailCollisionGeometry = retailCollisionGeometry;
 
     this.loadCollisionAndTransitions();
+
+    if(renderMode != EngineState.RenderMode.LEGACY) {
+      renderMode = EngineState.RenderMode.LEGACY;
+      RENDERER.setRenderMode(currentEngineState_8004dd04.getRenderMode());
+      RENDERER.updateProjections();
+    }
   }
 
   @Override
@@ -668,14 +678,14 @@ public class RetailSubmap extends Submap {
 
     //LAB_800e5430
     this.loadEnvironment(new EnvironmentFile(files.get(0)));
-    //this.retailCollisionGeometry.loadCollision(new TmdWithId("Background " + mapName, files.get(2)), files.get(1));
+    this.retailCollisionGeometry.loadCollision(new TmdWithId("Background " + mapName, files.get(2)), files.get(1));
 
     submapEnvState_80052c44 = SubmapEnvState.CHECK_TRANSITIONS_1_2;
   }
 
   @Method(0x800e664cL)
   private void loadCollisionAndTransitions() {
-    //this.retailCollisionGeometry.clearCollisionAndTransitionInfo();
+    this.retailCollisionGeometry.clearCollisionAndTransitionInfo();
 
     final SubmapCutInfo entry = this.newRoot.submapCutInfo_0000[this.cut];
     final short offset = entry.collisionAndTransitionOffset_04;
