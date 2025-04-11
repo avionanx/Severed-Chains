@@ -88,7 +88,7 @@ public class Submap3D extends Submap {
 
     this.scene = new Scene(Path.of("assets/submap/%s".formatted(this.name)), collisionGeometry);
 
-    this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 48);
+    this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 40);
 
     if(renderMode != EngineState.RenderMode.PERSPECTIVE) {
       renderMode = EngineState.RenderMode.PERSPECTIVE;
@@ -191,7 +191,9 @@ public class Submap3D extends Submap {
   @Override
   @Method(0x800ea974L)
   public void loadMapTransitionData(final MapTransitionData4c transitionData) {
-
+    // map transitions should not be embedded in model data, that is goofy
+    transitionData.clear();
+    transitionData.collidedPrimitiveSetterCallback_48 = (var u1, var u2) -> {};
   }
 
   @Override
@@ -202,7 +204,7 @@ public class Submap3D extends Submap {
       final Vector3f to = new Vector3f();
       sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, -72.0f), from);
       sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, 0.0f), to);
-      this.updateRview2(from, to, 0, 48);
+      this.updateRview2(from, to, 0, 40);
     }
   }
 

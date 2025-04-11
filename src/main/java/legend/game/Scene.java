@@ -158,7 +158,7 @@ public class Scene {
         }
       }
     }
-    collisionGeometryPtr.triangles = triangles;
+    collisionGeometryPtr.vertices = triangles;
   }
   public void render() {
     for(int i = 0; i < this.objects.size(); i++) {

@@ -13,7 +13,7 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
   private final Vector3f cachedPlayerMovement_800cbd98 = new Vector3f();
   private int collidedPrimitiveIndex_800cbd94;
 
-  public ArrayList<Vector3f> triangles = new ArrayList<>();
+  public ArrayList<Vector3f> vertices = new ArrayList<>();
 
   @Override
   public int checkCollision(boolean isNpc, Vector3f position, Vector3f movement, boolean updatePlayerRotationInterpolation) {
@@ -47,7 +47,7 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
 
   @Override
   public void getMiddleOfCollisionPrimitive(int primitiveIndex, Vector3f out) {
-    //new Vector3f(this.triangles[primitiveIndex][0]).add(this.triangles[primitiveIndex][1]).add(this.triangles[primitiveIndex][2]).div(3.0f, out);
+    new Vector3f(this.vertices.get(primitiveIndex * 3)).add(this.vertices.get(primitiveIndex * 3 + 1)).add(this.vertices.get(primitiveIndex * 3 + 2)).div(3.0f, out);
   }
 
   @Override
@@ -120,8 +120,8 @@ public class RaycastedTrisCollisionGeometry extends CollisionGeometry {
     float min = Float.MAX_VALUE;
     int index = -1;
 
-    for(int i = 0; i < this.triangles.size(); i += 3) {
-      final Vector3f point = this.triangleIntersection(origin, target, this.triangles.get(i), this.triangles.get(i + 1), this.triangles.get(i + 2));
+    for(int i = 0; i < this.vertices.size(); i += 3) {
+      final Vector3f point = this.triangleIntersection(origin, target, this.vertices.get(i), this.vertices.get(i + 1), this.vertices.get(i + 2));
       if(point != null){
         final float distance = point.distance(origin);
         if(distance < min) {
