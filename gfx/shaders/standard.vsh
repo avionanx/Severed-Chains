@@ -44,7 +44,7 @@ layout(std140) uniform transforms2 {
 
 layout(std140) uniform projectionInfo {
   float znear;
-  /** PS1 projection plane distance (H) */
+  /** PS1 projection plane distance (H) when in PS1 perspective mode */
   float zfar;
   float zdiffInv;
   /** 0: ortho, 1: PS1 perspective, 2: modern perspective */
