@@ -1,7 +1,6 @@
 package legend.game;
 
 import legend.core.QueuedModelStandard;
-import legend.core.QueuedModelTmd;
 import legend.core.gpu.Bpp;
 import legend.core.gte.MV;
 import legend.core.opengl.MeshObj;
@@ -18,8 +17,6 @@ import java.nio.file.Path;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.GTE;
 import static legend.core.GameEngine.RENDERER;
-import static legend.game.Scus94491BpeSegment_800c.lightColourMatrix_800c3508;
-import static legend.game.Scus94491BpeSegment_800c.lightDirectionMatrix_800c34e8;
 import static org.lwjgl.opengl.GL11C.GL_TRIANGLES;
 
 public class Sky {
