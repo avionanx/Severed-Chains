@@ -3215,11 +3215,21 @@ public class WMap extends EngineState {
       if(mag == 0.0f && autoRun != runHeld || mag >= 0.75f) { // World Map Running
         //LAB_800e11d0
         modelAndAnimData.currAnimIndex_b0 = 4;
-        this.handleEncounters(mode.worldMapRunModifier);
+
+        if(mag != 0.0f) {
+          this.handleEncounters(mode.worldMapRunModifier * mag);
+        } else {
+          this.handleEncounters(mode.worldMapRunModifier);
+        }
       } else {
         //LAB_800e11f4
         modelAndAnimData.currAnimIndex_b0 = 3;
-        this.handleEncounters(mode.worldMapWalkModifier);
+
+        if(mag != 0.0f) {
+          this.handleEncounters(mode.worldMapRunModifier * mag);
+        } else {
+          this.handleEncounters(mode.worldMapWalkModifier);
+        }
       }
 
       //LAB_800e1210
@@ -4088,10 +4098,10 @@ public class WMap extends EngineState {
             locations_800f0e34[this.mapState_800c6798.locationIndex_10].thumbnailShouldUseFullBrightness_10
         ) {
           //LAB_800e5e98
-          newBrightness = currentBrightness * 0.5f;
+          newBrightness = currentBrightness;
         } else {
           //LAB_800e5e18
-          newBrightness = currentBrightness * 0.1875f;
+          newBrightness = currentBrightness * 0.375f;
         }
 
         //LAB_800e5f04

@@ -1,5 +1,6 @@
 package legend.game;
 
+import legend.core.QueuedModelStandard;
 import legend.core.QueuedModelTmd;
 import legend.core.gpu.Bpp;
 import legend.core.gte.MV;
@@ -62,11 +63,8 @@ public class Sky {
   public void render() {
     MV mv = new MV();
     mv.scaling(18000.0f, 12000.0f, 18000.0f);
-    RENDERER.queueModel(this.mesh, mv, QueuedModelTmd.class)
+    RENDERER.queueModel(this.mesh, mv, QueuedModelStandard.class)
       .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
-      .lightDirection(lightDirectionMatrix_800c34e8)
-      .lightColour(lightColourMatrix_800c3508)
-      .backgroundColour(GTE.backgroundColour)
       .texture(this.skyTexture)
       ;
   }

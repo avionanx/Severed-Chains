@@ -63,7 +63,7 @@ public class Scene {
         if("$clr.diffuse".equals(property.mKey().dataString())) {
           final FloatBuffer colorBuffer = property.mData().asFloatBuffer();
           material3D.color = new Vector3f(colorBuffer.get(), colorBuffer.get(), colorBuffer.get());
-          material3D.color.div(2.0f);
+          //material3D.color.div(2.0f);
           material3D.alpha = colorBuffer.get();
         }
       }
