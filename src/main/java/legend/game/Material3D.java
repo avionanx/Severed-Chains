@@ -1,9 +1,15 @@
 package legend.game;
 
+import org.joml.Vector3f;
+
 public class Material3D {
 
   private boolean hasTexture;
   private int textureIndex;
+
+  public Vector3f color;
+  public float alpha;
+
   public Material3D() {}
 
   public Material3D setTexture(final int index) {

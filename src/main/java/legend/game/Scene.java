@@ -8,9 +8,9 @@ import legend.game.submap.RaycastedTrisCollisionGeometry;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.assimp.AIColor4D;
 import org.lwjgl.assimp.AIFace;
 import org.lwjgl.assimp.AIMaterial;
+import org.lwjgl.assimp.AIMaterialProperty;
 import org.lwjgl.assimp.AIMesh;
 import org.lwjgl.assimp.AINode;
 import org.lwjgl.assimp.AIScene;
@@ -21,6 +21,7 @@ import org.lwjgl.assimp.Assimp;
 import org.lwjgl.stb.STBImage;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,6 +57,18 @@ public class Scene {
         material3D.setTexture(textureIndex);
       }
       texturePath.free();
+      final PointerBuffer materialPropertyBuffer = material.mProperties();
+      while(materialPropertyBuffer.hasRemaining()) {
+        final AIMaterialProperty property = AIMaterialProperty.create(materialPropertyBuffer.get());
+        if("$clr.diffuse".equals(property.mKey().dataString())) {
+          final FloatBuffer colorBuffer = property.mData().asFloatBuffer();
+          material3D.color = new Vector3f(colorBuffer.get(), colorBuffer.get(), colorBuffer.get());
+          material3D.color.div(2.0f);
+          material3D.alpha = colorBuffer.get();
+        }
+      }
+
+
       this.materials.add(material3D);
     }
     this.loadSkybox(path.resolve("sky.png"));
@@ -64,17 +77,18 @@ public class Scene {
 
     for(int meshIndex = 0; meshIndex < scene.mNumMeshes(); meshIndex++) {
       final PolyBuilder builder = new PolyBuilder("MapBuilder", GL_TRIANGLES);
-      builder.bpp(Bpp.BITS_24);
-
       final Object3D object = new Object3D();
 
       final AIMesh mesh = AIMesh.create(scene.mMeshes().get(meshIndex));
       object.setMaterialIndex(mesh.mMaterialIndex());
 
+      if(this.materials.get(object.getMaterialIndex()).hasTexture()) {
+        builder.bpp(Bpp.BITS_24);
+      }
+
       final AIFace.Buffer faces = mesh.mFaces();
       final AIVector3D.Buffer vertices = mesh.mVertices();
       final AIVector3D.Buffer normals = mesh.mNormals();
-      final AIColor4D.Buffer colours = mesh.mColors(0);
       final AIVector3D.Buffer uvs = mesh.mTextureCoords(0);
 
       while(faces.hasRemaining()) {
@@ -87,15 +101,16 @@ public class Scene {
           builder.addVertex(vertex.x(), vertex.y(), vertex.z());
           builder.normal(normal.x(), normal.y(), normal.z());
           builder.disableBackfaceCulling();
-
+          builder.rgb(this.materials.get(object.getMaterialIndex()).color);
+          /*
           if(colours != null) {
             final AIColor4D colour = colours.get(vertexIndex);
             builder.rgb(colour.r() / 2, colour.g() / 2, colour.b() / 2);
           } else {
             builder.monochrome(0.5f);
           }
-
-          if(uvs != null) {
+          */
+          if(this.materials.get(object.getMaterialIndex()).hasTexture() && uvs != null) {
             final AIVector3D uv = uvs.get(vertexIndex);
             builder.uv(uv.x(), uv.y());
           }
@@ -161,15 +176,15 @@ public class Scene {
     collisionGeometryPtr.vertices = triangles;
   }
   public void render() {
-    for(int i = 0; i < this.objects.size(); i++) {
-      final var queued = RENDERER.queueModel(this.objects.get(i).getMesh(), QueuedModelTmd.class)
+    for(final Object3D object3D : this.objects) {
+      final var queued = RENDERER.queueModel(object3D.getMesh(), QueuedModelTmd.class)
         .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
         .lightDirection(lightDirectionMatrix_800c34e8)
         .lightColour(lightColourMatrix_800c3508)
         .backgroundColour(GTE.backgroundColour)
       ;
-      if(this.materials.get(this.objects.get(i).getMaterialIndex()).hasTexture()) {
-        queued.texture(this.textures.get(this.materials.get(this.objects.get(i).getMaterialIndex()).getTextureIndex()));
+      if(this.materials.get(object3D.getMaterialIndex()).hasTexture()) {
+        queued.texture(this.textures.get(this.materials.get(object3D.getMaterialIndex()).getTextureIndex()));
       }
     }
     this.sky.render();

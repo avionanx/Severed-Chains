@@ -48,7 +48,6 @@ import static legend.game.Scus94491BpeSegment_800b.musicLoaded_800bd782;
 import static legend.game.Scus94491BpeSegment_800b.previousSubmapCut_800bda08;
 import static legend.game.Scus94491BpeSegment_800b.projectionPlaneDistance_800bd810;
 import static legend.game.Scus94491BpeSegment_800b.rview2_800bd7e8;
-import static legend.game.Scus94491BpeSegment_800b.scriptStatePtrArr_800bc1c0;
 import static legend.game.Scus94491BpeSegment_800b.soundFiles_800bcf80;
 import static legend.game.Scus94491BpeSegment_800b.submapId_800bd808;
 import static legend.game.Scus94491BpeSegment_800c.worldToScreenMatrix_800c3548;
@@ -198,6 +197,7 @@ public class Submap3D extends Submap {
 
   @Override
   public void draw() {
+    /*
     if(scriptStatePtrArr_800bc1c0[10] != null) {
       final SubmapObject210 sobj = (SubmapObject210)scriptStatePtrArr_800bc1c0[10].innerStruct_00;
       final Vector3f from = new Vector3f();
@@ -206,6 +206,7 @@ public class Submap3D extends Submap {
       sobj.model_00.coord2_14.coord.transfer.add(new Vector3f(48.0f, -72.0f, 0.0f), to);
       this.updateRview2(from, to, 0, 40);
     }
+    */
   }
 
   @Override
