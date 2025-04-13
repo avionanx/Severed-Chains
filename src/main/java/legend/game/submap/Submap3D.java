@@ -87,7 +87,7 @@ public class Submap3D extends Submap {
 
     this.scene = new Scene(Path.of("assets/submap/%s".formatted(this.name)), collisionGeometry);
 
-    this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 40);
+    //this.updateRview2(new Vector3f(0.0f, 0.0f, 16.0f), new Vector3f(0.0f, 0.0f, 8.0f), 0, 30);
 
     if(renderMode != EngineState.RenderMode.PERSPECTIVE) {
       renderMode = EngineState.RenderMode.PERSPECTIVE;

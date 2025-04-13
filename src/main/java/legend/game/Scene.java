@@ -63,7 +63,6 @@ public class Scene {
         if("$clr.diffuse".equals(property.mKey().dataString())) {
           final FloatBuffer colorBuffer = property.mData().asFloatBuffer();
           material3D.color = new Vector3f(colorBuffer.get(), colorBuffer.get(), colorBuffer.get());
-          //material3D.color.div(2.0f);
           material3D.alpha = colorBuffer.get();
         }
       }
@@ -100,16 +99,8 @@ public class Scene {
           final AIVector3D normal = normals.get(vertexIndex);
           builder.addVertex(vertex.x(), vertex.y(), vertex.z());
           builder.normal(normal.x(), normal.y(), normal.z());
-          builder.disableBackfaceCulling();
           builder.rgb(this.materials.get(object.getMaterialIndex()).color);
-          /*
-          if(colours != null) {
-            final AIColor4D colour = colours.get(vertexIndex);
-            builder.rgb(colour.r() / 2, colour.g() / 2, colour.b() / 2);
-          } else {
-            builder.monochrome(0.5f);
-          }
-          */
+
           if(this.materials.get(object.getMaterialIndex()).hasTexture() && uvs != null) {
             final AIVector3D uv = uvs.get(vertexIndex);
             builder.uv(uv.x(), uv.y());

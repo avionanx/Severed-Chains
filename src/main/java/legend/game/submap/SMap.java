@@ -46,6 +46,7 @@ import legend.game.types.CContainer;
 import legend.game.types.CharacterData2c;
 import legend.game.types.GameState52c;
 import legend.game.types.GsF_LIGHT;
+import legend.game.types.GsRVIEW2;
 import legend.game.types.LodString;
 import legend.game.types.Model124;
 import legend.game.types.NewRootStruct;
@@ -115,10 +116,12 @@ import static legend.game.Scus94491BpeSegment_8003.GsGetLw;
 import static legend.game.Scus94491BpeSegment_8003.GsGetLws;
 import static legend.game.Scus94491BpeSegment_8003.GsInitCoordinate2;
 import static legend.game.Scus94491BpeSegment_8003.GsSetFlatLight;
+import static legend.game.Scus94491BpeSegment_8003.GsSetSmapRefView2L;
 import static legend.game.Scus94491BpeSegment_8003.PopMatrix;
 import static legend.game.Scus94491BpeSegment_8003.PushMatrix;
 import static legend.game.Scus94491BpeSegment_8003.RotTransPers4;
 import static legend.game.Scus94491BpeSegment_8003.perspectiveTransform;
+import static legend.game.Scus94491BpeSegment_8003.setProjectionPlaneDistance;
 import static legend.game.Scus94491BpeSegment_8004.engineStateOnceLoaded_8004dd24;
 import static legend.game.Scus94491BpeSegment_8004.engineState_8004dd20;
 import static legend.game.Scus94491BpeSegment_8005.collidedPrimitiveIndex_80052c38;
@@ -140,6 +143,7 @@ import static legend.game.Scus94491BpeSegment_800b.loadingNewGameState_800bdc34;
 import static legend.game.Scus94491BpeSegment_800b.musicLoaded_800bd782;
 import static legend.game.Scus94491BpeSegment_800b.playerPositionBeforeBattle_800bed30;
 import static legend.game.Scus94491BpeSegment_800b.pregameLoadingStage_800bb10c;
+import static legend.game.Scus94491BpeSegment_800b.projectionPlaneDistance_800bd810;
 import static legend.game.Scus94491BpeSegment_800b.rview2_800bd7e8;
 import static legend.game.Scus94491BpeSegment_800b.screenOffsetBeforeBattle_800bed50;
 import static legend.game.Scus94491BpeSegment_800b.scriptStatePtrArr_800bc1c0;
@@ -684,9 +688,54 @@ public class SMap extends EngineState {
     functions[788] = this::FUN_800f2554;
     functions[789] = this::scriptDeallocateLawPodTrail;
     functions[790] = this::scriptAllocateUnusedSmokeEffectData;
+    functions[800] = this::scriptSetCameraModeFixed;
+    functions[801] = this::scriptSetCameraModeTrack;
+    functions[802] = this::scriptSetCameraModeFollow;
     return functions;
   }
 
+  private FlowControl scriptSetCameraModeFollow(final RunningScript runningScript) {
+    return FlowControl.CONTINUE;
+  }
+
+  private FlowControl scriptSetCameraModeTrack(final RunningScript runningScript) {
+    return FlowControl.CONTINUE;
+  }
+  @ScriptDescription("Fixed location/rotation")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "x0", description = "From X0")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "y0", description = "From Y0")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "z0", description = "From Z0")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "x1", description = "To X1")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "y1", description = "To Y1")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "z1", description = "To Z1")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "rotation", description = "Rotation degrees")
+  @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "projectionDistance", description = "Projection plane distance")
+  private FlowControl scriptSetCameraModeFixed(final RunningScript<?> script) {
+    final int projectionDistance = script.params_20[7].get();
+    if(projectionDistance > 0) {
+      projectionPlaneDistance_800bd810 = projectionDistance;
+      setProjectionPlaneDistance(projectionPlaneDistance_800bd810);
+    }
+    final GsRVIEW2 view = new GsRVIEW2();
+    view.viewpoint_00.set(script.params_20[0].get(), script.params_20[1].get(), script.params_20[2].get());
+    view.refpoint_0c.set(script.params_20[3].get(), script.params_20[4].get(), script.params_20[5].get());
+    view.super_1c = null;
+    view.viewpointTwist_18 = script.params_20[6].get();
+    GsSetSmapRefView2L(view);
+    this.clearSmallValuesFromMatrix(worldToScreenMatrix_800c3548);
+    rview2_800bd7e8.set(view);
+    worldToScreenMatrix_800c3548.transpose(this.screenToWorldMatrix_800cbd40);
+    return FlowControl.CONTINUE;
+  }
+  private void clearSmallValuesFromMatrix(final MV matrix) {
+    for(int x = 0; x < 3; x++) {
+      for(int y = 0; y < 3; y++) {
+        if(Math.abs(matrix.get(x, y)) < 0.015625f) {
+          matrix.set(x, y, 0.0f);
+        }
+      }
+    }
+  }
   @Override
   public RenderMode getRenderMode() {
     return RenderMode.LEGACY;

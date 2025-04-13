@@ -109,7 +109,7 @@ public class RenderBatch {
   }
 
   public void updateFieldOfView() {
-    this.aspectRatio = 320.0f / this.nativeHeight;
+    this.aspectRatio = 1.777f;//320.0f / this.nativeHeight;
     final float halfWidth = this.nativeWidth / 2.0f;
     this.fieldOfView = (float)(Math.atan(halfWidth / this.projectionDepth) * 2.0f / this.aspectRatio);
     this.updateProjections();
