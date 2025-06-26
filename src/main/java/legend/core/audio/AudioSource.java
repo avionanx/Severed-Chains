@@ -3,6 +3,7 @@ package legend.core.audio;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.IntBuffer;
+import java.util.Arrays;
 
 import static org.lwjgl.openal.AL10.AL_BUFFERS_PROCESSED;
 import static org.lwjgl.openal.AL10.AL_PLAYING;
@@ -26,75 +27,25 @@ public abstract class AudioSource {
 
   private boolean playing;
 
-  private final IntBuffer tmp = MemoryUtil.memAllocInt(1);
+  private IntBuffer tmp;
 
   public AudioSource(final int bufferCount) {
     this.buffers = new int[bufferCount];
-    this.init();
   }
 
-  void init() {
+  protected boolean isInitialized() {
+    return this.sourceId != 0;
+  }
+
+  protected void init() {
     this.sourceId = alGenSources();
+    this.tmp = MemoryUtil.memAllocInt(1);
 
     alGenBuffers(this.buffers);
     this.bufferIndex = this.buffers.length - 1;
   }
 
-  public void tick() {
-    // Restart playback if stopped
-    if(this.isPlaying()) {
-      this.play();
-    }
-  }
-
-  public boolean canBuffer() {
-    if(!this.playing) {
-      return false;
-    }
-
-    return this.bufferIndex >= 0;
-  }
-
-  public void handleProcessedBuffers() {
-    if(this.bufferIndex < this.buffers.length - 1) {
-      alGetSourcei(this.sourceId, AL_BUFFERS_PROCESSED, this.tmp);
-      final int processedBufferCount = this.tmp.get(0);
-
-      for(int buffer = 0; buffer < processedBufferCount; buffer++) {
-        this.buffers[++this.bufferIndex] = alSourceUnqueueBuffers(this.sourceId);
-      }
-    }
-  }
-
-  protected void bufferOutput(final int format, final short[] buffer, final int sampleRate) {
-    synchronized(this) {
-      final int bufferId = this.buffers[this.bufferIndex--];
-      alBufferData(bufferId, format, buffer, sampleRate);
-      alSourceQueueBuffers(this.sourceId, bufferId);
-    }
-  }
-
-  protected void play() {
-    alGetSourcei(this.sourceId, AL_SOURCE_STATE, this.tmp);
-    if(this.tmp.get(0) != AL_PLAYING) {
-      alSourcePlay(this.sourceId);
-    }
-  }
-
-  protected void stop() {
-    this.playing = false;
-    alSourceStop(this.sourceId);
-  }
-
-  protected void setPlaying(final boolean playing) {
-    this.playing = playing;
-  }
-
-  public boolean isPlaying() {
-    return this.playing;
-  }
-
-  public void destroy() {
+  protected void destroy() {
     this.playing = false;
     alSourceStop(this.sourceId);
 
@@ -110,6 +61,69 @@ public abstract class AudioSource {
     alDeleteSources(this.sourceId);
 
     memFree(this.tmp);
+
+    Arrays.fill(this.buffers, 0);
+    this.sourceId = 0;
+    this.tmp = null;
+  }
+
+  public void tick() {
+    // Restart playback if stopped
+    if(this.isPlaying()) {
+      this.play();
+    }
+  }
+
+  public boolean canBuffer() {
+    if(!this.playing || !this.isInitialized()) {
+      return false;
+    }
+
+    return this.bufferIndex >= 0;
+  }
+
+  protected void handleProcessedBuffers() {
+    if(this.bufferIndex < this.buffers.length - 1) {
+      alGetSourcei(this.sourceId, AL_BUFFERS_PROCESSED, this.tmp);
+      final int processedBufferCount = this.tmp.get(0);
+
+      for(int buffer = 0; buffer < processedBufferCount; buffer++) {
+        this.buffers[++this.bufferIndex] = alSourceUnqueueBuffers(this.sourceId);
+      }
+    }
+  }
+
+  protected void bufferOutput(final int format, final short[] buffer, final int sampleRate) {
+    synchronized(this) {
+      if(this.bufferIndex >= 0) {
+        final int bufferId = this.buffers[this.bufferIndex--];
+        alBufferData(bufferId, format, buffer, sampleRate);
+        alSourceQueueBuffers(this.sourceId, bufferId);
+      }
+    }
+  }
+
+  protected void play() {
+    alGetSourcei(this.sourceId, AL_SOURCE_STATE, this.tmp);
+    if(this.tmp.get(0) != AL_PLAYING) {
+      alSourcePlay(this.sourceId);
+    }
+  }
+
+  protected void stop() {
+    this.playing = false;
+
+    if(this.isInitialized()) {
+      alSourceStop(this.sourceId);
+    }
+  }
+
+  protected void setPlaying(final boolean playing) {
+    this.playing = playing;
+  }
+
+  public boolean isPlaying() {
+    return this.playing;
   }
 
   protected void resetBuffers() {

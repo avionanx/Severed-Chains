@@ -19,9 +19,6 @@ import java.nio.file.Path;
 
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.IoHelper.intsToBytes;
-import static legend.game.Scus94491BpeSegment_800b.input_800bee90;
-import static legend.game.Scus94491BpeSegment_800b.press_800bee94;
-import static legend.game.Scus94491BpeSegment_800b.repeat_800bee98;
 import static legend.game.Scus94491BpeSegment_800b.scriptStatePtrArr_800bc1c0;
 
 public class ScriptManager {
@@ -40,30 +37,19 @@ public class ScriptManager {
   private int framesPerTick;
   private int currentTicks;
 
-  /** Accumulates joypad input on script engine off frames */
-  public int joypadInput;
-  /** Accumulates joypad press on script engine off frames */
-  public int joypadPress;
-  /** Accumulates joypad repeat on script engine off frames */
-  public int joypadRepeat;
-
   public ScriptManager(final Path patchDir) {
     this.patchDir = patchDir;
   }
 
+  public boolean willTick() {
+    return this.currentTicks == 0;
+  }
+
   public boolean tick() {
     boolean ticked = false;
-    this.joypadInput |= input_800bee90;
-    this.joypadPress |= press_800bee94;
-    this.joypadRepeat |= repeat_800bee98;
 
     if(this.currentTicks == 0) {
       this.executeScriptFrame();
-
-      this.joypadInput = 0;
-      this.joypadPress = 0;
-      this.joypadRepeat = 0;
-
       ticked = true;
     }
 
@@ -145,7 +131,7 @@ public class ScriptManager {
     return scriptStatePtrArr_800bc1c0[index];
   }
 
-  public <T> ScriptState<T> getState(final int index, final Class<T> type) {
+  public <T extends ScriptedObject> ScriptState<T> getState(final int index, final Class<T> type) {
     if(index == -1) {
       return null;
     }
@@ -161,11 +147,11 @@ public class ScriptManager {
     return type.cast(scriptStatePtrArr_800bc1c0[index].innerStruct_00);
   }
 
-  public <T> ScriptState<T> allocateScriptState(final String name, @Nullable final T type) {
+  public <T extends ScriptedObject> ScriptState<T> allocateScriptState(final String name, @Nullable final T type) {
     return this.allocateScriptState(this.findFreeScriptState(), name, type);
   }
 
-  public <T> ScriptState<T> allocateScriptState(final int index, final String name, @Nullable final T type) {
+  public <T extends ScriptedObject> ScriptState<T> allocateScriptState(final int index, final String name, @Nullable final T type) {
     LOGGER.info(SCRIPT_MARKER, "Allocating script index %d (%s)", index, name);
 
     final ScriptState<T> scriptState = new ScriptState<>(this, index, name, type);

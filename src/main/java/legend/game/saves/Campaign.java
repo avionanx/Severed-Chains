@@ -19,7 +19,7 @@ public final class Campaign {
   private static final Logger LOGGER = LogManager.getFormatterLogger(Campaign.class);
 
   private final SaveManager manager;
-  private final ConfigCollection config = new ConfigCollection();
+  public final ConfigCollection config = new ConfigCollection();
   public final Path path;
   public final String name;
   public final SavedGame latestSave;
@@ -60,6 +60,10 @@ public final class Campaign {
 
   public boolean exists() {
     return Files.exists(this.path);
+  }
+
+  public boolean hasSave() {
+    return this.latestSave != null;
   }
 
   public boolean saveExists(final String saveName) {

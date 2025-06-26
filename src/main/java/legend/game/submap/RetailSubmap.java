@@ -2,6 +2,7 @@ package legend.game.submap;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import legend.core.Config;
 import legend.core.QueuedModel;
 import legend.core.QueuedModelStandard;
 import legend.core.QueuedModelTmd;
@@ -32,7 +33,7 @@ import legend.game.types.MoonMusic08;
 import legend.game.types.NewRootStruct;
 import legend.game.types.TmdAnimationFile;
 import legend.game.unpacker.FileData;
-import legend.game.unpacker.Unpacker;
+import legend.game.unpacker.Loader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joml.Math;
@@ -50,6 +51,7 @@ import java.util.function.Consumer;
 
 import static legend.core.Async.allLoaded;
 import static legend.core.GameEngine.AUDIO_THREAD;
+import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GPU;
 import static legend.core.GameEngine.GTE;
@@ -90,6 +92,7 @@ import static legend.game.Scus94491BpeSegment_800b.submapId_800bd808;
 import static legend.game.Scus94491BpeSegment_800c.lightColourMatrix_800c3508;
 import static legend.game.Scus94491BpeSegment_800c.lightDirectionMatrix_800c34e8;
 import static legend.game.Scus94491BpeSegment_800c.worldToScreenMatrix_800c3548;
+import static legend.game.modding.coremod.CoreMod.REDUCE_MOTION_FLASHING_CONFIG;
 import static org.lwjgl.opengl.GL11C.GL_RGBA;
 import static org.lwjgl.opengl.GL12C.GL_UNSIGNED_INT_8_8_8_8_REV;
 
@@ -214,7 +217,7 @@ public class RetailSubmap extends Submap {
 
       loadDrgnDir(drgnIndex.get() + 2, fileIndex.get() + 1, files -> allLoaded(assetsCount, 3, () -> assets.addAll(files), prepareSobjsAndComplete));
       loadDrgnDir(drgnIndex.get() + 2, fileIndex.get() + 2, files -> allLoaded(assetsCount, 3, () -> scripts.addAll(files), prepareSobjsAndComplete));
-      Unpacker.loadDirectory("SECT/DRGN" + (20 + drgnIndex.get()) + ".BIN/" + (fileIndex.get() + 1) + "/textures", files -> allLoaded(assetsCount, 3, () -> textures.addAll(files), prepareSobjsAndComplete));
+      Loader.loadDirectory("SECT/DRGN" + (20 + drgnIndex.get()) + ".BIN/" + (fileIndex.get() + 1) + "/textures", files -> allLoaded(assetsCount, 3, () -> textures.addAll(files), prepareSobjsAndComplete));
 
       // Load 3D overlay
       if(cutFileIndex != 0) {
@@ -408,15 +411,26 @@ public class RetailSubmap extends Submap {
   }
 
   @Override
-  public void generateEncounter() {
+  public void prepareEncounter(final int encounterId, final boolean useBattleStage) {
     final var sceneId = encounterData_800f64c4[this.cut].scene_00;
     final var scene = sceneEncounterIds_800f74c4[sceneId];
-    final var encounterId = scene[this.randomEncounterIndex()];
-    final var battleStageId = encounterData_800f64c4[this.cut].stage_03;
+    final var battleStageId = useBattleStage ? battleStage_800bb0f4 : encounterData_800f64c4[this.cut].stage_03;
 
     final var generateEncounterEvent = EVENTS.postEvent(new SubmapGenerateEncounterEvent(encounterId, battleStageId, this.cut, sceneId, scene));
     encounterId_800bb0f8 = generateEncounterEvent.encounterId;
     battleStage_800bb0f4 = generateEncounterEvent.battleStageId;
+
+    if(Config.combatStage()) {
+      battleStage_800bb0f4 = Config.getCombatStage();
+    }
+  }
+
+  @Override
+  public void prepareEncounter(final boolean useBattleStage) {
+    final var sceneId = encounterData_800f64c4[this.cut].scene_00;
+    final var scene = sceneEncounterIds_800f74c4[sceneId];
+    final var encounterId = scene[this.randomEncounterIndex()];
+    this.prepareEncounter(encounterId, useBattleStage);
   }
 
   @Override
@@ -1171,7 +1185,7 @@ public class RetailSubmap extends Submap {
         }
 
         //LAB_800e7d50
-        if(maxZ > metrics.z_20 || minZ < metrics.z_20) {
+        if(Math.round(maxZ) > metrics.z_20 || Math.round(minZ) < metrics.z_20) {
           //LAB_800e7d64
           envZs[i] = (maxZ + minZ) / 2;
         } else {
@@ -1310,7 +1324,11 @@ public class RetailSubmap extends Submap {
     this.submapModel_800d4bf8.coord2_14.transforms.rotate.zero();
 
     applyModelRotationAndScale(this.submapModel_800d4bf8);
-    animateModel(this.submapModel_800d4bf8, 4 / vsyncMode_8007a3b8);
+
+    if(!CONFIG.getConfig(REDUCE_MOTION_FLASHING_CONFIG.get())) {
+      animateModel(this.submapModel_800d4bf8, 4 / vsyncMode_8007a3b8);
+    }
+
     this.renderSubmapModel(this.submapModel_800d4bf8, matrix);
   }
 
@@ -1329,7 +1347,7 @@ public class RetailSubmap extends Submap {
 
       RENDERER.queueModel(dobj2.obj, matrix, lw, QueuedModelTmd.class)
         .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
-        .depthOffset(model.zOffset_a0)
+        .depthOffset(model.zOffset_a0 * 4)
         .lightDirection(lightDirectionMatrix_800c34e8)
         .lightColour(lightColourMatrix_800c3508)
         .backgroundColour(GTE.backgroundColour)
@@ -1416,7 +1434,7 @@ public class RetailSubmap extends Submap {
     }
 
     //LAB_8001c7ec
-    if(AUDIO_THREAD.isMusicPlaying()) {
+    if(!AUDIO_THREAD.isMusicPlaying()) {
       return -2;
     }
 

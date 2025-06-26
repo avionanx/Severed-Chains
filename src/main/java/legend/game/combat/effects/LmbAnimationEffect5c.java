@@ -294,7 +294,7 @@ public class LmbAnimationEffect5c implements Effect<EffectManagerParams.AnimType
         this.lmbTransforms_10[i] = new LmbTransforms14().set(lmb.initialTransforms_10[i]);
         this.lmbTransforms_10[i + lmb.objectCount_04] = new LmbTransforms14().set(lmb.initialTransforms_10[i]);
       }
-    }    
+    }
   }
 
   @Override
@@ -311,7 +311,7 @@ public class LmbAnimationEffect5c implements Effect<EffectManagerParams.AnimType
       tmdGp0Tpage_1f8003ec = flags >>> 23 & 0x60; // tpage
       this.depthOffset = zOffset_1f8003e8 = manager.params_10.z_22;
       if((manager.params_10.flags_00 & 0x40) == 0) {
-        FUN_800e61e4(manager.params_10.colour_1c.x / 128.0f, manager.params_10.colour_1c.y / 128.0f, manager.params_10.colour_1c.z / 128.0f);
+        FUN_800e61e4((manager.params_10.colour_1c.x << 5) / (float)0x1000, (manager.params_10.colour_1c.y << 5) / (float)0x1000, (manager.params_10.colour_1c.z << 5) / (float)0x1000);
       }
 
       //LAB_80117ac0
@@ -631,7 +631,7 @@ public class LmbAnimationEffect5c implements Effect<EffectManagerParams.AnimType
     final LmbType2 lmb = (LmbType2)this.lmb_0c;
     final LmbTransforms14[] originalTransforms = lmb.initialTransforms_10;
     final int keyframeIndex = tickFip12 / 0x2000;
-    final float lerpScale = (tickFip12 & 0x1fff) / (float)0x2000; // mod(tick, 2) / 2
+    float lerpScale = (tickFip12 & 0x1fff) / (float)0x2000; // mod(tick, 2) / 2
     final LmbTransforms14[] transformsLo = this.lmbTransforms_10;
     final LmbTransforms14[] transformsHi = Arrays.copyOfRange(transformsLo, lmb.objectCount_04, transformsLo.length);
     final int nextKeyframeIndex = (keyframeIndex + 1) % lmb.keyframeCount_0a;
@@ -735,6 +735,11 @@ public class LmbAnimationEffect5c implements Effect<EffectManagerParams.AnimType
 
       //LAB_80117438
       if(nextKeyframeIndex == 0) {
+        // Lerp to end if LMB attachment was removed - no replaying
+        if(!manager.hasAttachment(5)) {
+          lerpScale = 1;
+        }
+
         //LAB_801176c0
         //LAB_801176e0
         for(int i = 0; i < lmb.objectCount_04; i++) {

@@ -14,22 +14,22 @@ import javax.annotation.Nullable;
 import java.nio.FloatBuffer;
 
 public class QueuedModelBattleTmd extends QueuedModel<ShaderOptionsBattleTmd, QueuedModelBattleTmd> implements LitModel {
-  final Shader.UniformBuffer vdfUniform;
-  final FloatBuffer vdfBuffer;
-  final Matrix4f lightTransforms = new Matrix4f();
-  final FloatBuffer lightingBuffer;
+  private final Shader.UniformBuffer vdfUniform;
+  private final FloatBuffer vdfBuffer;
+  private final Matrix4f lightTransforms = new Matrix4f();
+  private final FloatBuffer lightingBuffer;
 
-  final Matrix4f lightDirection = new Matrix4f();
-  final Matrix3f lightColour = new Matrix3f();
-  final Vector4f backgroundColour = new Vector4f();
-  boolean lightUsed;
+  private final Matrix4f lightDirection = new Matrix4f();
+  private final Matrix3f lightColour = new Matrix3f();
+  private final Vector4f backgroundColour = new Vector4f();
+  private boolean lightUsed;
 
   /** The untextured translucency override from the TMD header */
-  int tmdTranslucency;
+  private int tmdTranslucency;
 
-  int ctmdFlags;
-  final Vector3f battleColour = new Vector3f();
-  Vector3f[] vdf;
+  private int ctmdFlags;
+  private final Vector3f battleColour = new Vector3f();
+  private Vector3f[] vdf;
 
   public QueuedModelBattleTmd(final RenderBatch batch, final Shader<ShaderOptionsBattleTmd> shader, final ShaderOptionsBattleTmd shaderOptions, final Shader.UniformBuffer vdfUniform, final FloatBuffer vdfBuffer, final FloatBuffer lightingBuffer) {
     super(batch, shader, shaderOptions);
@@ -123,6 +123,11 @@ public class QueuedModelBattleTmd extends QueuedModel<ShaderOptionsBattleTmd, Qu
   }
 
   @Override
+  public boolean hasTranslucency(final int index) {
+    return super.hasTranslucency(index) || (this.ctmdFlags & 0x2) != 0;
+  }
+
+  @Override
   public void useShader(final int modelIndex, final int discardMode) {
     super.useShader(modelIndex, discardMode);
     this.shaderOptions.tmdTranslucency(this.tmdTranslucency);
@@ -155,6 +160,15 @@ public class QueuedModelBattleTmd extends QueuedModel<ShaderOptionsBattleTmd, Qu
   }
 
   @Override
+  public boolean shouldRender(@Nullable final Translucency translucency, final int layer) {
+    if(this.hasTranslucency(layer) && (!this.obj.hasTexture(layer) || this.isUniformLit())) {
+      return translucency != null && this.tmdTranslucency == translucency.ordinal();
+    }
+
+    return super.shouldRender(translucency, layer) || (this.ctmdFlags & 0x2) != 0 && translucency != null && this.tmdTranslucency == translucency.ordinal();
+  }
+
+  @Override
   void storeTransforms(final int modelIndex, final FloatBuffer transforms2Buffer) {
     super.storeTransforms(modelIndex, transforms2Buffer);
 
@@ -166,14 +180,14 @@ public class QueuedModelBattleTmd extends QueuedModel<ShaderOptionsBattleTmd, Qu
   }
 
   @Override
-  void render(@Nullable final Translucency translucency) {
-    if(this.isTranslucent() || this.obj.hasTranslucency() && (!this.obj.hasTexture() || this.isUniformLit())) {
+  void render(@Nullable final Translucency translucency, final int layer) {
+    if(this.isTranslucent() || this.obj.hasTranslucency(layer) && (!this.obj.hasTexture(layer) || this.isUniformLit())) {
       // Translucency override
       this.updateColours(translucency);
-      this.obj.render(this.startVertex, this.vertexCount);
+      this.obj.render(layer, this.startVertex, this.vertexCount);
       return;
     }
 
-    super.render(translucency);
+    super.render(translucency, layer);
   }
 }

@@ -104,6 +104,7 @@ public class BattleMenuStruct58 {
   public int cameraPositionSwitchTicksRemaining_44;
   public int target_48;
   public boolean displayTargetArrowAndName_4c;
+  public boolean targetArrowHiding;
   public int targetType_50;
   public int combatantIndex_54;
 
@@ -233,8 +234,9 @@ public class BattleMenuStruct58 {
           .add()
           .bpp(Bpp.BITS_4)
           .vramPos(704, 256)
-          .monochrome(0.5f)
-          .size(16, 24)
+          .monochrome(1.0f)
+          .posSize(16, 24)
+          .uvSize(16, 23)
           .uv(240, 0);
 
         if(i == 0) {

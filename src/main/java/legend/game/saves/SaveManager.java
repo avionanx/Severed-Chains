@@ -3,13 +3,13 @@ package legend.game.saves;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import legend.core.IoHelper;
+import legend.core.memory.types.IntRef;
 import legend.game.EngineStateEnum;
 import legend.game.inventory.WhichMenu;
-import legend.game.modding.coremod.CoreMod;
 import legend.game.types.ActiveStatsa0;
 import legend.game.types.GameState52c;
+import legend.game.unpacker.ExpandableFileData;
 import legend.game.unpacker.FileData;
-import legend.lodmod.LodMod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -69,12 +69,12 @@ public final class SaveManager {
   }
 
   public String generateCampaignName() {
-    if(!Files.exists(this.dir.resolve("New Campaign"))) {
+    if(!Files.exists(this.dir.resolve(IoHelper.slugName("New Campaign")))) {
       return "New Campaign";
     }
 
     for(int i = 2; ; i++) {
-      if(!Files.exists(this.dir.resolve("New Campaign " + i))) {
+      if(!Files.exists(this.dir.resolve(IoHelper.slugName("New Campaign " + i)))) {
         return "New Campaign " + i;
       }
     }
@@ -84,8 +84,9 @@ public final class SaveManager {
     return this.dir.resolve(path);
   }
 
+  /** Checks if a campaign exists and has at least one valid save */
   public boolean campaignExists(final String campaign) {
-    return Files.exists(this.dir.resolve(IoHelper.slugName(campaign)));
+    return Campaign.load(this, this.dir.resolve(IoHelper.slugName(campaign))).hasSave();
   }
 
   private static final Pattern SAVE_NUMBER_PATTERN = Pattern.compile("^(.+?)\\s(\\d+)$");
@@ -194,7 +195,7 @@ public final class SaveManager {
     if(!memcards.isEmpty()) {
       LOGGER.info("Converting memcards to campaign");
 
-      bootMods(Set.of(CoreMod.MOD_ID, LodMod.MOD_ID));
+      bootMods(Set.of());
       bootRegistries();
 
       final Campaign campaign = Campaign.create(this, campaignName);
@@ -326,14 +327,15 @@ public final class SaveManager {
     try {
       ConfigStorage.saveConfig(CONFIG, ConfigStorageLocation.CAMPAIGN, gameState_800babc8.campaign.path.resolve("campaign_config.dcnf"));
 
-      final FileData data = new FileData(new byte[0x4000]); // Lots of extra space
-      data.writeInt(0x0, this.serializerMagic);
-      final int length = this.serializer.serializer(saveName, data.slice(0x4), state, activeStats);
+      final FileData data = new ExpandableFileData(0x1);
+      final IntRef offset = new IntRef();
+      data.writeInt(offset, this.serializerMagic);
+      this.serializer.serializer(saveName, data, offset, state, activeStats);
 
       final Path file = state.campaign.path.resolve(fileName + ".dsav");
 
       Files.createDirectories(state.campaign.path);
-      Files.write(file, data.slice(0x0, length + 0x4).getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+      Files.write(file, data.slice(0, offset.get()).getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
       return file;
     } catch(final IOException e) {
       throw new SaveFailedException("Failed to save game", e);

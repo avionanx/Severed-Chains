@@ -27,6 +27,7 @@ uniform vec2 uvOffset;
 uniform float translucency;
 uniform float discardTranslucency;
 uniform float alpha;
+uniform float useTextureAlpha;
 uniform sampler2D tex24;
 uniform usampler2D tex15;
 
@@ -64,8 +65,8 @@ void main() {
       texColour = texture(tex24, vertUv + uvOffset);
     }
 
-    // Discard if (0, 0, 0)
-    if(texColour.a == 0 && texColour.r == 0 && texColour.g == 0 && texColour.b == 0) {
+    // Discard if (0, 0, 0, 0), or if alpha is 0 and we're using texture alpha mode
+    if(texColour.a == 0 && (useTextureAlpha != 0 || texColour.r == 0 && texColour.g == 0 && texColour.b == 0)) {
       discard;
     }
 
@@ -74,7 +75,7 @@ void main() {
       discard;
     }
 
-    outColour *= texColour;
+    outColour = clamp(outColour * texColour, 0.0, 1.0);
   } else {
     // Untextured translucent primitives don't have a translucency bit so we always discard during the appropriate discard modes
     if(discardTranslucency == 1 && translucent || discardTranslucency == 2 && !translucent) {
@@ -84,15 +85,21 @@ void main() {
 
   outColour.rgb *= recolour;
 
-  // The or condition is to disable translucency if a texture's pixel has alpha disabled
-  if(translucent && translucencyMode == 1 && (!textured || outColour.a != 0)) { // (B+F)/2 translucency
-    outColour.a = 0.5;
-  } else {
-    outColour.a = 1.0;
-  }
+  if(alpha != -1) {
+    if(useTextureAlpha == 0) {
+      outColour.a = alpha;
+    } else {
+      outColour.a *= alpha;
 
-  // True alpha
-  if(translucencyMode == 5) {
-    outColour.a = alpha;
+      if(translucencyMode == 2 || translucencyMode == 3) {
+        outColour.rgb *= outColour.a;
+      }
+    }
+  } else if(useTextureAlpha == 0) {
+    if(translucent && translucencyMode == 1) { // (B+F)/2 translucency
+      outColour.a = 0.5;
+    } else {
+      outColour.a = 1.0;
+    }
   }
 }

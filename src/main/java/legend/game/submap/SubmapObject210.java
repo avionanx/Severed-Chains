@@ -1,12 +1,13 @@
 package legend.game.submap;
 
 import legend.core.opengl.Texture;
+import legend.game.scripting.ScriptedObject;
 import legend.game.types.Model124;
 import org.joml.Vector3f;
 
 import static legend.game.submap.AttachedSobjEffect.AttachedSobjEffectData40;
 
-public class SubmapObject210 {
+public class SubmapObject210 implements ScriptedObject {
   public final Model124 model_00;
 
   public boolean hidden_128;
@@ -30,9 +31,19 @@ public class SubmapObject210 {
 //  /** The total distance moved (.16) */
 //  public final Vector3f movementDistanceMoved12_160 = new Vector3f();
   public int collidedPrimitiveIndex_16c;
-  public int us_170;
-  public int s_172;
-  public int s_174;
+  /**
+   * Forced movement types
+   * <ul>
+   *   <li>0 - none</li>
+   *   <li>1 - linear</li>
+   *   <li>2 - non-linear</li>
+   * </ul>
+   */
+  public int movementType_170;
+  /** Forced movement geometry collision detection */
+  public int ignoreCollision_172;
+  /** Used to restore ignoreCollision_172 after SMap::scriptSobjMoveAlongArc2 */
+  public int ignoreCollisionMemory_174;
 
   public final Vector3f interpMovementStart = new Vector3f();
   public final Vector3f interpMovementDest = new Vector3f();
@@ -153,5 +164,10 @@ public class SubmapObject210 {
   @Override
   public String toString() {
     return this.model_00.toString();
+  }
+
+  @Override
+  public Vector3f getPosition() {
+    return this.model_00.coord2_14.coord.transfer;
   }
 }

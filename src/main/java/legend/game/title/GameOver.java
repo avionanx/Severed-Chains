@@ -9,16 +9,13 @@ import legend.core.opengl.Obj;
 import legend.game.EngineState;
 import legend.game.EngineStateEnum;
 import legend.game.Scus94491BpeSegment_8002;
-import legend.game.input.Input;
-import legend.game.input.InputAction;
 import legend.game.types.McqHeader;
 import legend.game.unpacker.FileData;
-import legend.game.unpacker.Unpacker;
+import legend.game.unpacker.Loader;
 
 import static legend.core.GameEngine.GPU;
-import static legend.core.GameEngine.MODS;
+import static legend.core.GameEngine.PLATFORM;
 import static legend.core.GameEngine.RENDERER;
-import static legend.core.GameEngine.bootMods;
 import static legend.game.Scus94491BpeSegment.loadDrgnFile;
 import static legend.game.Scus94491BpeSegment.resizeDisplay;
 import static legend.game.Scus94491BpeSegment.startFadeEffect;
@@ -28,6 +25,8 @@ import static legend.game.Scus94491BpeSegment_8004.engineStateOnceLoaded_8004dd2
 import static legend.game.Scus94491BpeSegment_8007.vsyncMode_8007a3b8;
 import static legend.game.Scus94491BpeSegment_800b.fullScreenEffect_800bb140;
 import static legend.game.Scus94491BpeSegment_800b.gameOverMcq_800bdc3c;
+import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_BACK;
+import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_CONFIRM;
 
 public class GameOver extends EngineState {
   private int loadingStage;
@@ -36,8 +35,8 @@ public class GameOver extends EngineState {
   private final MV transforms = new MV();
 
   @Override
-  public boolean allowsWidescreen() {
-    return false;
+  public RenderMode getRenderMode() {
+    return RenderMode.LEGACY;
   }
 
   @Method(0x800c7558L)
@@ -65,11 +64,11 @@ public class GameOver extends EngineState {
   @Override
   @Method(0x800c75fcL)
   public void tick() {
+    super.tick();
+
     switch(this.loadingStage) {
       case 0 -> {
-        if(Unpacker.getLoadingFileCount() == 0) {
-          bootMods(MODS.getAllModIds());
-
+        if(Loader.getLoadingFileCount() == 0) {
           resetSubmapToNewGame();
           resizeDisplay(640, 240);
           this.loadingStage = 1;
@@ -89,7 +88,7 @@ public class GameOver extends EngineState {
 
       // Game Over Screen
       case 4 -> {
-        if(Input.pressedThisFrame(InputAction.BUTTON_CENTER_2) || Input.pressedThisFrame(InputAction.BUTTON_SOUTH)) {
+        if(PLATFORM.isActionPressed(INPUT_ACTION_MENU_CONFIRM.get()) || PLATFORM.isActionPressed(INPUT_ACTION_MENU_BACK.get())) {
           Scus94491BpeSegment_8002.playMenuSound(2);
           this.loadingStage = 5;
           startFadeEffect(1, 10);
