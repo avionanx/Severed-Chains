@@ -169,7 +169,7 @@ public final class Audio {
    */
   @Method(0x80019a60L)
   public static void playSound(final SoundFile soundFile, final int soundIndex, final int initialDelay, final int repeatDelay) {
-    if(!soundFile.used_00 || soundFile.playableSound_10 == null) {
+    if(!soundFile.used_00 || soundFile.playableSound_10 == null || soundIndex >= soundFile.indices_08.length) {
       return;
     }
 

@@ -225,7 +225,7 @@ public final class SItem {
     "Mortal Dr Mt.", "", "Kashua Glacier", "Flanvel Tower", "Snowfield",
     "Fort Magrad", "Vellweb", "", "Death Frontier", "Ulara",
     "Zenebatos", "Mayfil", "", "Rouge", "Aglis",
-    "Divine Tree", "Moon",
+    "Divine Tree", "Moon", "Intro Forest", "",
   };
   public static final String[] worldMapNames_8011c1ec = {
     "So. of Serdio",
