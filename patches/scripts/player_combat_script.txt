@@ -325,6 +325,7 @@ mov 0x0, stor[12] ; source, dest
 mov 0x0, stor[8] ; loop counter, alive bent slot
 
 LABEL_27:
+jmp_cmp ==, var[49], 0x0, inl[:LABEL_80]
 mov var[48][stor[8]], stor[12] ; s12 = alive bent s8
 mov stor[stor[stor[0], 12], 7], stor[10] ; s10 = s12's s7
 and 0x200000, stor[10] ; right, left
