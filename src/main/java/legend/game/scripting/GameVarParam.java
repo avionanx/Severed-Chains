@@ -1,5 +1,6 @@
 package legend.game.scripting;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import legend.game.FullScreenEffects;
 import legend.game.Graphics;
 import legend.game.SItem;
@@ -30,6 +31,7 @@ import static legend.game.Scus94491BpeSegment_8006.battleState_8006e398;
 import static legend.game.Scus94491BpeSegment_800b.battleStage_800bb0f4;
 import static legend.game.Scus94491BpeSegment_800b.encounter;
 import static legend.game.Scus94491BpeSegment_800b.equipmentOverflow;
+import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Scus94491BpeSegment_800b.itemOverflow;
 import static legend.game.combat.SBtld.startEncounter;
 import static legend.game.combat.SBtld.startLegacyEncounter;
@@ -133,7 +135,18 @@ public class GameVarParam extends Param {
       case 59 -> ((Battle)currentEngineState_8004dd04).currentTurnBent_800c66c8 != null ? ((Battle)currentEngineState_8004dd04).currentTurnBent_800c66c8.index : -1;
       case 60 -> Scus94491BpeSegment_800b.goldGainedFromCombat_800bc920;
       case 61 -> Scus94491BpeSegment_800b.totalXpFromCombat_800bc95c;
+      case 62 -> gameState_800babc8.charData_32c.size();
+      case 63 -> {
+        final IntList chars = ((SMap)currentEngineState_8004dd04).primaryPartyBackup;
 
+        if(chars.isEmpty()) {
+          yield -1;
+        }
+
+        final int index = chars.getInt(0);
+        chars.removeInt(0);
+        yield index;
+      }
       case 64 -> ((SMap)currentEngineState_8004dd04).sobjs_800c6880[0].index;
       case 65 -> ((SMap)currentEngineState_8004dd04).submapControllerState_800c6740.index;
       case 66 -> ((SMap)currentEngineState_8004dd04).submap.objects.size();
@@ -281,6 +294,7 @@ public class GameVarParam extends Param {
       case 60 -> Scus94491BpeSegment_800b.goldGainedFromCombat_800bc920 = val;
       case 61 -> Scus94491BpeSegment_800b.totalXpFromCombat_800bc95c = val;
 
+      case 63 -> ((SMap)currentEngineState_8004dd04).primaryPartyBackup.add(val);
       case 64 -> ((SMap)currentEngineState_8004dd04).sobjs_800c6880[0] = SCRIPTS.getState(val, SubmapObject210.class);
       case 65 -> ((SMap)currentEngineState_8004dd04).submapControllerState_800c6740 = SCRIPTS.getState(val, ScriptedObject.class);
 //      case 66 -> ((SMap)currentEngineState_8004dd04).sobjCount_800c6730 = val;

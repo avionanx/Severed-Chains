@@ -425,7 +425,7 @@ public class ScriptManager {
       }
 
       this.compiler = new FateCompiler(this.meta);
-      this.tokenizer = new Tokenizer(this.meta);
+      this.tokenizer = new Tokenizer(this.meta, this.compiler);
       this.disassembler = new Disassembler(this.meta);
     }
 
@@ -436,7 +436,7 @@ public class ScriptManager {
     this.meta();
 
     final List<String> errors = new ArrayList<>();
-    final String asm = this.compiler.compile(source, errors);
+    final String asm = this.compiler.compile(this.includePaths, source, errors);
 
     if(!errors.isEmpty()) {
       throw new RuntimeException(String.join("\n", errors));

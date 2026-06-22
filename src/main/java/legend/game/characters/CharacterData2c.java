@@ -44,6 +44,8 @@ public class CharacterData2c {
    *   <li>0x20 - {@link #CANT_REMOVE}</li>
    *   <li>0x40 - {@link #HAS_ULTIMATE_ADDITION}</li>
    * </ul>
+   *
+   * When temporarily removed from the party, these flags will be shifted up by 8 bits to back them up
    */
   public int partyFlags_04;
 //  public int hp_08;

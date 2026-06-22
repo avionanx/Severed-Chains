@@ -1,6 +1,8 @@
 package legend.game.submap;
 
 import de.jcm.discordgamesdk.activity.Activity;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import legend.core.IoHelper;
 import legend.core.MathHelper;
 import legend.core.QueuedModelStandard;
@@ -413,6 +415,9 @@ public class SMap extends EngineState<SMap> {
 
   private EngineStateType<?> engineStateToTransitionTo;
 
+  /** Used for restoring the primary party after forced party changes. Used as a FIFO queue by char_utils script lib. */
+  public final IntList primaryPartyBackup = new IntArrayList();
+
   public SMap() {
     super(LodEngineStateTypes.SUBMAP.get());
   }
@@ -429,6 +434,7 @@ public class SMap extends EngineState<SMap> {
   }
 
   private static final int SMAP_SAVE_VERSION_1 = 'V' | '1' << 8;
+  private static final int SMAP_SAVE_VERSION_2 = 'V' | '2' << 8;
 
   @Override
   public FileData writeSaveData(final GameState52c gameState) {
@@ -437,10 +443,16 @@ public class SMap extends EngineState<SMap> {
 
     final FileData data = new ExpandableFileData(9);
     final IntRef offset = new IntRef();
-    data.writeShort(offset, SMAP_SAVE_VERSION_1);
+    data.writeShort(offset, SMAP_SAVE_VERSION_2);
     data.writeInt(offset, gameState.submapScene_a4);
     data.writeInt(offset, gameState.submapCut_a8);
     data.writeBool(offset, gameState.indicatorsDisabled_4e3);
+
+    data.writeInt(offset, this.primaryPartyBackup.size());
+    for(int i = 0; i < this.primaryPartyBackup.size(); i++) {
+      data.writeInt(offset, this.primaryPartyBackup.getInt(i));
+    }
+
     return data;
   }
 
@@ -462,11 +474,6 @@ public class SMap extends EngineState<SMap> {
     final IntRef offset = new IntRef();
     final int version = data.readUShort(offset);
 
-    if(version != SMAP_SAVE_VERSION_1) {
-      LOGGER.warn("Unknown SMAP save data version");
-      return;
-    }
-
     gameState.submapScene_a4 = data.readInt(offset);
     gameState.submapCut_a8 = data.readInt(offset);
     gameState.indicatorsDisabled_4e3 = data.readBool(offset);
@@ -474,6 +481,15 @@ public class SMap extends EngineState<SMap> {
     submapScene_80052c34 = gameState.submapScene_a4;
     submapCut_80052c30 = gameState.submapCut_a8;
     collidedPrimitiveIndex_80052c38 = submapScene_80052c34;
+
+    if(version == SMAP_SAVE_VERSION_2) {
+      this.primaryPartyBackup.clear();
+      final int count = data.readInt(offset);
+
+      for(int i = 0; i < count; i++) {
+        this.primaryPartyBackup.add(data.readInt(offset));
+      }
+    }
   }
 
   @Override
