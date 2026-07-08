@@ -1962,9 +1962,10 @@ public class Battle extends EngineState<Battle> {
         case 0xd -> 697;
         case 0xe -> 698;
         case 0xf -> 699;
+        case 0x13 -> 732; // Melbu
         case 0x56 -> 700;
         case 0x58 -> 701;
-        default -> this.parseMelbuVictory(encounter.musicIndex & 0x1f);
+        default -> -1;
       };
 
       final var battleMusicEvent = EVENTS.postEvent(new BattleMusicEvent(battle, victoryType, musicIndex, encounter));
@@ -1973,14 +1974,6 @@ public class Battle extends EngineState<Battle> {
 
       this.loadEncounterMusic(battleMusicEvent.musicIndex, battleMusicEvent.victoryType);
     }
-  }
-
-  private int parseMelbuVictory(final int musicIndex) {
-    if(musicIndex == 0x13) {
-      return 732;
-    }
-
-    return -1;
   }
 
   @Method(0x800c7648L)

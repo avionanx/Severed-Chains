@@ -9,6 +9,7 @@ import legend.game.combat.bent.PlayerBattleEntity;
 import legend.game.combat.types.battlestate.StatusConditions20;
 import legend.game.modding.events.battle.DragonBlockStaffOffEvent;
 import legend.game.modding.events.battle.DragonBlockStaffOnEvent;
+import legend.game.modding.events.gamestate.PrimaryPartyChangeEvent;
 import legend.game.submap.SMap;
 import legend.game.submap.SubmapObject210;
 
@@ -16,6 +17,7 @@ import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.SCRIPTS;
 import static legend.game.EngineStates.currentEngineState_8004dd04;
 import static legend.game.Scus94491BpeSegment_800b.encounter;
+import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 
 public class GameVarArrayParam extends Param {
   private final int varIndex;
@@ -68,14 +70,16 @@ public class GameVarArrayParam extends Param {
     switch(this.varIndex) {
       case 6 -> Scus94491BpeSegment_800b.gameState_800babc8.scriptData_08[this.arrIndex] = val;
       case 17 -> {
-        if(this.arrIndex < Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.size()) {
-          if(val != -1) {
-            Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.set(this.arrIndex, val);
+        final PrimaryPartyChangeEvent event = EVENTS.postEvent(new PrimaryPartyChangeEvent(gameState_800babc8, this.arrIndex, val));
+
+        if(event.activePartySlot < Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.size()) {
+          if(event.characterIndex != -1) {
+            Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.set(event.activePartySlot, event.characterIndex);
           } else {
-            Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.removeInt(this.arrIndex);
+            Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.removeInt(event.activePartySlot);
           }
-        } else if(val != -1) {
-          Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.add(val);
+        } else if(event.characterIndex != -1) {
+          Scus94491BpeSegment_800b.gameState_800babc8.charIds_88.add(event.characterIndex);
         }
       }
       case 32 -> Scus94491BpeSegment_8006.battleState_8006e398.allBents_e0c.set(this.arrIndex, SCRIPTS.getState(val, BattleEntity27c.class));
