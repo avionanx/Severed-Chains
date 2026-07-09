@@ -84,6 +84,8 @@ public final class GameEngine {
 
   private static final Logger LOGGER = LogManager.getFormatterLogger(GameEngine.class);
 
+  public static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+
   private static ModManager.Access MOD_ACCESS;
   private static LangManager.Access LANG_ACCESS;
   private static EventManager.Access EVENT_ACCESS;

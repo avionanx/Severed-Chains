@@ -19,6 +19,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import static legend.core.GameEngine.CONFIG;
+import static legend.core.GameEngine.IS_WINDOWS;
 import static org.lwjgl.sdl.SDLError.SDL_GetError;
 import static org.lwjgl.sdl.SDLKeyboard.SDL_StartTextInput;
 import static org.lwjgl.sdl.SDLKeyboard.SDL_StopTextInput;
@@ -54,6 +55,7 @@ import static org.lwjgl.sdl.SDLVideo.SDL_GetPrimaryDisplay;
 import static org.lwjgl.sdl.SDLVideo.SDL_GetWindowSize;
 import static org.lwjgl.sdl.SDLVideo.SDL_RestoreWindow;
 import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowBordered;
+import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowFullscreen;
 import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowIcon;
 import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowMinimumSize;
 import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowPosition;
@@ -204,21 +206,34 @@ public class SdlWindow extends Window {
     LOGGER.info("Switching to fullscreen");
     this.monitor = this.getMonitorFromConfig();
     this.vidMode = SDL_GetDesktopDisplayMode(this.monitor);
-    this.err(SDL_RestoreWindow(this.window), "RestoreWindow");
-    this.err(SDL_SetWindowBordered(this.window, false), "SetWindowBordered");
+
+    if(IS_WINDOWS) {
+      this.err(SDL_RestoreWindow(this.window), "RestoreWindow");
+      this.err(SDL_SetWindowBordered(this.window, false), "SetWindowBordered");
+    } else {
+      this.err(SDL_SetWindowFullscreen(this.window, true), "SetWindowFullscreen");
+    }
+
     this.moveToMonitor();
 
-    // Overscan by 1 pixel to stop Windows from putting it into exclusive fullscreen
-    LOGGER.info("Setting window size to [%d, %d]", this.vidMode.w(), this.vidMode.h() + 1);
-    this.err(SDL_SetWindowSize(this.window, this.vidMode.w(), this.vidMode.h() + 1), "SetWindowSize");
+    if(IS_WINDOWS) {
+      // Overscan by 1 pixel to stop Windows from putting it into exclusive fullscreen
+      LOGGER.info("Setting window size to [%d, %d]", this.vidMode.w(), this.vidMode.h() + 1);
+      this.err(SDL_SetWindowSize(this.window, this.vidMode.w(), this.vidMode.h() + 1), "SetWindowSize");
+    }
   }
 
   @Override
   public void makeWindowed() {
     LOGGER.info("Switching to windowed [%d, %d]", Config.windowWidth(), Config.windowHeight());
-    this.err(SDL_SetWindowBordered(this.window, true), "SetWindowBordered");
-    this.err(SDL_SetWindowSize(this.window, Config.windowWidth(), Config.windowHeight()), "SetWindowSize");
-    this.centerWindow();
+
+    if(IS_WINDOWS) {
+      this.err(SDL_SetWindowBordered(this.window, true), "SetWindowBordered");
+      this.err(SDL_SetWindowSize(this.window, Config.windowWidth(), Config.windowHeight()), "SetWindowSize");
+      this.centerWindow();
+    } else {
+      this.err(SDL_SetWindowFullscreen(this.window, false), "SetWindowFullscreen");
+    }
   }
 
   @Override
