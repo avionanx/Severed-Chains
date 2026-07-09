@@ -5,7 +5,6 @@ import legend.core.MathHelper;
 import legend.core.QueuedModelStandard;
 import legend.core.audio.GenericSource;
 import legend.core.gpu.Bpp;
-import legend.core.gte.MV;
 import legend.core.opengl.Obj;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.Texture;
@@ -27,6 +26,7 @@ import legend.game.unpacker.FileData;
 import legend.game.unpacker.Loader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
 
@@ -39,7 +39,6 @@ import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.DISCORD;
 import static legend.core.GameEngine.PLATFORM;
 import static legend.core.GameEngine.RENDERER;
-import static legend.game.sound.Audio.sssqResetStuff;
 import static legend.game.EngineStates.engineStateOnceLoaded_8004dd24;
 import static legend.game.Graphics.clearBlue_800babc0;
 import static legend.game.Graphics.clearGreen_800bb104;
@@ -51,6 +50,7 @@ import static legend.game.SItem.UI_WHITE;
 import static legend.game.Scus94491BpeSegment_800b.submapId_800bd808;
 import static legend.game.Text.renderText;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_FMV_SKIP;
+import static legend.game.sound.Audio.sssqResetStuff;
 import static org.lwjgl.openal.AL10.AL_FORMAT_STEREO16;
 
 public final class Fmv {
@@ -237,6 +237,7 @@ public final class Fmv {
   private static final Vector2i oldProjectionSize = new Vector2i();
   private static EngineState.RenderMode oldRenderMode;
   private static final Vector3i oldClearColour = new Vector3i();
+  private static final Matrix4f transforms = new Matrix4f();
 
   private static RumbleData[] rumbleData;
   private static int rumbleFrames;
@@ -588,9 +589,23 @@ public final class Fmv {
       displayTexture.use();
       displayTexture.data(0, 0, frameHeader.getWidth(), frameHeader.getHeight(), framePixels);
 
-      final MV transforms = new MV();
-      transforms.scaling(320.0f, frameHeader.getHeight(), 1.0f);
-      transforms.transfer.set(0.0f, (240.0f - frameHeader.getHeight()) / 2.0f, 100.0f);
+      final float windowHeight = RENDERER.getNativeHeight();
+      final float windowWidth = windowHeight * RENDERER.getRenderAspectRatio();
+
+      final float scaleW = windowWidth / frameHeader.getWidth();
+      final float scaleH = windowHeight / frameHeader.getHeight();
+      final float scale = Math.min(scaleW, scaleH);
+
+      final float w = frameHeader.getWidth() * scale;
+      final float h = frameHeader.getHeight() * scale;
+
+      final float l = (windowWidth - w) / 2;
+      final float t = (windowHeight - h) / 2;
+
+      transforms
+        .translation(l, t, 100.0f)
+        .scale(w, h, 1.0f)
+      ;
 
       RENDERER.queueOrthoModel(texturedObj, transforms, QueuedModelStandard.class)
         .texture(displayTexture)
