@@ -137,9 +137,36 @@ tasks.register('updaterJar', Jar) {
   }
 
   from(sourceSets.main.output) {
+    include 'legend/core/Async.class'
     include 'legend/core/UpdaterMain.class'
     include 'legend/core/UpdaterMain$*.class'
+    include 'legend/core/UpdaterApplication.class'
+    include 'legend/core/UpdaterApplication$*.class'
+    include 'legend/core/UpdaterController.class'
   }
+
+  from(sourceSets.main.output.resourcesDir) {
+    include 'legend/core/updater.fxml'
+  }
+
+  // bundle javafx
+  from {
+    configurations.runtimeClasspath.findAll { it.name.contains('javafx') || it.name.contains('log4j') }.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
+
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+  finalizedBy tasks.named('copyUpdaterConfig')
+}
+
+tasks.register('copyUpdaterConfig', Copy) {
+  dependsOn tasks.named('updaterJar')
+
+  from('log4j2-updater.xml')
+
+  into tasks.named('updaterJar').get().destinationDirectory
 }
 
 tasks.register('sourceJar', Jar) {

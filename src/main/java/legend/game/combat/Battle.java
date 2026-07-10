@@ -9026,31 +9026,29 @@ public class Battle extends EngineState<Battle> {
   @Method(0x800f98b0L)
   public FlowControl scriptTakeItem(final RunningScript<?> script) {
     final RegistryId itemId = script.params_20[0].getRegistryId();
+    script.params_20[1].set(0);
 
     if(gameState_800babc8.items_2e9.isEmpty()) {
-      script.params_20[1].set(0);
       return FlowControl.CONTINUE;
     }
 
-    ItemStack stack;
+    // Take a random item
     if(itemId == null) {
-      stack = gameState_800babc8.items_2e9.get((simpleRand() * gameState_800babc8.items_2e9.getSize()) >> 16);
+      final ItemStack random = gameState_800babc8.items_2e9.get((simpleRand() * gameState_800babc8.items_2e9.getSize()) >> 16);
+      final RegistryId randomId = random.getRegistryId();
 
-      if(stack.isProtected()) {
-        stack = ItemStack.EMPTY;
-      } else {
-        stack = gameState_800babc8.items_2e9.take(stack);
+      if(!random.isProtected() && gameState_800babc8.items_2e9.take(random).isEmpty()) {
+        script.params_20[1].set(randomId);
       }
-    } else {
-      stack = gameState_800babc8.items_2e9.take(REGISTRIES.items.getEntry(itemId).get());
+
+      return FlowControl.CONTINUE;
     }
 
-    //LAB_800f9988
-    //LAB_800f99a4
-    if(!stack.isEmpty()) {
-      script.params_20[1].set(stack.getItem().getRegistryId());
-    } else {
-      script.params_20[1].set(0);
+    // Take a specific item
+    final ItemStack stack = gameState_800babc8.items_2e9.take(REGISTRIES.items.getEntry(itemId).get());
+
+    if(stack.isEmpty()) {
+      script.params_20[1].set(itemId);
     }
 
     return FlowControl.CONTINUE;

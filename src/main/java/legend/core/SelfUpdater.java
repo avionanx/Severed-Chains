@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * Launches the standalone {@code updater.jar} as a separate process,
  * then shuts down the game so the updater can overwrite files safely.
  *
- * <p>The actual download/extract/apply logic lives in {@link UpdaterMain},
+ * <p>The actual download/extract/apply logic lives in {@link UpdaterApplication},
  * which is packaged as a separate {@code updater.jar}. This class is the
  * bridge from the running game to that external process.
  *
@@ -118,7 +118,7 @@ public final class SelfUpdater {
       return bundled;
     }
 
-    // also check the versioned directory name pattern 
+    // also check the versioned directory name pattern
     try(final var stream = Files.newDirectoryStream(gameDir, "jdk25*")) {
       for(final Path dir : stream) {
         final Path candidate = dir.resolve("bin").resolve(exeName);
@@ -128,7 +128,7 @@ public final class SelfUpdater {
       }
     } catch(final IOException ignored) { }
 
-    // fall back to whatever java is on PATH 
+    // fall back to whatever java is on PATH
     final Path javaHome = Path.of(System.getProperty("java.home"));
     final Path systemJava = javaHome.resolve("bin").resolve(exeName);
     if(Files.exists(systemJava)) {

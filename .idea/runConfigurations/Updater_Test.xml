@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Updater Test" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="legend.core.UpdaterMain" />
+    <module name="lod-game.main" />
+    <option name="PROGRAM_PARAMETERS" value="&quot;https://github.com/Legend-of-Dragoon-Modding/Severed-Chains/releases/download/devbuild/Severed_Chains_Linux.tar.gz&quot; $ProjectFileDir$" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="legend.core.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

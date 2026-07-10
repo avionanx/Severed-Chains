@@ -16,6 +16,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -185,8 +186,8 @@ public class Updater {
      * returns the download URL for the archive script also determines OS dynamically or null if not found.
      */
     public String getPlatformDownloadUrl() {
-      final String os = System.getProperty("os.name", "").toLowerCase(java.util.Locale.US);
-      final String arch = System.getProperty("os.arch", "").toLowerCase(java.util.Locale.US);
+      final String os = System.getProperty("os.name", "").toLowerCase(Locale.US);
+      final String arch = System.getProperty("os.arch", "").toLowerCase(Locale.US);
       final boolean isArm = arch.startsWith("arm") || arch.startsWith("aarch64");
 
       final String keyword;
