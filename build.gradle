@@ -254,7 +254,7 @@ tasks.register('copySupportFiles', Copy) {
   }
 }
 
-jar.dependsOn(clearOutput, copyLibs, copySupportFiles, updaterJar)
+jar.dependsOn(clearOutput, copyLibs, copySupportFiles, updaterJar, copyUpdaterConfig)
 
 publishing {
   publications {
