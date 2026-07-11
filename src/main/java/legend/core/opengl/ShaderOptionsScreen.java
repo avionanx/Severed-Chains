@@ -22,8 +22,12 @@ public class ShaderOptionsScreen implements ShaderOptions<ShaderOptionsScreen> {
   private final Shader<ShaderOptionsScreen>.UniformFloat warpAmount;
   private final Shader<ShaderOptionsScreen>.UniformFloat vignetteIntensity;
   private final Shader<ShaderOptionsScreen>.UniformFloat vignetteOpacity;
+  private final Shader<ShaderOptionsScreen>.UniformFloat bloomIntensity;
+  private final Shader<ShaderOptionsScreen>.UniformFloat bloomThreshold;
+  private final Shader<ShaderOptionsScreen>.UniformFloat bloomRadius;
+  private final Shader<ShaderOptionsScreen>.UniformVec4 turnOrderBounds;
 
-  public ShaderOptionsScreen(final Shader<ShaderOptionsScreen>.UniformInt enableCrt, final Shader<ShaderOptionsScreen>.UniformFloat time, final Shader<ShaderOptionsScreen>.UniformFloat scanlinesOpacity, final Shader<ShaderOptionsScreen>.UniformFloat scanlinesWidth, final Shader<ShaderOptionsScreen>.UniformFloat grilleOpacity, final Shader<ShaderOptionsScreen>.UniformVec2 resolution, final Shader<ShaderOptionsScreen>.UniformInt pixelate, final Shader<ShaderOptionsScreen>.UniformInt roll, final Shader<ShaderOptionsScreen>.UniformFloat rollSpeed, final Shader<ShaderOptionsScreen>.UniformFloat rollSize, final Shader<ShaderOptionsScreen>.UniformFloat rollVariation, final Shader<ShaderOptionsScreen>.UniformFloat distortIntensity, final Shader<ShaderOptionsScreen>.UniformFloat noiseOpacity, final Shader<ShaderOptionsScreen>.UniformFloat noiseSpeed, final Shader<ShaderOptionsScreen>.UniformFloat staticIntensity, final Shader<ShaderOptionsScreen>.UniformFloat aberration, final Shader<ShaderOptionsScreen>.UniformFloat brightness, final Shader<ShaderOptionsScreen>.UniformInt discolour, final Shader<ShaderOptionsScreen>.UniformFloat warpAmount, final Shader<ShaderOptionsScreen>.UniformFloat vignetteIntensity, final Shader<ShaderOptionsScreen>.UniformFloat vignetteOpacity) {
+  public ShaderOptionsScreen(final Shader<ShaderOptionsScreen>.UniformInt enableCrt, final Shader<ShaderOptionsScreen>.UniformFloat time, final Shader<ShaderOptionsScreen>.UniformFloat scanlinesOpacity, final Shader<ShaderOptionsScreen>.UniformFloat scanlinesWidth, final Shader<ShaderOptionsScreen>.UniformFloat grilleOpacity, final Shader<ShaderOptionsScreen>.UniformVec2 resolution, final Shader<ShaderOptionsScreen>.UniformInt pixelate, final Shader<ShaderOptionsScreen>.UniformInt roll, final Shader<ShaderOptionsScreen>.UniformFloat rollSpeed, final Shader<ShaderOptionsScreen>.UniformFloat rollSize, final Shader<ShaderOptionsScreen>.UniformFloat rollVariation, final Shader<ShaderOptionsScreen>.UniformFloat distortIntensity, final Shader<ShaderOptionsScreen>.UniformFloat noiseOpacity, final Shader<ShaderOptionsScreen>.UniformFloat noiseSpeed, final Shader<ShaderOptionsScreen>.UniformFloat staticIntensity, final Shader<ShaderOptionsScreen>.UniformFloat aberration, final Shader<ShaderOptionsScreen>.UniformFloat brightness, final Shader<ShaderOptionsScreen>.UniformInt discolour, final Shader<ShaderOptionsScreen>.UniformFloat warpAmount, final Shader<ShaderOptionsScreen>.UniformFloat vignetteIntensity, final Shader<ShaderOptionsScreen>.UniformFloat vignetteOpacity, final Shader<ShaderOptionsScreen>.UniformFloat bloomIntensity, final Shader<ShaderOptionsScreen>.UniformFloat bloomThreshold, final Shader<ShaderOptionsScreen>.UniformFloat bloomRadius, final Shader<ShaderOptionsScreen>.UniformVec4 turnOrderBounds) {
     this.enableCrt = enableCrt;
     this.time = time;
     this.scanlinesOpacity = scanlinesOpacity;
@@ -45,6 +49,10 @@ public class ShaderOptionsScreen implements ShaderOptions<ShaderOptionsScreen> {
     this.warpAmount = warpAmount;
     this.vignetteIntensity = vignetteIntensity;
     this.vignetteOpacity = vignetteOpacity;
+    this.bloomIntensity = bloomIntensity;
+    this.bloomThreshold = bloomThreshold;
+    this.bloomRadius = bloomRadius;
+    this.turnOrderBounds = turnOrderBounds;
   }
 
   public ShaderOptionsScreen enableCrt(final boolean val) {
@@ -149,6 +157,26 @@ public class ShaderOptionsScreen implements ShaderOptions<ShaderOptionsScreen> {
 
   public ShaderOptionsScreen vignetteOpacity(final float val) {
     this.vignetteOpacity.set(val);
+    return this;
+  }
+
+  public ShaderOptionsScreen bloomIntensity(final float val) {
+    this.bloomIntensity.set(val);
+    return this;
+  }
+
+  public ShaderOptionsScreen bloomThreshold(final float val) {
+    this.bloomThreshold.set(val);
+    return this;
+  }
+
+  public ShaderOptionsScreen bloomRadius(final float val) {
+    this.bloomRadius.set(val);
+    return this;
+  }
+
+  public ShaderOptionsScreen turnOrderBounds(final float minX, final float minY, final float maxX, final float maxY) {
+    this.turnOrderBounds.set(minX, minY, maxX, maxY);
     return this;
   }
 

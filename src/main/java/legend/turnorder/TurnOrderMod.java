@@ -61,6 +61,18 @@ public class TurnOrderMod {
     EVENTS.register(this);
   }
 
+  public boolean isVisible() {
+    return this.visible;
+  }
+
+  public float getCurrentWidth() {
+    return this.background != null ? this.background.getWidth() : 0.0f;
+  }
+
+  public float getCurrentHeight() {
+    return this.background != null ? this.background.getHeight() : 0.0f;
+  }
+
   @EventListener
   public void onRegisterConfig(final ConfigRegistryEvent event) {
     TurnOrderConfigs.register(event);

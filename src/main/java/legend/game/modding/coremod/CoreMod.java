@@ -51,6 +51,7 @@ import legend.game.modding.coremod.config.MusicEffectsOverTimeGranularityConfigE
 import legend.game.modding.coremod.config.MusicInterpolationPrecisionConfigEntry;
 import legend.game.modding.coremod.config.MusicPitchResolutionConfigEntry;
 import legend.game.modding.coremod.config.MusicVolumeConfigEntry;
+import legend.game.modding.coremod.config.PixelateModeConfigEntry;
 import legend.game.modding.coremod.config.ReduceMotionFlashingConfigEntry;
 import legend.game.modding.coremod.config.ResolutionConfig;
 import legend.game.modding.coremod.config.RumbleIntensityConfigEntry;
@@ -129,7 +130,7 @@ public class CoreMod {
   public static final RegistryDelegate<BoolConfigEntry> SHADER_ENABLE_CRT_CONFIG = CONFIG_REGISTRAR.register("shader_enable_crt", () -> new BoolConfigEntry(false, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_SCANLINES_OPACITY_CONFIG = CONFIG_REGISTRAR.register("shader_scanlines_opacity", () -> new FloatConfigEntry(0.4f, 0.05f, 0.1f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_GRILLE_OPACITY_CONFIG = CONFIG_REGISTRAR.register("shader_grille_opacity", () -> new FloatConfigEntry(0.0f, 0.05f, 0.1f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
-  public static final RegistryDelegate<BoolConfigEntry> SHADER_PIXELATE_CONFIG = CONFIG_REGISTRAR.register("shader_pixelate", () -> new BoolConfigEntry(false, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
+  public static final RegistryDelegate<PixelateModeConfigEntry> SHADER_PIXELATE_CONFIG = CONFIG_REGISTRAR.register("shader_pixelate", PixelateModeConfigEntry::new);
   public static final RegistryDelegate<BoolConfigEntry> SHADER_ROLL_CONFIG = CONFIG_REGISTRAR.register("shader_roll", () -> new BoolConfigEntry(false, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_ROLL_SPEED_CONFIG = CONFIG_REGISTRAR.register("shader_roll_speed", () -> new FloatConfigEntry(8.0f, 0.25f, 1.0f, 0.0f, 100.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_ROLL_SIZE_CONFIG = CONFIG_REGISTRAR.register("shader_roll_size", () -> new FloatConfigEntry(15.0f, 0.25f, 1.0f, 0.0f, 100.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
@@ -138,12 +139,15 @@ public class CoreMod {
   public static final RegistryDelegate<FloatConfigEntry> SHADER_NOISE_OPACITY_CONFIG = CONFIG_REGISTRAR.register("shader_noise_opacity", () -> new FloatConfigEntry(0.0f, 0.05f, 0.1f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_NOISE_SPEED_CONFIG = CONFIG_REGISTRAR.register("shader_noise_speed", () -> new FloatConfigEntry(20.0f, 0.25f, 1.0f, 0.0f, 100.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_STATIC_INTENSITY_CONFIG = CONFIG_REGISTRAR.register("shader_static_intensity", () -> new FloatConfigEntry(0.0f, 0.05f, 0.1f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
-  public static final RegistryDelegate<FloatConfigEntry> SHADER_ABERRATION_CONFIG = CONFIG_REGISTRAR.register("shader_aberration", () -> new FloatConfigEntry(0.1f, 0.01f, 0.5f, 0.0f, 0.4f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
+  public static final RegistryDelegate<FloatConfigEntry> SHADER_ABERRATION_CONFIG = CONFIG_REGISTRAR.register("shader_aberration", () -> new FloatConfigEntry(0.02f, 0.01f, 0.05f, 0.0f, 0.4f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_BRIGHTNESS_CONFIG = CONFIG_REGISTRAR.register("shader_brightness", () -> new FloatConfigEntry(1.1f, 0.1f, 0.5f, 0.0f, 10.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<BoolConfigEntry> SHADER_DISCOLOUR_CONFIG = CONFIG_REGISTRAR.register("shader_discolour", () -> new BoolConfigEntry(false, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_EDGE_WARP_CONFIG = CONFIG_REGISTRAR.register("shader_edge_warp", () -> new FloatConfigEntry(0.0f, 0.05f, 0.25f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_VIGNETTE_INTENSITY_CONFIG = CONFIG_REGISTRAR.register("shader_vignette_intensity", () -> new FloatConfigEntry(0.4f, 0.05f, 0.25f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
   public static final RegistryDelegate<FloatConfigEntry> SHADER_VIGNETTE_OPACITY_CONFIG = CONFIG_REGISTRAR.register("shader_vignette_opacity", () -> new FloatConfigEntry(0.0f, 0.05f, 0.25f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
+  public static final RegistryDelegate<FloatConfigEntry> SHADER_BLOOM_INTENSITY_CONFIG = CONFIG_REGISTRAR.register("shader_bloom_intensity", () -> new FloatConfigEntry(0.4f, 0.01f, 0.1f, 0.0f, 3.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
+  public static final RegistryDelegate<FloatConfigEntry> SHADER_BLOOM_THRESHOLD_CONFIG = CONFIG_REGISTRAR.register("shader_bloom_threshold", () -> new FloatConfigEntry(0.5f, 0.05f, 0.1f, 0.0f, 1.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
+  public static final RegistryDelegate<FloatConfigEntry> SHADER_BLOOM_RADIUS_CONFIG = CONFIG_REGISTRAR.register("shader_bloom_radius", () -> new FloatConfigEntry(4.0f, 0.25f, 1.0f, 0.25f, 100.0f, ConfigStorageLocation.GLOBAL, ConfigCategory.POSTPROCESSING));
 
   // Per-campaign config
   public static final RegistryDelegate<ControllerKeybindsConfigEntry> CONTROLLER_KEYBINDS_CONFIG = CONFIG_REGISTRAR.register("controller_keybinds", ControllerKeybindsConfigEntry::new);

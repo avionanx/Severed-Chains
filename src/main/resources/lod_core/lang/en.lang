@@ -190,6 +190,13 @@ lod_core.config.shader_enable_crt.label=CRT Enabled
 lod_core.config.shader_scanlines_opacity.label=CRT: Scanline Opacity
 lod_core.config.shader_grille_opacity.label=CRT: Grille Opacity
 lod_core.config.shader_pixelate.label=CRT: Pixelate
+lod_core.config.shader_pixelate.NONE=None
+lod_core.config.shader_pixelate.P240=240p (Original)
+lod_core.config.shader_pixelate.P480=480p
+lod_core.config.shader_pixelate.P720=720p
+lod_core.config.shader_pixelate.NATIVE_1_4=1/4 x Native
+lod_core.config.shader_pixelate.NATIVE_1_3=1/3 x Native
+lod_core.config.shader_pixelate.NATIVE_1_2=1/2 x Native
 lod_core.config.shader_roll.label=CRT: Roll
 lod_core.config.shader_roll_speed.label=CRT: Roll Speed
 lod_core.config.shader_roll_size.label=CRT: Roll Size
@@ -204,6 +211,9 @@ lod_core.config.shader_discolour.label=CRT: Discolour
 lod_core.config.shader_edge_warp.label=CRT: Edge Warp Intensity
 lod_core.config.shader_vignette_intensity.label=CRT: Vignette Intensity
 lod_core.config.shader_vignette_opacity.label=CRT: Vignette Opacity
+lod_core.config.shader_bloom_intensity.label=CRT: Bloom Intensity
+lod_core.config.shader_bloom_threshold.label=CRT: Bloom Threshold
+lod_core.config.shader_bloom_radius.label=CRT: Bloom Radius
 
 # FMV config
 lod_core.config.fmv.skip_keyboard = Press %s to skip

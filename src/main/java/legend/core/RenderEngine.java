@@ -11,6 +11,7 @@ import legend.core.opengl.FrameBuffer;
 import legend.core.opengl.LineBuilder;
 import legend.core.opengl.Mesh;
 import legend.core.opengl.Obj;
+import legend.core.opengl.PixelateMode;
 import legend.core.opengl.QuadBuilder;
 import legend.core.opengl.QuaternionCamera;
 import legend.core.opengl.RenderState;
@@ -63,9 +64,12 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import legend.turnorder.TurnOrderMod;
+
 import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.GTE;
+import static legend.core.GameEngine.MODS;
 import static legend.core.GameEngine.PLATFORM;
 import static legend.core.GameEngine.RENDERER;
 import static legend.core.MathHelper.PI;
@@ -94,6 +98,9 @@ import static legend.game.modding.coremod.CoreMod.LEGACY_WIDESCREEN_MODE_CONFIG;
 import static legend.game.modding.coremod.CoreMod.RESOLUTION_CONFIG;
 import static legend.game.modding.coremod.CoreMod.SHADER_ABERRATION_CONFIG;
 import static legend.game.modding.coremod.CoreMod.SHADER_BRIGHTNESS_CONFIG;
+import static legend.game.modding.coremod.CoreMod.SHADER_BLOOM_INTENSITY_CONFIG;
+import static legend.game.modding.coremod.CoreMod.SHADER_BLOOM_THRESHOLD_CONFIG;
+import static legend.game.modding.coremod.CoreMod.SHADER_BLOOM_RADIUS_CONFIG;
 import static legend.game.modding.coremod.CoreMod.SHADER_DISCOLOUR_CONFIG;
 import static legend.game.modding.coremod.CoreMod.SHADER_EDGE_WARP_CONFIG;
 import static legend.game.modding.coremod.CoreMod.SHADER_ENABLE_CRT_CONFIG;
@@ -169,6 +176,8 @@ public class RenderEngine {
   private final FloatBuffer clutAnimationBuffer = BufferUtils.createFloatBuffer(2 * 2 * 1024); // 2 sets of 2 vectors
   private int clutAnimationBufferIndex;
   private boolean frameSkip = true;
+  private TurnOrderMod turnOrderMod;
+  private boolean turnOrderModSearched;
 
   public static final ShaderType<SimpleShaderOptions> SIMPLE_SHADER = new ShaderType<>(
     options -> loadShader("simple", "simple", options),
@@ -288,7 +297,11 @@ public class RenderEngine {
       final Shader<ShaderOptionsScreen>.UniformFloat warpAmount = shader.new UniformFloat("warp_amount");
       final Shader<ShaderOptionsScreen>.UniformFloat vignetteIntensity = shader.new UniformFloat("vignette_intensity");
       final Shader<ShaderOptionsScreen>.UniformFloat vignetteOpacity = shader.new UniformFloat("vignette_opacity");
-      return () -> new ShaderOptionsScreen(enableCrt, time, scanlinesOpacity, scanlinesWidth, grilleOpacity, resolution, pixelate, roll, rollSpeed, rollSize, rollVariation, distortIntensity, noiseOpacity, noiseSpeed, staticNoiseIntensity, aberration, brightness, discolour, warpAmount, vignetteIntensity, vignetteOpacity);
+      final Shader<ShaderOptionsScreen>.UniformFloat bloomIntensity = shader.new UniformFloat("bloom_intensity");
+      final Shader<ShaderOptionsScreen>.UniformFloat bloomThreshold = shader.new UniformFloat("bloom_threshold");
+      final Shader<ShaderOptionsScreen>.UniformFloat bloomRadius = shader.new UniformFloat("bloom_radius");
+      final Shader<ShaderOptionsScreen>.UniformVec4 turnOrderBounds = shader.new UniformVec4("turn_order_bounds");
+      return () -> new ShaderOptionsScreen(enableCrt, time, scanlinesOpacity, scanlinesWidth, grilleOpacity, resolution, pixelate, roll, rollSpeed, rollSize, rollVariation, distortIntensity, noiseOpacity, noiseSpeed, staticNoiseIntensity, aberration, brightness, discolour, warpAmount, vignetteIntensity, vignetteOpacity, bloomIntensity, bloomThreshold, bloomRadius, turnOrderBounds);
     }
   );
 
@@ -759,8 +772,42 @@ public class RenderEngine {
           screenShaderOptions.time((float)this.vsyncCount / 1000.0f);
           screenShaderOptions.scanlinesOpacity(CONFIG.getConfig(SHADER_SCANLINES_OPACITY_CONFIG.get()));
           screenShaderOptions.grilleOpacity(CONFIG.getConfig(SHADER_GRILLE_OPACITY_CONFIG.get()));
-          screenShaderOptions.resolution(this.window.getWidth() / 2.0f, this.window.getHeight() / 1.5f);
-          screenShaderOptions.pixelate(CONFIG.getConfig(SHADER_PIXELATE_CONFIG.get()));
+          final PixelateMode pixelateMode = CONFIG.getConfig(SHADER_PIXELATE_CONFIG.get());
+          screenShaderOptions.pixelate(pixelateMode != PixelateMode.NONE);
+
+          final float resWidth;
+          final float resHeight;
+          switch(pixelateMode) {
+            case P240 -> {
+              resHeight = 240.0f;
+              resWidth = resHeight * ((float)this.window.getWidth() / Math.max(1, this.window.getHeight()));
+            }
+            case P480 -> {
+              resHeight = 480.0f;
+              resWidth = resHeight * ((float)this.window.getWidth() / Math.max(1, this.window.getHeight()));
+            }
+            case P720 -> {
+              resHeight = 720.0f;
+              resWidth = resHeight * ((float)this.window.getWidth() / Math.max(1, this.window.getHeight()));
+            }
+            case NATIVE_1_4 -> {
+              resWidth = this.window.getWidth() / 4.0f;
+              resHeight = this.window.getHeight() / 4.0f;
+            }
+            case NATIVE_1_3 -> {
+              resWidth = this.window.getWidth() / 3.0f;
+              resHeight = this.window.getHeight() / 3.0f;
+            }
+            case NATIVE_1_2 -> {
+              resWidth = this.window.getWidth() / 2.0f;
+              resHeight = this.window.getHeight() / 2.0f;
+            }
+            default -> {
+              resWidth = this.window.getWidth() / 2.0f;
+              resHeight = this.window.getHeight() / 1.5f;
+            }
+          }
+          screenShaderOptions.resolution(resWidth, resHeight);
           screenShaderOptions.roll(CONFIG.getConfig(SHADER_ROLL_CONFIG.get()));
           screenShaderOptions.rollSpeed(CONFIG.getConfig(SHADER_ROLL_SPEED_CONFIG.get()));
           screenShaderOptions.rollSize(CONFIG.getConfig(SHADER_ROLL_SIZE_CONFIG.get()));
@@ -775,6 +822,29 @@ public class RenderEngine {
           screenShaderOptions.warpAmount(CONFIG.getConfig(SHADER_EDGE_WARP_CONFIG.get()));
           screenShaderOptions.vignetteIntensity(CONFIG.getConfig(SHADER_VIGNETTE_INTENSITY_CONFIG.get()));
           screenShaderOptions.vignetteOpacity(CONFIG.getConfig(SHADER_VIGNETTE_OPACITY_CONFIG.get()));
+          screenShaderOptions.bloomIntensity(CONFIG.getConfig(SHADER_BLOOM_INTENSITY_CONFIG.get()));
+          screenShaderOptions.bloomThreshold(CONFIG.getConfig(SHADER_BLOOM_THRESHOLD_CONFIG.get()));
+          screenShaderOptions.bloomRadius(CONFIG.getConfig(SHADER_BLOOM_RADIUS_CONFIG.get()));
+          if(this.turnOrderMod == null && !this.turnOrderModSearched && currentEngineState_8004dd04 instanceof legend.game.combat.Battle) {
+            this.turnOrderModSearched = true;
+            for(final var container : MODS.getLoadedMods()) {
+              if(container.mod instanceof TurnOrderMod) {
+                this.turnOrderMod = (TurnOrderMod)container.mod;
+                break;
+              }
+            }
+          }
+
+          if(this.turnOrderMod != null && this.turnOrderMod.isVisible() && currentEngineState_8004dd04 instanceof final legend.game.combat.Battle battle && !battle.isBattleDisabled() && CONFIG.getConfig(legend.turnorder.TurnOrderConfigs.SHOW_TURN_ORDER.get())) {
+            final float xOffset = this.getWidescreenOrthoOffsetX();
+            final float minX = 3.5f / (320.0f + xOffset);
+            final float maxX = (3.5f + this.turnOrderMod.getCurrentWidth()) / (320.0f + xOffset);
+            final float minY = (240.0f - 4.0f - this.turnOrderMod.getCurrentHeight()) / 240.0f;
+            final float maxY = (240.0f - 4.0f) / 240.0f;
+            screenShaderOptions.turnOrderBounds(minX, minY, maxX, maxY);
+          } else {
+            screenShaderOptions.turnOrderBounds(0.0f, 0.0f, 0.0f, 0.0f);
+          }
         }
 
         // draw final screen quad
