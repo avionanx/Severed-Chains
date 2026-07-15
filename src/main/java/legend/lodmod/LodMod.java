@@ -675,7 +675,7 @@ public class LodMod {
     event.add(LodCharacterTemplates.ROSE.get(), EquipmentTypes.ROSE, EquipmentTypes.SHORTSWORD, EquipmentTypes.NEUTRAL, EquipmentTypes.FEMALE, EquipmentTypes.ADDITIONS, EquipmentTypes.MEDIUM);
     event.add(LodCharacterTemplates.HASCHEL.get(), EquipmentTypes.HASCHEL, EquipmentTypes.HAND, EquipmentTypes.NEUTRAL, EquipmentTypes.MALE, EquipmentTypes.ADDITIONS);
     event.add(LodCharacterTemplates.ALBERT.get(), EquipmentTypes.ALBERT, EquipmentTypes.POLEARM, EquipmentTypes.NEUTRAL, EquipmentTypes.MALE, EquipmentTypes.ADDITIONS, EquipmentTypes.HEAVY, EquipmentTypes.ARMOR_OF_YORE);
-    event.add(LodCharacterTemplates.MERU.get(), EquipmentTypes.MERU, EquipmentTypes.HAMMER, EquipmentTypes.NEUTRAL, EquipmentTypes.FEMALE, EquipmentTypes.ADDITIONS);
+    event.add(LodCharacterTemplates.MERU.get(), EquipmentTypes.MERU, EquipmentTypes.HAMMER, EquipmentTypes.NEUTRAL, EquipmentTypes.FEMALE, EquipmentTypes.ADDITIONS, EquipmentTypes.LIGHT);
     event.add(LodCharacterTemplates.KONGOL.get(), EquipmentTypes.KONGOL, EquipmentTypes.AXE, EquipmentTypes.NEUTRAL, EquipmentTypes.MALE, EquipmentTypes.ADDITIONS, EquipmentTypes.ARMOR_OF_YORE);
     event.add(LodCharacterTemplates.MIRANDA.get(), EquipmentTypes.MIRANDA, EquipmentTypes.BOW, EquipmentTypes.NEUTRAL, EquipmentTypes.FEMALE, EquipmentTypes.MEDIUM, EquipmentTypes.LIGHT);
   }
