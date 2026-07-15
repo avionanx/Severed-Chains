@@ -2,15 +2,13 @@ package legend.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Response;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -18,28 +16,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-
-import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 public class Updater {
   private static final Logger LOGGER = LogManager.getFormatterLogger(Updater.class);
 
   private static final String UPDATE_URL = "https://api.github.com/repos/Legend-of-Dragoon-Modding/Severed-Chains/releases";
 
-  private AsyncHttpClient client;
+  private HttpClient client;
 
-  private ListenableFuture<Response> activeCheck;
+  private CompletableFuture<?> activeCheck;
 
   public void delete() {
-    try {
-      if(this.client != null) {
-        this.client.close();
-      }
-    } catch(final IOException e) {
-      LOGGER.warn("Failed to shut down updater", e);
+    if(this.client != null) {
+      this.client.close();
     }
   }
 
@@ -47,7 +38,7 @@ public class Updater {
     synchronized(this) {
       if(this.client == null) {
         try {
-          this.client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder().setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(10)).build());
+          this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).followRedirects(HttpClient.Redirect.NORMAL).build();
         } catch(final Throwable r) {
           LOGGER.error("Failed to initialize updater");
         }
@@ -75,8 +66,8 @@ public class Updater {
     }
   }
 
-  private void onCheckComplete(final Response response, final Consumer<Release> onComplete) {
-    final Release release = this.parseReleases(new JSONArray(response.getResponseBody()))
+  private void onCheckComplete(final HttpResponse<String> response, final Consumer<Release> onComplete) {
+    final Release release = this.parseReleases(new JSONArray(response.body()))
       .stream()
       .filter(r -> r.tag.startsWith(Version.CHANNEL) && r.timestamp.isAfter(Version.TIMESTAMP))
       .sorted()
@@ -120,51 +111,34 @@ public class Updater {
     return releases;
   }
 
-  private ListenableFuture<Response> get(final String url, final Consumer<Response> listener) {
-    return this.listen(this.client.prepareGet(url).execute(), listener);
-  }
+  private CompletableFuture<Void> get(final String url, final Consumer<HttpResponse<String>> listener) {
+    final HttpRequest request = HttpRequest.newBuilder(URI.create(url)).GET().build();
+    final CompletableFuture<HttpResponse<String>> responseFuture = this.client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
 
-  private ListenableFuture<Response> listen(final ListenableFuture<Response> future, final Consumer<Response> listener) {
-    future.addListener(() -> this.callResponse(this.getFuture(future), listener), null);
-    return future;
-  }
+    return responseFuture
+      .thenApply(response -> {
+        if(response.statusCode() / 100 != 2) {
+          LOGGER.warn("Request to %s failed: %d", response.uri(), response.statusCode());
 
-  private void callResponse(@Nullable final Response response, final Consumer<Response> listener) {
-    if(response != null) {
-      if(response.getStatusCode() / 100 != 2) {
-        LOGGER.warn("Request to %s failed (%d): %s", response.getUri(), response.getStatusCode(), response.getStatusText());
-
-        synchronized(this) {
-          this.activeCheck = null;
+          synchronized(this) {
+            this.activeCheck = null;
+          }
         }
 
-        return;
-      }
-
-      try {
         listener.accept(response);
-      } catch(final Throwable t) {
+        return response;
+      })
+      .thenAccept(listener)
+      .exceptionally(t -> {
         LOGGER.warn("Failed to check for updates", t);
 
         synchronized(this) {
           this.activeCheck = null;
         }
-      }
-    }
-  }
 
-  private <T> T getFuture(final Future<T> future) {
-    try {
-      return future.get();
-    } catch(final InterruptedException | ExecutionException e) {
-      LOGGER.warn("Failed to check for updates", e);
-
-      synchronized(this) {
-        this.activeCheck = null;
-      }
-    }
-
-    return null;
+        return null;
+      })
+    ;
   }
 
   public static class Release implements Comparable<Release> {

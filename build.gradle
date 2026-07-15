@@ -85,7 +85,6 @@ dependencies {
   runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
   api "org.joml:joml:${jomlVersion}"
 
-  implementation 'org.asynchttpclient:async-http-client:3.0.1' // update check
   implementation 'org.json:json:20250107'
   api "com.google.code.gson:gson:2.13.2"
 
