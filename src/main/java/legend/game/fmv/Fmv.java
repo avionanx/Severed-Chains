@@ -681,6 +681,7 @@ public final class Fmv {
       AUDIO_THREAD.removeSource(source);
       source = null;
 
+      stopRumble(0);
       rumbleData = null;
     });
   }
