@@ -1,12 +1,20 @@
 package legend.game.scripting;
 
-public class ScriptInlineParam extends Param {
-  private final ScriptState<?> state;
-  private final int offset;
+import legend.core.QueuePool;
 
-  public ScriptInlineParam(final ScriptState<?> state, final int offset) {
+public class ScriptInlineParam extends Param {
+  private final QueuePool<Param> pool;
+  private ScriptState<?> state;
+  private int offset;
+
+  public ScriptInlineParam(final QueuePool<Param> pool) {
+    this.pool = pool;
+  }
+
+  protected ScriptInlineParam init(final ScriptState<?> state, final int offset) {
     this.state = state;
     this.offset = offset;
+    return this;
   }
 
   @Override
@@ -34,7 +42,7 @@ public class ScriptInlineParam extends Param {
 
   @Override
   public Param array(final int index) {
-    return new ScriptInlineParam(this.state, this.offset + index);
+    return this.pool.acquire(ScriptInlineParam.class).init(this.state, this.offset + index);
   }
 
   @Override

@@ -3,6 +3,7 @@ package legend.game.scripting;
 import com.opencsv.exceptions.CsvException;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import legend.core.QueuePool;
 import legend.game.modding.events.scripting.ScriptAllocatedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +40,8 @@ import static legend.game.scripting.ScriptState.FLAG_TICKER_NOT_SET;
 public class ScriptManager {
   private static final Logger LOGGER = LogManager.getFormatterLogger(ScriptManager.class);
   private static final Marker SCRIPT_MARKER = MarkerManager.getMarker("SCRIPT");
+
+  public final QueuePool<Param> paramPool = new QueuePool<>();
 
   public static boolean[] scriptLog = new boolean[108];
 
@@ -191,6 +194,9 @@ public class ScriptManager {
   public ScriptManager(final List<Path> includePaths, final Path patchDir) {
     this.includePaths = includePaths;
     this.patchDir = patchDir;
+
+    this.paramPool.addType(ScriptInlineParam.class, () -> new ScriptInlineParam(this.paramPool));
+    this.paramPool.addType(ScriptStorageParam.class, () -> new ScriptStorageParam(this.paramPool));
   }
 
   public boolean willTick() {
@@ -312,7 +318,7 @@ public class ScriptManager {
   public <T extends ScriptedObject> ScriptState<T> allocateScriptState(final int index, final String name, @Nullable final T type) {
     LOGGER.info(SCRIPT_MARKER, "Allocating script index %d (%s)", index, name);
 
-    final ScriptState<T> scriptState = new ScriptState<>(this, index, name, type);
+    final ScriptState<T> scriptState = new ScriptState<>(this, this.paramPool, index, name, type);
     this.scriptStatePtrArr_800bc1c0[index] = scriptState;
 
     //LAB_800159c0
@@ -337,6 +343,8 @@ public class ScriptManager {
     if(this.paused || this.stopped) {
       return;
     }
+
+    this.paramPool.reset();
 
     //LAB_80015fd8
     for(int index = 0; index < this.scriptStatePtrArr_800bc1c0.length; index++) {

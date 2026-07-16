@@ -1,12 +1,20 @@
 package legend.game.scripting;
 
-public class ScriptStorageParam extends Param {
-  private final ScriptState<?> state;
-  private final int index;
+import legend.core.QueuePool;
 
-  public ScriptStorageParam(final ScriptState<?> state, final int index) {
+public class ScriptStorageParam extends Param {
+  private final QueuePool<Param> paramPool;
+  private ScriptState<?> state;
+  private int index;
+
+  public ScriptStorageParam(final QueuePool<Param> paramPool) {
+    this.paramPool = paramPool;
+  }
+
+  public ScriptStorageParam init(final ScriptState<?> state, final int index) {
     this.state = state;
     this.index = index;
+    return this;
   }
 
   @Override
@@ -22,7 +30,7 @@ public class ScriptStorageParam extends Param {
 
   @Override
   public Param array(final int index) {
-    return new ScriptStorageParam(this.state, this.index + index);
+    return this.paramPool.acquire(ScriptStorageParam.class).init(this.state, this.index + index);
   }
 
   @Override

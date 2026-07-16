@@ -1608,7 +1608,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df168L)
   private FlowControl scriptSelfLoadSobjModelAndAnimation(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptLoadSobjModelAndAnimation(script);
   }
 
@@ -1617,7 +1617,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df198L)
   private FlowControl scriptSelfLoadSobjAnimation(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptLoadSobjAnimation(script);
   }
 
@@ -1626,7 +1626,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df1c8L)
   private FlowControl scriptSelfGetSobjAnimation(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptGetSobjAnimation(script);
   }
 
@@ -1635,7 +1635,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df1f8L)
   private FlowControl scriptSelfToggleAnimationDisabled(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptToggleAnimationDisabled(script);
   }
 
@@ -1644,7 +1644,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df228L)
   private FlowControl scriptSelfIsAnimationFinished(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptIsAnimationFinished(script);
   }
 
@@ -1788,7 +1788,7 @@ public class SMap extends EngineState<SMap> {
     script.params_20[3] = script.params_20[2];
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptFacePoint(script);
   }
 
@@ -1797,7 +1797,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df410L)
   private FlowControl scriptSelfSetSobjHidden(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptSetSobjHidden(script);
   }
 
@@ -1812,7 +1812,7 @@ public class SMap extends EngineState<SMap> {
     script.params_20[3] = script.params_20[2];
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptSobjMoveToPosition(script);
   }
 
@@ -1827,7 +1827,7 @@ public class SMap extends EngineState<SMap> {
     script.params_20[3] = script.params_20[2];
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptSobjMoveAlongArc(script);
   }
 
@@ -1836,7 +1836,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df4d0L)
   private FlowControl scriptCheckSelfCollision(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptCheckSobjCollision(script);
   }
 
@@ -1852,7 +1852,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df530L)
   private FlowControl scriptSelfSetIgnoreCollision(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptSetSobjIgnoreCollision(script);
   }
 
@@ -1875,7 +1875,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df5c0L)
   private FlowControl scriptSelfEnableTextureAnimation(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptEnableTextureAnimation(script);
   }
 
@@ -1884,7 +1884,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df5f0L)
   private FlowControl scriptSelfDisableTextureAnimation(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptDisableTextureAnimation(script);
   }
 
@@ -1893,7 +1893,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df620L)
   private FlowControl scriptSelfGetMovementType(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptGetSobjMovementType(script);
   }
 
@@ -1902,7 +1902,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800df650L)
   private FlowControl scriptSelfAttachCameraToSobj(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptAttachCameraToSobj(script);
   }
 
@@ -2009,7 +2009,7 @@ public class SMap extends EngineState<SMap> {
     script.params_20[3] = script.params_20[2];
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptSobjMoveAlongArc2(script);
   }
 
@@ -2059,7 +2059,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800dfb44L)
   private FlowControl scriptSelfGetSobjNobj(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptGetSobjNobj(script);
   }
 
@@ -2068,7 +2068,7 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800dfb74L)
   private FlowControl scriptSelfHideModelPart(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptHideModelPart(script);
   }
 
@@ -2077,14 +2077,14 @@ public class SMap extends EngineState<SMap> {
   @Method(0x800dfba4L)
   private FlowControl scriptSelfShowModelPart(final RunningScript<?> script) {
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptShowModelPart(script);
   }
 
   @ScriptDescription("Make this submap object face the camera")
   @Method(0x800dfbd4L)
   private FlowControl scriptSelfFaceCamera(final RunningScript<?> script) {
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptFaceCamera(script);
   }
 
@@ -2148,7 +2148,7 @@ public class SMap extends EngineState<SMap> {
   private FlowControl scriptSelfSetSobjFlag(final RunningScript<?> script) {
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptSetSobjFlag(script);
   }
 
@@ -2159,7 +2159,7 @@ public class SMap extends EngineState<SMap> {
   private FlowControl scriptSelfGetSobjFlag(final RunningScript<?> script) {
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptGetSobjFlag(script);
   }
 
@@ -4558,16 +4558,18 @@ public class SMap extends EngineState<SMap> {
     return FlowControl.CONTINUE;
   }
 
+  private final Vector2f transformed = new Vector2f();
+  private final Vector2f offset = new Vector2f();
+
   @Method(0x800e8104L)
   private void setCameraPos(final int latchTicks, final Vector3f cameraPos) {
-    final Vector2f transformed = new Vector2f();
-    final Vector2f offset = new Vector2f(this.screenOffsetDest);
-    this.transformVertex(transformed, cameraPos);
-    this.submap.calcGoodScreenOffset(transformed.x, transformed.y, offset);
+    this.offset.set(this.screenOffsetDest);
+    this.transformVertex(this.transformed, cameraPos);
+    this.submap.calcGoodScreenOffset(this.transformed.x, this.transformed.y, this.offset);
 
     //LAB_800e8164
-    this.setScreenOffsetIfNotSet(latchTicks, offset.x, offset.y);
-    this.setGeomOffsetIfNotSet(latchTicks, offset.x, offset.y);
+    this.setScreenOffsetIfNotSet(latchTicks, this.offset.x, this.offset.y);
+    this.setGeomOffsetIfNotSet(latchTicks, this.offset.x, this.offset.y);
   }
 
   @Method(0x800e81a0L)
@@ -4910,7 +4912,7 @@ public class SMap extends EngineState<SMap> {
     script.params_20[3] = script.params_20[2];
     script.params_20[2] = script.params_20[1];
     script.params_20[1] = script.params_20[0];
-    script.params_20[0] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[0] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     return this.scriptInitTmdDust(script);
   }
 
@@ -4979,7 +4981,7 @@ public class SMap extends EngineState<SMap> {
   @ScriptParam(direction = ScriptParam.Direction.IN, type = ScriptParam.Type.INT, name = "sobjIndex", description = "The SubmapObject210 script index")
   @Method(0x800f22c4L)
   private FlowControl scriptChangeFootprintsMode(final RunningScript<?> script) {
-    script.params_20[2] = new ScriptStorageParam(script.scriptState_04, 0);
+    script.params_20[2] = SCRIPTS.paramPool.acquire(ScriptStorageParam.class).init(script.scriptState_04, 0);
     final SubmapObject210 sobj = SCRIPTS.getObject(script.params_20[2].get(), SubmapObject210.class);
 
     final int footprintMode = script.params_20[0].get();

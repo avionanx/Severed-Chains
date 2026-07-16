@@ -2,6 +2,7 @@ package legend.game.scripting;
 
 import legend.core.DebugHelper;
 import legend.core.MathHelper;
+import legend.core.QueuePool;
 import legend.core.memory.Method;
 import legend.game.Scus94491BpeSegment_8004;
 import legend.game.combat.bent.BattleEntity27c;
@@ -53,6 +54,7 @@ public class ScriptState<T extends ScriptedObject> {
   public static final int FLAG_DESTRUCTOR_NOT_SET = 0x800_0000;
 
   private final ScriptManager manager;
+  private final QueuePool<Param> paramPool;
   public final RunningScript<T> context = new RunningScript<>(this);
 
   /** This script's index */
@@ -140,6 +142,8 @@ public class ScriptState<T extends ScriptedObject> {
   public final RegistryId[] registryIds = new RegistryId[REGISTRY_ID_COUNT];
   private final Deque<Integer> stack = new LinkedList<>();
 
+  private final ScriptTickEvent tickEvent;
+
   private boolean paused;
   private int ticks;
 
@@ -147,11 +151,13 @@ public class ScriptState<T extends ScriptedObject> {
     return (Class<ScriptState<T>>)(Class<?>)ScriptState.class;
   }
 
-  public ScriptState(final ScriptManager manager, final int index, final String name, @Nullable final T innerStruct) {
+  public ScriptState(final ScriptManager manager, final QueuePool<Param> paramPool, final int index, final String name, @Nullable final T innerStruct) {
     this.manager = manager;
+    this.paramPool = paramPool;
     this.index = index;
     this.name = name;
     this.innerStruct_00 = innerStruct;
+    this.tickEvent = new ScriptTickEvent(index);
   }
 
   public void setTicker(@Nullable final BiConsumer<ScriptState<T>, T> callback) {
@@ -414,8 +420,7 @@ public class ScriptState<T extends ScriptedObject> {
   }
 
   public ScriptStackFrame replaceFrame(final ScriptStackFrame frame) {
-    this.callStack.pop();
-    this.callStack.push(frame);
+    this.callStack.set(0, frame);
     return frame;
   }
 
@@ -474,7 +479,7 @@ public class ScriptState<T extends ScriptedObject> {
           }
         }
 
-        EVENTS.postEvent(new ScriptTickEvent(this.index));
+        EVENTS.postEvent(this.tickEvent);
 
         if(scriptLog[this.index]) {
           if(scriptFunctionDescriptions.containsKey(this.context.opIndex_10)) {
@@ -521,25 +526,25 @@ public class ScriptState<T extends ScriptedObject> {
     this.context.commandOffset_0c++;
 
     if(type == 0x1) { // Push next value after this param
-      final Param param = new ScriptInlineParam(this, this.context.commandOffset_0c);
+      final Param param = this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c);
       this.context.commandOffset_0c++;
       return param;
     }
 
     if(type == 0x2) { // Push storage[cmd0]
-      return new ScriptStorageParam(this, cmd0);
+      return this.paramPool.acquire(ScriptStorageParam.class).init(this, cmd0);
     }
 
     if(type == 0x3) { // Push script[script[script[this].storage[cmd0]].storage[cmd1]].storage[cmd2]
       final int otherScriptIndex1 = this.getStor(cmd0);
       final int otherScriptIndex2 = this.manager.getState(otherScriptIndex1).getStor(cmd1);
-      return new ScriptStorageParam(this.manager.getState(otherScriptIndex2), cmd2);
+      return this.paramPool.acquire(ScriptStorageParam.class).init(this.manager.getState(otherScriptIndex2), cmd2);
     }
 
     if(type == 0x4) { // Push script[script[this].storage[cmd0]].storage[cmd1 + script[this].storage[cmd2]]
       final int otherScriptIndex = this.getStor(cmd0);
       final int storageIndex = cmd1 + this.getStor(cmd2);
-      return new ScriptStorageParam(this.manager.getState(otherScriptIndex), storageIndex);
+      return this.paramPool.acquire(ScriptStorageParam.class).init(this.manager.getState(otherScriptIndex), storageIndex);
     }
 
     if(type == 0x5) { // Push gameVar[cmd0]
@@ -562,27 +567,27 @@ public class ScriptState<T extends ScriptedObject> {
     }
 
     if(type == 0x9) { // INLINE_1 Push (commandStart + (cmd0 | cmd1 << 8) * 4)
-      return new ScriptInlineParam(this, this.context.opOffset_08 + (short)op);
+      return this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08 + (short)op);
     }
 
     if(type == 0xa) { // INLINE_2 Push (commandStart + (script[this].storage[cmd2] + (cmd0 | cmd1 << 8)) * 4)
       final int storage = this.getStor(cmd2);
-      return new ScriptInlineParam(this, this.context.opOffset_08 + ((short)op + storage));
+      return this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08 + ((short)op + storage));
     }
 
     if(type == 0xb) { // INLINE_TABLE_1 Push (commandStart[commandStart[script[this].storage[cmd2] + (cmd0 | cmd1 << 8)] + (cmd0 | cmd1 << 8)])
       final int storage = this.getStor(cmd2);
-      return new ScriptInlineParam(this, this.context.opOffset_08).array((short)op + new ScriptInlineParam(this, this.context.opOffset_08).array((short)op + storage).get());
+      return this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08).array((short)op + this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08).array((short)op + storage).get());
     }
 
     if(type == 0xc) { // INLINE_TABLE_2 Push commandStart[commandStart[script[this].storage[cmd0]] + script[this].storage[cmd1]]
-      final Param param = new ScriptInlineParam(this, this.context.commandOffset_0c).array(new ScriptInlineParam(this, this.context.commandOffset_0c).array(this.getStor(cmd0)).get() + this.getStor(cmd1));
+      final Param param = this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(this.getStor(cmd0)).get() + this.getStor(cmd1));
       this.context.commandOffset_0c++;
       return param;
     }
 
     if(type == 0xd) { // Push script[script[this].storage[cmd0]].storage[cmd1 + cmd2]
-      return new ScriptStorageParam(this.manager.getState(this.getStor(cmd0)), cmd1 + cmd2);
+      return this.paramPool.acquire(ScriptStorageParam.class).init(this.manager.getState(this.getStor(cmd0)), cmd1 + cmd2);
     }
 
     if(type == 0xe) { // Push gameVar[cmd0 + cmd1]
@@ -605,27 +610,27 @@ public class ScriptState<T extends ScriptedObject> {
     }
 
     if(type == 0x13) { // INLINE_3
-      return new ScriptInlineParam(this, this.context.opOffset_08).array((short)op + cmd2);
+      return this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08).array((short)op + cmd2);
     }
 
     if(type == 0x14) { // INLINE_TABLE_3 Push commandStart[(cmd0 | cmd1 << 8) + commandStart[(cmd0 | cmd1 << 8) + cmd2]]
-      return new ScriptInlineParam(this, this.context.opOffset_08).array((short)op + new ScriptInlineParam(this, this.context.opOffset_08).array((short)op + cmd2).get());
+      return this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08).array((short)op + this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.opOffset_08).array((short)op + cmd2).get());
     }
 
     if(type == 0x15) {
-      final Param param = new ScriptInlineParam(this, this.context.commandOffset_0c).array(new ScriptInlineParam(this, this.context.commandOffset_0c).array(this.getStor(cmd0)).get() + cmd1);
+      final Param param = this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(this.getStor(cmd0)).get() + cmd1);
       this.context.commandOffset_0c++;
       return param;
     }
 
     if(type == 0x16) {
-      final Param param = new ScriptInlineParam(this, new ScriptInlineParam(this, this.context.commandOffset_0c).array(cmd0).get() + this.getStor(cmd1));
+      final Param param = this.paramPool.acquire(ScriptInlineParam.class).init(this, this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(cmd0).get() + this.getStor(cmd1));
       this.context.commandOffset_0c++;
       return param;
     }
 
     if(type == 0x17) { // INLINE_TABLE_4
-      final Param param = new ScriptInlineParam(this, this.context.commandOffset_0c).array(new ScriptInlineParam(this, this.context.commandOffset_0c).array(cmd0).get() + cmd1);
+      final Param param = this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c).array(cmd0).get() + cmd1);
       this.context.commandOffset_0c++;
       return param;
     }
@@ -654,10 +659,10 @@ public class ScriptState<T extends ScriptedObject> {
 
       if(cmd0 == 2) {
         final int scriptIndex = this.frame().file.getOp(packed >>> 16);
-        return new ScriptStorageParam(this.manager.getState(scriptIndex), storIndex);
+        return this.paramPool.acquire(ScriptStorageParam.class).init(this.manager.getState(scriptIndex), storIndex);
       }
 
-      return new ScriptStorageParam(this, storIndex);
+      return this.paramPool.acquire(ScriptStorageParam.class).init(this, storIndex);
     }
 
     if(type == 0x25) { // var[inl][inl?]
@@ -688,11 +693,11 @@ public class ScriptState<T extends ScriptedObject> {
       final int packed = this.frame().file.getOp(this.context.commandOffset_0c++);
       final int offset = packed & 0xffff;
       final int index = this.frame().file.getOp(packed >>> 16);
-      return new ScriptInlineParam(this, offset).array(index);
+      return this.paramPool.acquire(ScriptInlineParam.class).init(this, offset).array(index);
     }
 
     // Treated as an immediate if not a valid op
-    return new ScriptInlineParam(this, this.context.commandOffset_0c - 1);
+    return this.paramPool.acquire(ScriptInlineParam.class).init(this, this.context.commandOffset_0c - 1);
   }
 
   private FlowControl runOp(final OpType op, final RunningScript<?> script) {

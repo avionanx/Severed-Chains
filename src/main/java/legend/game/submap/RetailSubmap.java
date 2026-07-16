@@ -1450,20 +1450,20 @@ public class RetailSubmap extends Submap {
     this.renderSubmapModel(this.submapModel_800d4bf8, matrix);
   }
 
+  private final MV submapModelLw = new MV();
+
   @Method(0x800eee48L)
   private void renderSubmapModel(final Model124 model, final Matrix4f matrix) {
     zOffset_1f8003e8 = model.zOffset_a0;
     tmdGp0Tpage_1f8003ec = model.tpage_108;
 
-    final MV lw = new MV();
-
     //LAB_800eee94
     for(int i = 0; i < model.modelParts_00.length; i++) {
       final ModelPart10 dobj2 = model.modelParts_00[i];
 
-      GsGetLw(dobj2.coord2_04, lw);
+      GsGetLw(dobj2.coord2_04, this.submapModelLw);
 
-      RENDERER.queueModel(dobj2.tmd_08.getObj(), matrix, lw, QueuedModelTmd.class)
+      RENDERER.queueModel(dobj2.tmd_08.getObj(), matrix, this.submapModelLw, QueuedModelTmd.class)
         .screenspaceOffset(GPU.getOffsetX() + GTE.getScreenOffsetX() - 184, GPU.getOffsetY() + GTE.getScreenOffsetY() - 120)
         .depthOffset(model.zOffset_a0 * 4)
         .usePs1Depth(model.usePs1Depth)
