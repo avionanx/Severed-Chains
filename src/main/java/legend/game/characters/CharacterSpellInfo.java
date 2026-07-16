@@ -16,6 +16,7 @@ public class CharacterSpellInfo {
   }
 
   public CharacterSpellInfo(final List<SpellUnlockCriterion> unlockCriteria, final UnlockState unlockState, final int unlockTimestamp) {
+    this(unlockCriteria);
     this.unlockState = unlockState;
     this.unlockTimestamp = unlockTimestamp;
   }
