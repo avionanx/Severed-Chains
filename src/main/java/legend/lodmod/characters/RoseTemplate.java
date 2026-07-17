@@ -61,7 +61,7 @@ public class RoseTemplate extends RetailCharacterTemplate {
   @Override
   public void loadWorldMapModel(final CharacterData2c character, final Consumer<List<FileData>> onLoad) {
     Loader
-      .loadFiles("SECT/DRGN22.BIN/836/99", "SECT/DRGN22.BIN/836/textures/3", "SECT/DRGN22.BIN/836/100", "SECT/DRGN22.BIN/836/101", "SECT/DRGN22.BIN/836/102")
+      .loadFiles("SECT/DRGN21.BIN/335/132", "SECT/DRGN21.BIN/335/textures/4", "SECT/DRGN21.BIN/335/133", "SECT/DRGN21.BIN/335/134", "SECT/DRGN21.BIN/335/135")
       .thenAccept(onLoad)
     ;
   }

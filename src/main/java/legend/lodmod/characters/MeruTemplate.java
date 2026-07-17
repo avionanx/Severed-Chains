@@ -62,7 +62,7 @@ public class MeruTemplate extends RetailCharacterTemplate {
   @Override
   public void loadWorldMapModel(final CharacterData2c character, final Consumer<List<FileData>> onLoad) {
     Loader
-      .loadFiles("SECT/DRGN22.BIN/836/66", "SECT/DRGN22.BIN/836/textures/2", "SECT/DRGN22.BIN/836/67", "SECT/DRGN22.BIN/836/68", "SECT/DRGN22.BIN/836/69")
+      .loadFiles("SECT/DRGN22.BIN/755/33", "SECT/DRGN22.BIN/755/textures/1", "SECT/DRGN22.BIN/755/34", "SECT/DRGN22.BIN/755/35", "SECT/DRGN22.BIN/755/36")
       .thenAccept(onLoad)
     ;
   }

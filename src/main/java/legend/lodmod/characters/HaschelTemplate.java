@@ -63,7 +63,7 @@ public class HaschelTemplate extends RetailCharacterTemplate {
   @Override
   public void loadWorldMapModel(final CharacterData2c character, final Consumer<List<FileData>> onLoad) {
     Loader
-      .loadFiles("SECT/DRGN22.BIN/836/165", "SECT/DRGN22.BIN/836/textures/5", "SECT/DRGN22.BIN/836/166", "SECT/DRGN22.BIN/836/167", "SECT/DRGN22.BIN/836/168")
+      .loadFiles("SECT/DRGN21.BIN/425/132", "SECT/DRGN21.BIN/425/textures/4", "SECT/DRGN21.BIN/425/133", "SECT/DRGN21.BIN/605/134", "SECT/DRGN21.BIN/425/135")
       .thenAccept(onLoad)
     ;
   }
