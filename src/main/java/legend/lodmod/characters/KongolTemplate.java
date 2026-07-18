@@ -82,7 +82,7 @@ public class KongolTemplate extends RetailCharacterTemplate {
   public int getDxpToNextLevel(final CharacterData2c character) {
     return switch(character.dlevel_13) {
       case 1 -> 1000;
-      case 2 -> 6000;
+      case 2 -> 2000;
       case 3 -> 12000;
       case 4 -> 20000;
       default -> 20000 + (character.dlevel_13 - 4) * 10000;
