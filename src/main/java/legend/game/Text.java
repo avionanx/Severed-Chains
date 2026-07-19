@@ -314,11 +314,11 @@ public final class Text {
             textbox.width_1c = textbox.chars_18 * 9 / 2;
             textbox.height_1e = textbox.lines_1a * 6;
 
-            if((textbox.flags_08 & Textbox4c.NO_ANIMATE_OUT) == 0) {
-              textbox.state_00 = TextboxState._5;
-            } else {
+//            if((textbox.flags_08 & Textbox4c.NO_ANIMATE_OUT) == 0) {
+//              textbox.state_00 = TextboxState._5;
+//            } else {
               textbox.state_00 = TextboxState._6;
-            }
+//            }
 
             //LAB_80025bc0
             textbox.flags_08 |= Textbox4c.RENDER_BACKGROUND;
@@ -329,7 +329,7 @@ public final class Text {
             textbox.state_00 = TextboxState._2;
             textbox.flags_08 |= Textbox4c.ANIMATING;
             textbox.currentTicks_10 = 0;
-            textbox.animationTicks_24 = 60 / vsyncMode_8007a3b8 / 4;
+            textbox.animationTicks_24 = 1; //60 / vsyncMode_8007a3b8 / 4;
 
             if((textbox.flags_08 & 0x2) != 0) {
               textbox.stepX_30 = (textbox.currentX_28 - textbox._38) / textbox.animationTicks_24;
@@ -414,7 +414,7 @@ public final class Text {
             textbox.state_00 = TextboxState.ANIMATE_OUT_3;
             textbox.flags_08 |= Textbox4c.ANIMATING;
 
-            final int ticks = 60 / vsyncMode_8007a3b8 / 4;
+            final int ticks = 1; //60 / vsyncMode_8007a3b8 / 4;
             textbox.currentTicks_10 = ticks;
             textbox.animationTicks_24 = ticks;
           } else {
@@ -522,7 +522,7 @@ public final class Text {
       case INIT_TEXTBOX_TYPE_1 -> {
         //LAB_8002663c
         if((textbox.flags_08 & TextboxText84.INITIALIZED) == 0) {
-          var type = TextboxType.from(textboxText.type_04);
+          final var type = TextboxType.from(textboxText.type_04);
           switch(type) {
             case NORMAL_INTERACTIVE -> textboxText.state_00 = TextboxTextState.CHECK_UNINITIALIZED_PENDING_INPUT_12;
 
@@ -635,7 +635,7 @@ public final class Text {
             boolean endOfTextBlock = false;
 
             //LAB_80026954
-            for(int lineIndex = 0; lineIndex < 4; lineIndex++) {
+            for(int lineIndex = 0; lineIndex < 400; lineIndex++) {
               processTextboxCharacter(textboxIndex);
 
               if(textboxText.state_00 == TextboxTextState.SCROLL_TEXT_5 || textboxText.state_00 == TextboxTextState.WAIT_FOR_INPUT_ADVANCED_DIRTY_BOX_6 || textboxText.state_00 == TextboxTextState.CLOSE_TEXTBOX_15 || textboxText.state_00 == TextboxTextState.WAIT_FOR_INPUT_ADVANCED_CLEAN_BOX_11 || textboxText.state_00 == TextboxTextState.PROCESS_NO_INPUT_ADVANCED_13) {
@@ -1204,10 +1204,10 @@ public final class Text {
     final TextboxText84 textboxText = textboxText_800bdf38[textboxIndex];
 
     // This code would be really tricky to make work at 60 FPS, but there isn't any harm in just slowing it down
-    if(textboxText.waitTicks != 0) {
-      textboxText.waitTicks--;
-      return;
-    }
+//    if(textboxText.waitTicks != 0) {
+//      textboxText.waitTicks--;
+//      return;
+//    }
 
     textboxText.waitTicks = currentEngineState_8004dd04.tickMultiplier() - 1;
 
@@ -1705,12 +1705,12 @@ public final class Text {
 
     textboxText.scrollAmount_2c += textboxText.scrollSpeed_2a;
 
-    if(textboxText.scrollAmount_2c >= 12.0f) {
+//    if(textboxText.scrollAmount_2c >= 12.0f) {
       advanceTextbox(textboxIndex);
       textboxText.state_00 = TextboxTextState.PROCESS_TEXT_4;
       textboxText.scrollAmount_2c = 0.0f;
       textboxText.charY_36--;
-    }
+//    }
 
     //LAB_80028894
   }
