@@ -418,6 +418,15 @@ public class SMap extends EngineState<SMap> {
   /** Used for restoring the primary party after forced party changes. Used as a FIFO queue by char_utils script lib. */
   public final IntList primaryPartyBackup = new IntArrayList();
 
+  private static final float UNSTUCK_SAVE_LOADED_BUDGET = 60.0f;
+
+  /**
+   * When a save is loaded, a small budget of world units is given. As the player moves, this budget is depleted. While the budget is non-zero, the
+   * player is able to walk through other submap objects if they are already inside of one. This allows the player to walk out of NPCs or chests if
+   * they load into a save inside of one.
+   */
+  private float unstuckMovementBudget;
+
   public SMap() {
     super(LodEngineStateTypes.SUBMAP.get());
   }
@@ -458,6 +467,8 @@ public class SMap extends EngineState<SMap> {
 
   @Override
   public void readSaveData(final GameState52c gameState, final FileData data) {
+    this.unstuckMovementBudget = UNSTUCK_SAVE_LOADED_BUDGET;
+
     // no data - legacy saves
     if(data.size() == 0) {
       submapScene_80052c34 = gameState.submapScene_a4;
@@ -1332,6 +1343,12 @@ public class SMap extends EngineState<SMap> {
           player.interpMovementStart.set(playerModel.coord2_14.coord.transfer);
           player.interpMovementStart.add(worldspaceDeltaMovement, player.interpMovementDest);
           player.lastMovementTick = this.smapTicks_800c6ae0;
+
+          this.unstuckMovementBudget -= Math.abs(worldspaceDeltaMovement.x) + Math.abs(worldspaceDeltaMovement.z);
+
+          if(this.unstuckMovementBudget < 0.0f) {
+            this.unstuckMovementBudget = 0.0f;
+          }
         }
 
         //LAB_800de2c8
@@ -1577,7 +1594,7 @@ public class SMap extends EngineState<SMap> {
 
         //LAB_800df104
         if(size * size >= x * x + z * z && (collideeMinY >= colliderMinY && collideeMinY <= colliderMaxY || collideeMaxY >= colliderMinY && collideeMaxY <= colliderMaxY)) {
-          if(sobj.sobjIndex_12e == 0) {
+          if(this.unstuckMovementBudget > 0.0f && sobj.sobjIndex_12e == 0) {
             // Stuck protection: if Dart is inside a sobj, he is not collided so he can still move
             final float dx2 = struct.model_00.coord2_14.coord.transfer.x - model.coord2_14.coord.transfer.x;
             final float dz2 = struct.model_00.coord2_14.coord.transfer.z - model.coord2_14.coord.transfer.z;
