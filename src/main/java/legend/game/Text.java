@@ -314,11 +314,11 @@ public final class Text {
             textbox.width_1c = textbox.chars_18 * 9 / 2;
             textbox.height_1e = textbox.lines_1a * 6;
 
-//            if((textbox.flags_08 & Textbox4c.NO_ANIMATE_OUT) == 0) {
-//              textbox.state_00 = TextboxState._5;
-//            } else {
+            if((textbox.flags_08 & Textbox4c.NO_ANIMATE_OUT) == 0) {
+              textbox.state_00 = TextboxState._5;
+            } else {
               textbox.state_00 = TextboxState._6;
-//            }
+            }
 
             //LAB_80025bc0
             textbox.flags_08 |= Textbox4c.RENDER_BACKGROUND;
